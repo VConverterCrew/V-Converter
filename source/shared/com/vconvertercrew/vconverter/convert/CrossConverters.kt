@@ -20,6 +20,7 @@ import com.vconvertercrew.vconverter.codename.CodenameStageParser
 import com.vconvertercrew.vconverter.codename.CodenameToPsychCharacter
 import com.vconvertercrew.vconverter.codename.CodenameToPsychChart
 import com.vconvertercrew.vconverter.codename.CodenameToPsychEvents
+import com.vconvertercrew.vconverter.codename.CodenameToPsychLua
 import com.vconvertercrew.vconverter.codename.CodenameToPsychScript
 import com.vconvertercrew.vconverter.codename.CodenameToPsychStage
 import com.vconvertercrew.vconverter.codename.CodenameToPsychWeek
@@ -347,7 +348,6 @@ class CodenameToPsychScriptsConverter : CodenameToPsychConverter() {
                 eventName = if (target.scope == CodenameScope.EVENT) target.key else "",
                 hooks = hooks
             )
-            val result = CodenameToPsychScript(target, context).convert(item.text)
             val path = when (target.scope) {
                 CodenameScope.GLOBAL -> "scripts/$stem.hx"
                 CodenameScope.SONG -> "data/${target.key}/$stem.hx"
@@ -356,7 +356,14 @@ class CodenameToPsychScriptsConverter : CodenameToPsychConverter() {
                 CodenameScope.EVENT -> if (CodenameToPsychEvents.script(target.key) != null) "scripts/${CodenameEvents.eventId(target.key)}Event.hx" else "custom_events/${target.key}.hx"
                 CodenameScope.NOTE_TYPE -> "custom_notetypes/${CodenameToPsychChart.noteTypeFor(target.key)}.hx"
             }
-            outputs += out(path, result.source)
+            val lua = CodenameToPsychLua.convert(path, item.name, item.text, target, context)
+            val result = if (lua == null) CodenameToPsychScript(target, context).convert(item.text) else null
+            if (lua != null) {
+                outputs += out(lua.first, lua.second.source)
+                report.section(item.name, lua.second.notes())
+            } else if (result != null) {
+                outputs += out(path, result.source)
+            }
             if (target.scope == CodenameScope.EVENT) {
                 val builtin = CodenameToPsychEvents.script(target.key)
                 outputs += out("custom_events/${target.key}.txt", (builtin?.description ?: CodenameToPsychEvents.description(target.key)) + "\n")
@@ -365,8 +372,8 @@ class CodenameToPsychScriptsConverter : CodenameToPsychConverter() {
                     if (target.key in CodenameToPsychEvents.needsCompat) compat = true
                 }
             }
-            if (result.usesCompat) compat = true
-            if (result.issues.isNotEmpty()) report.section(item.name, issueLines(result.issues))
+            if (result?.usesCompat == true) compat = true
+            if (result != null && result.issues.isNotEmpty()) report.section(item.name, issueLines(result.issues))
             if (target.scope == CodenameScope.STAGE && stage == null) report.warn("${item.name}: add the stage XML too so stage sprites are fetched with getVar().")
         }
         if (compat) outputs += out(CodenamePsychHelpers.COMPAT_SCRIPT, CodenamePsychHelpers.compatScript())

@@ -2,6 +2,7 @@ package com.vconvertercrew.vconverter.reverse
 
 import com.vconvertercrew.vconverter.core.Report
 import com.vconvertercrew.vconverter.core.ReportBuilder
+import com.vconvertercrew.vconverter.script.HaxeToLua
 import com.vconvertercrew.vconverter.script.HxImports
 import com.vconvertercrew.vconverter.script.ReflectCalls
 
@@ -56,6 +57,15 @@ object HxcToPsych {
         "funkin.play.event.SongEvent", "funkin.data.event.SongEventSchema", "funkin.play.notes.notekind.NoteKind", "funkin.Preferences",
         "funkin.modding.events.ScriptEvent", "funkin.util.HapticUtil", "funkin.FunkinMemory"
     ) + (characterParents - "BaseCharacter").map { "funkin.play.character.$it" }
+
+    fun toLua(result: HxcResult, source: String, fileName: String): HxcResult {
+        if (result.kind == HxcKind.OTHER) return result
+        val main = result.files.firstOrNull { it.path.endsWith(".hx") } ?: return result
+        val lua = HaxeToLua.convert(source, "vslice", fileName, result.targetId) ?: return result
+        val files = result.files.map { if (it === main) PsychScriptFile(HaxeToLua.luaPath(it.path), lua.source) else it }
+        val kept = result.notes.filter { it.startsWith("Modules run") || it.startsWith("Parent class") }
+        return result.copy(files = files, notes = lua.notes() + kept)
+    }
 
     fun kindOf(parent: String): HxcKind = when (parent.substringAfterLast('.')) {
         "Module" -> HxcKind.MODULE
@@ -980,7 +990,8 @@ function hasBeatenLevel(level:String, ?difficulties:Array<String>):Bool
         report.section(
             "How it runs",
             listOf(
-                "V-Slice callbacks became Psych HScript callbacks (onCreate, onUpdate, onBeatHit, goodNoteHit, onEvent…).",
+                if (results.any { (_, r) -> r.files.any { it.path.endsWith(".lua") } }) "V-Slice classes became Psych Lua scripts (onCreate, onUpdate, onBeatHit, goodNoteHit, onEvent…); code with no Lua equivalent runs as Haxe through runHaxeCode()."
+                else "V-Slice callbacks became Psych HScript callbacks (onCreate, onUpdate, onBeatHit, goodNoteHit, onEvent…).",
                 "Song scripts go to data/<song>/, stage scripts to stages/, character scripts to characters/, events to custom_events/ and note kinds to custom_notetypes/."
             )
         )

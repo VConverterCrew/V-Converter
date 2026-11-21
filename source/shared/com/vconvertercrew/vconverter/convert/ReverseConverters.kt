@@ -220,7 +220,7 @@ class ReverseScriptsConverter : FileConverter() {
         val failures = mutableListOf<String>()
         items.forEach { item ->
             try {
-                results += item.name to HxcToPsych.convert(item.name, item.text)
+                results += item.name to HxcToPsych.toLua(HxcToPsych.convert(item.name, item.text), item.text, item.name)
             } catch (e: Exception) {
                 failures += "${item.name}: ${e.message}"
             }

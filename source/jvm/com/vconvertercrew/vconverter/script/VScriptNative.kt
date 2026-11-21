@@ -19,6 +19,8 @@ object VScriptNative {
 
     fun convertLua(source: String, options: String): String? = if (available) nativeConvertLua(source, options) else null
 
+    fun convertHx(source: String, options: String): String? = if (available) nativeConvertHx(source, options) else null
+
     fun generate(spec: String): String? = if (available) nativeGenerate(spec) else null
 
     fun builtinEvent(name: String, className: String, id: String): String? = if (available) nativeBuiltinEvent(name, className, id) else null
@@ -30,6 +32,7 @@ object VScriptNative {
 
     @JvmStatic private external fun nativeVersion(): String
     @JvmStatic private external fun nativeConvertLua(source: String, options: String): String?
+    @JvmStatic private external fun nativeConvertHx(source: String, options: String): String?
     @JvmStatic private external fun nativeGenerate(spec: String): String?
     @JvmStatic private external fun nativeBuiltinEvent(name: String, className: String, id: String): String?
     @JvmStatic private external fun nativeConvertData(kind: String, input: String): String?

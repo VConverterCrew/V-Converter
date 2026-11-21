@@ -1,6 +1,7 @@
 #include "vscript/VScript.h"
 
 #include "Converter.hpp"
+#include "HaxeLua.hpp"
 #include "Json.hpp"
 #include "Lua.hpp"
 
@@ -110,16 +111,16 @@ static void testStage() {
     CHECK(has(s, "var stage:Stage = this;"));
     CHECK(has(s, "public override function onCountdownStart(event:CountdownScriptEvent):Void"));
     CHECK(has(s, "layerSprites();"));
-    CHECK(has(s, "bg.scrollFactor.set(0.9, 0.9);"));
+    CHECK(has(s, "bg?.scrollFactor?.set(0.9, 0.9);"));
     CHECK(has(s, "crowd = FunkinSprite.createSparrow(0, 300, \"crowd\");"));
-    CHECK(has(s, "crowd.animation.addByIndices(\"left\", \"crowd bop\", [0, 1, 2], \"\", 24, false);"));
+    CHECK(has(s, "crowd?.animation?.addByIndices(\"left\", \"crowd bop\", [0, 1, 2], \"\", 24, false);"));
     CHECK(has(s, "frontSprites.push(crowd);"));
     CHECK(has(s, "add(crowd);"));
     CHECK(has(s, "stage.refresh();"));
     CHECK(has(s, "Conductor.instance.currentBeat % 2 == 0"));
-    CHECK(has(s, "crowd.animation.play(\"bop\", true, false, 0);"));
+    CHECK(has(s, "crowd?.animation?.play(\"bop\", true, false, 0);"));
     CHECK(has(s, "var elapsed:Float = event.elapsed;"));
-    CHECK(has(s, "bg.angle = Math.sin(sway) * 5;"));
+    CHECK(has(s, "bg?.angle = Math.sin(sway) * 5;"));
     CHECK(has(s, "var sway:Dynamic = 0;"));
     CHECK(lacks(s, "psychCallback"));
     CHECK(lacks(s, "setProperty("));
@@ -404,6 +405,219 @@ end)", vscript::Base::Song);
     CHECK(has(chart, "\"unsupportedEvents\":[]"));
 }
 
+static void testRuntimeSafety() {
+    const std::string lua =
+        "function onCreate()\n"
+        "  if not lowQuality then makeAnimatedLuaSprite('sayori', 'clubroom/sayori', 100, 200) end\n"
+        "  debugPrint('a\\1b\\27c\\0d')\n"
+        "end\n"
+        "function onBeatHit()\n"
+        "  objectPlayAnimation('sayori', 'idle', true)\n"
+        "  playAnim('monika', 'idle', true)\n"
+        "  setProperty('dad.visible', getProperty('sayori.animation.curAnim.curFrame') > 2)\n"
+        "end\n"
+        "function onEvent(n, a, b)\n"
+        "  doTweenZoom('camz', 'camGame', 1.2, 1, 'quadOut')\n"
+        "end\n"
+        "function onTweenCompleted(tag, vars)\n"
+        "  if tag == 'camz' then setProperty('defaultCamZoom', 1.2) end\n"
+        "end\n";
+    vscript::ConvertResult r = convert(lua, vscript::Base::Stage, "ClubroomStage", "clubroom");
+    CHECK(r.ok);
+    const std::string& s = r.source;
+    CHECK(lacks(s, "\\x"));
+    CHECK(has(s, "String.fromCharCode(0)"));
+    CHECK(has(s, "sayori?.animation?.play(\"idle\", true, false, 0);"));
+    CHECK(has(s, "getNamedProp(\"monika\")?.playAnimation(\"idle\", true);"));
+    CHECK(has(s, "getDad()?.visible = sayori?.animation?.curAnim?.curFrame > 2;"));
+    CHECK(has(s, "function onTweenCompleted(?tag, ?vars)"));
+    CHECK(has(s, "onTweenCompleted(\"camz\")"));
+}
+
+static vscript::HaxeLuaResult hxToLua(const std::string& source, const std::string& engine = "vslice", const std::string& file = "Script.hxc") {
+    vscript::HaxeLuaOptions options;
+    options.engine = engine;
+    options.fileName = file;
+    return vscript::convertHaxeToLua(source, options);
+}
+
+static void testHaxeToLua() {
+    const std::string stage =
+        "import funkin.play.stage.Stage;\n"
+        "import funkin.graphics.FunkinSprite;\n"
+        "import flixel.FlxG;\n"
+        "import flixel.tweens.FlxTween;\n"
+        "import flixel.tweens.FlxEase;\n"
+        "import flixel.util.FlxTimer;\n"
+        "class ClubStage extends Stage {\n"
+        "  var sayori:FunkinSprite;\n"
+        "  var bops:Int = 0;\n"
+        "  var crowd:Array<FunkinSprite> = [];\n"
+        "  function new() { super('club'); }\n"
+        "  override function buildStage() {\n"
+        "    super.buildStage();\n"
+        "    sayori = FunkinSprite.createSparrow(100, 200, 'club/sayori');\n"
+        "    sayori.animation.addByPrefix('idle', 'Sayori Idle', 24, false);\n"
+        "    sayori.scrollFactor.set(0.9, 0.9);\n"
+        "    add(sayori);\n"
+        "    for (i in 0...3) {\n"
+        "      var c = FunkinSprite.create(i * 100, 500, 'club/crowd');\n"
+        "      crowd.push(c);\n"
+        "      add(c);\n"
+        "    }\n"
+        "  }\n"
+        "  override function onBeatHit(event:SongTimeScriptEvent) {\n"
+        "    super.onBeatHit(event);\n"
+        "    if (event.beat % 2 == 0) sayori.animation.play('idle', true);\n"
+        "    getNamedProp('monika').playAnimation('idle', true);\n"
+        "    for (c in crowd) c.y += 5;\n"
+        "    bops++;\n"
+        "    if (bops > 3) {\n"
+        "      FlxTween.tween(FlxG.camera, {zoom: 1.2}, 1, {ease: FlxEase.quadOut, onComplete: function(t) { trace('done ' + bops); }});\n"
+        "      new FlxTimer().start(0.5, function(tmr:FlxTimer) { getBoyfriend().playAnimation('hey', true); });\n"
+        "    }\n"
+        "  }\n"
+        "  override function onUpdate(event:UpdateScriptEvent) {\n"
+        "    PlayState.instance.health += event.elapsed * 0.01;\n"
+        "    var label = 'x${bops}';\n"
+        "    switch (bops) { case 1, 2: trace('low'); default: trace(label.toUpperCase()); }\n"
+        "    FlxG.state.openSubState(new PauseSubState());\n"
+        "  }\n"
+        "}\n";
+    vscript::HaxeLuaResult r = hxToLua(stage);
+    CHECK(r.ok);
+    CHECK(r.kind == "stage");
+    CHECK(r.className == "ClubStage");
+    CHECK(r.targetId == "club");
+    const std::string& s = r.source;
+    CHECK(has(s, "function onCreate()"));
+    CHECK(has(s, "makeAnimatedLuaSprite('sayori', 'club/sayori', 100, 200)"));
+    CHECK(has(s, "addAnimationByPrefix('sayori', 'idle', 'Sayori Idle', 24, false)"));
+    CHECK(has(s, "setScrollFactor('sayori', 0.9, 0.9)"));
+    CHECK(has(s, "addLuaSprite('sayori', false)"));
+    CHECK(has(s, "for i = 0, 3 - 1 do"));
+    CHECK(has(s, "local c = 'c_' .. hx_uid()\n    makeLuaSprite(c, 'club/crowd', i * 100, 500)"));
+    CHECK(has(s, "table.insert(crowd, c)"));
+    CHECK(has(s, "function onBeatHit()"));
+    CHECK(has(s, "if curBeat % 2 == 0 then"));
+    CHECK(has(s, "playAnim('sayori', 'idle', true)"));
+    CHECK(has(s, "playAnim('monika', 'idle', true)"));
+    CHECK(has(s, "setProperty(c .. '.y', getProperty(c .. '.y') + 5)"));
+    CHECK(has(s, "bops = bops + 1"));
+    CHECK(has(s, "startTween("));
+    CHECK(has(s, "'camGame', {zoom = 1.2}, 1, {ease = 'quadOut', onComplete = 'hxTweenDone_ClubStage'})"));
+    CHECK(has(s, "debugPrint('done ' .. tostring(bops))"));
+    CHECK(has(s, "runTimer("));
+    CHECK(has(s, "playAnim('boyfriend', 'hey', true)"));
+    CHECK(has(s, "function onTimerCompleted(tag, loops, loopsLeft)"));
+    CHECK(has(s, "function hxTweenDone_ClubStage(tag)"));
+    CHECK(has(s, "function onUpdate(elapsed)"));
+    CHECK(has(s, "setProperty('health', getProperty('health') + elapsed * 0.01)"));
+    CHECK(has(s, "local label = 'x' .. tostring(bops)"));
+    CHECK(has(s, "if hx_sw"));
+    CHECK(has(s, "debugPrint(string.upper(label))"));
+    CHECK(has(s, "runHaxeCode([[FlxG.state.openSubState(new PauseSubState())]])"));
+    CHECK(r.fallbacks == 1);
+    CHECK(lacks(s, "super"));
+    CHECK(lacks(s, "event."));
+
+    const std::string event =
+        "class ZoomEvent extends SongEvent {\n"
+        "  public function new() { super('ZoomCam'); }\n"
+        "  public override function handleEvent(data:SongEventData) {\n"
+        "    if (PlayState.instance == null) return;\n"
+        "    var zoom:Float = data.getFloat('zoom');\n"
+        "    PlayState.instance.currentCameraZoom = zoom;\n"
+        "  }\n"
+        "  public override function getTitle():String { return 'Zoom Cam'; }\n"
+        "  public override function getEventSchema() { return new SongEventSchema([{name: 'zoom', type: 'float'}, {name: 'dur', type: 'float'}]); }\n"
+        "}\n";
+    r = hxToLua(event);
+    CHECK(r.ok);
+    CHECK(r.kind == "event");
+    CHECK(r.title == "Zoom Cam");
+    CHECK(r.schema.size() == 2);
+    CHECK(has(r.source, "function onEvent(name, value1, value2, strumTime)"));
+    CHECK(has(r.source, "if name ~= 'ZoomCam' then return end"));
+    CHECK(has(r.source, "if false then"));
+    CHECK(has(r.source, "local zoom = tonumber(value1)"));
+    CHECK(has(r.source, "setProperty('defaultCamZoom', zoom)"));
+
+    const std::string note =
+        "class HurtNote extends NoteKind {\n"
+        "  function new() { super('hurt'); }\n"
+        "  override function onNoteHit(event:HitNoteScriptEvent) {\n"
+        "    if (event.note.noteData.getMustHitNote()) PlayState.instance.health -= 0.3;\n"
+        "    trace(event.note.noteData.getDirection());\n"
+        "  }\n"
+        "}\n";
+    r = hxToLua(note);
+    CHECK(r.ok);
+    CHECK(has(r.source, "function goodNoteHit(id, direction, noteType, isSustainNote)\n  if noteType ~= 'hurt' then return end\n  if true then"));
+    CHECK(has(r.source, "function opponentNoteHit(id, direction, noteType, isSustainNote)"));
+    CHECK(has(r.source, "debugPrint(tostring(direction))"));
+
+    const std::string codename =
+        "var bg:FlxSprite;\n"
+        "function create() {\n"
+        "  bg = new FlxSprite(-100, -50).loadGraphic(Paths.image('stages/bg'));\n"
+        "  bg.scale.set(6, 6);\n"
+        "  bg.cameras = [camHUD];\n"
+        "  insert(members.indexOf(dad), bg);\n"
+        "}\n"
+        "function beatHit(curBeat:Int) {\n"
+        "  if (curBeat % 4 == 0) FlxG.camera.zoom += 0.015;\n"
+        "  if (curBeat == 8) FlxG.camera.flash(FlxColor.WHITE, 1);\n"
+        "}\n"
+        "function onPlayerHit(event) {\n"
+        "  if (event.noteType == 'Hurt Note') event.cancel();\n"
+        "}\n"
+        "function onEvent(e) {\n"
+        "  if (e.event.name == 'Flash') trace(e.event.params[0]);\n"
+        "  var list = [for (i in 0...4) if (i != 2) i * 2];\n"
+        "}\n";
+    r = hxToLua(codename, "codename", "songs/test/scripts/zoom.hx");
+    CHECK(r.ok);
+    CHECK(r.kind == "script");
+    CHECK(has(r.source, "makeLuaSprite('bg', '', -100, -50)\n  loadGraphic('bg', 'stages/bg')"));
+    CHECK(has(r.source, "scaleObject('bg', 6, 6, false)"));
+    CHECK(has(r.source, "setObjectCamera('bg', 'hud')"));
+    CHECK(has(r.source, "addLuaSprite('bg', false)"));
+    CHECK(has(r.source, "setProperty('camGame.zoom', getProperty('camGame.zoom') + 0.015)"));
+    CHECK(has(r.source, "cameraFlash('game', 'FFFFFF', 1, false)"));
+    CHECK(has(r.source, "local hx_stop = false"));
+    CHECK(has(r.source, "if hx_stop then return Function_Stop end"));
+    CHECK(has(r.source, "if name == 'Flash' then"));
+    CHECK(has(r.source, "debugPrint(tostring(value1))"));
+    CHECK(has(r.source, "hx_out[#hx_out + 1] = i * 2"));
+    CHECK(r.fallbacks == 0);
+
+    r = hxToLua("class Broken extends Module { function new( { }");
+    CHECK(!r.ok);
+    CHECK(!r.issues.empty());
+
+    const char* pieces[] = {"class", "X", "extends", "Module", "{", "}", "function", "(", ")", "var", "=", "1", "'a$b'", "if", "else", "for", "in", "...",
+        "[", "]", ";", ".", "?.", "switch", "case", ":", "new", "FlxSprite", "->", "return", "\"s\"", "?", "!", "+", "=>", "cast", "try", "catch", "@:meta", "#if"};
+    unsigned seed = 99;
+    for (int round = 0; round < 3000; round++) {
+        std::string text;
+        int n = 1 + static_cast<int>(seed % 40);
+        for (int i = 0; i < n; i++) {
+            seed = seed * 1103515245u + 12345u;
+            text += pieces[(seed >> 8) % (sizeof(pieces) / sizeof(pieces[0]))];
+            text += ' ';
+        }
+        char* raw = vscript_convert_hx(text.c_str(), round % 2 ? "{\"engine\":\"codename\"}" : "{}");
+        CHECK(raw != nullptr);
+        vscript_free(raw);
+    }
+    for (size_t cut = 0; cut < stage.size(); cut += 7) {
+        char* raw = vscript_convert_hx(stage.substr(0, cut).c_str(), "{}");
+        CHECK(raw != nullptr);
+        vscript_free(raw);
+    }
+}
+
 int main() {
     testParser();
     testStage();
@@ -415,6 +629,8 @@ int main() {
     testFuzz();
     testDataConverters();
     testChangeCharacter();
+    testRuntimeSafety();
+    testHaxeToLua();
     if (failures == 0) std::printf("v-script: all tests passed\n");
     return failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

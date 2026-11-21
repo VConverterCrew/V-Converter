@@ -39,6 +39,12 @@ JNIEXPORT jstring JNICALL VCS_FUNCTION(nativeConvertLua)(JNIEnv* env, jclass, js
     return take(env, vscript_convert_lua(code.c_str(), json.c_str()));
 }
 
+JNIEXPORT jstring JNICALL VCS_FUNCTION(nativeConvertHx)(JNIEnv* env, jclass, jstring source, jstring options) {
+    std::string code = text(env, source);
+    std::string json = text(env, options);
+    return take(env, vscript_convert_hx(code.c_str(), json.c_str()));
+}
+
 JNIEXPORT jstring JNICALL VCS_FUNCTION(nativeGenerate)(JNIEnv* env, jclass, jstring spec) {
     std::string json = text(env, spec);
     return take(env, vscript_generate(json.c_str()));

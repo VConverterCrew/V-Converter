@@ -19,6 +19,8 @@ VSCRIPT_API const char* vscript_version(void);
 
 VSCRIPT_API char* vscript_convert_lua(const char* source, const char* options_json);
 
+VSCRIPT_API char* vscript_convert_hx(const char* source, const char* options_json);
+
 VSCRIPT_API char* vscript_generate(const char* spec_json);
 
 VSCRIPT_API char* vscript_builtin_event(const char* name, const char* class_name, const char* id);

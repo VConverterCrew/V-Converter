@@ -5,7 +5,6 @@ import com.vconvertercrew.vconverter.script.lua.LuaParser
 import com.vconvertercrew.vconverter.script.lua.LuaSyntaxException
 import com.vconvertercrew.vconverter.script.lua.Stat
 import com.vconvertercrew.vconverter.script.lua.TableField
-import com.vconvertercrew.vconverter.core.fmt
 
 enum class ScriptScope(val label: String) {
     GLOBAL("Global"),
@@ -132,7 +131,7 @@ abstract class LuaTranspiler(protected val skipLines: Set<Int> = emptySet()) {
                     c == '\r' -> sb.append("\\r")
                     c == '\t' -> sb.append("\\t")
                     c == '$' -> sb.append("$")
-                    c.code < 0x20 -> sb.append(fmt("\\x%02X", c.code))
+                    c.code == 0 -> {}
                     else -> sb.append(c)
                 }
             }

@@ -302,18 +302,19 @@ function onPlayerHit(event) {
         assertEquals("Cne Mod", info.title)
         val out = Files.createTempDirectory("c2pout").toFile()
         CodenameToPsychMod(files, scan, DirectoryModWriter(out)).convert(ModInfo(info.title, info.description, info.author))
+        val zoomScript = if (com.vconvertercrew.vconverter.script.HaxeToLua.available) "data/test/zoom.lua" else "data/test/zoom.hx"
         listOf(
             "data/test/test-hard.json",
             "songs/test/Inst.ogg",
             "songs/test/Voices.ogg",
-            "data/test/zoom.hx",
+            zoomScript,
             "characters/dad.json",
             "stages/mall-evil.json",
             "weeks/week5.json",
             "custom_events/Camera Flash.hx",
             "pack.json"
         ).forEach { assertTrue("missing $it", File(out, it).exists()) }
-        assertTrue(File(out, "data/test/zoom.hx").readText().contains("function onBeatHit()"))
+        assertTrue(File(out, zoomScript).readText().contains("function onBeatHit()"))
         assertEquals("Cne Mod", JSONObject(File(out, "pack.json").readText()).getString("name"))
     }
 }

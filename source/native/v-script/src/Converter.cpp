@@ -110,8 +110,11 @@ std::string numberText(double value) {
 
 }
 
+std::string nullSafe(const std::string& text, const std::set<std::string>& fields);
+
 std::string hxString(const std::string& text) {
     std::string out = "\"";
+    bool nul = false;
     for (unsigned char c : text) {
         switch (c) {
             case '"': out += "\\\""; break;
@@ -119,17 +122,120 @@ std::string hxString(const std::string& text) {
             case '\n': out += "\\n"; break;
             case '\r': out += "\\r"; break;
             case '\t': out += "\\t"; break;
-            default:
-                if (c < 0x20) {
-                    char buffer[8];
-                    std::snprintf(buffer, sizeof buffer, "\\x%02X", c);
-                    out += buffer;
-                } else {
-                    out += static_cast<char>(c);
-                }
+            case 0: nul = true; out += "\" + String.fromCharCode(0) + \""; break;
+            default: out += static_cast<char>(c);
         }
     }
-    return out + "\"";
+    out += "\"";
+    return nul ? "(" + out + ")" : out;
+}
+
+namespace {
+
+bool identStart(char c) { return std::isalpha(static_cast<unsigned char>(c)) || c == '_'; }
+bool identPart(char c) { return std::isalnum(static_cast<unsigned char>(c)) || c == '_'; }
+
+size_t skipQuoted(const std::string& t, size_t i) {
+    char q = t[i++];
+    while (i < t.size() && t[i] != q) i += t[i] == '\\' ? 2 : 1;
+    return i < t.size() ? i + 1 : t.size();
+}
+
+size_t skipBalanced(const std::string& t, size_t i) {
+    int depth = 0;
+    while (i < t.size()) {
+        char c = t[i];
+        if (c == '"' || c == '\'') { i = skipQuoted(t, i); continue; }
+        if (c == '(' || c == '[' || c == '{') depth++;
+        else if (c == ')' || c == ']' || c == '}') {
+            if (--depth == 0) return i + 1;
+        }
+        i++;
+    }
+    return i;
+}
+
+}
+
+std::string nullSafe(const std::string& text, const std::set<std::string>& fields) {
+    static const std::set<std::string> calls = {"getNamedProp", "getDad", "getBoyfriend", "getGirlfriend"};
+    std::string out;
+    out.reserve(text.size() + text.size() / 16);
+    size_t i = 0;
+    auto group = [&]() {
+        size_t end = skipBalanced(text, i);
+        if (end - i < 2 || text[end - 1] != ')') {
+            out.append(text, i, end - i);
+        } else {
+            out += '(';
+            out += nullSafe(text.substr(i + 1, end - i - 2), fields);
+            out += ')';
+        }
+        i = end;
+    };
+    auto chain = [&]() {
+        while (i < text.size()) {
+            if (text[i] == '.' && i + 1 < text.size() && identStart(text[i + 1])) {
+                out += "?.";
+                i++;
+            } else if (text[i] == '?' && i + 2 < text.size() && text[i + 1] == '.' && identStart(text[i + 2])) {
+                out += "?.";
+                i += 2;
+            } else {
+                break;
+            }
+            size_t start = i;
+            while (i < text.size() && identPart(text[i])) i++;
+            out.append(text, start, i - start);
+            if (i < text.size() && text[i] == '(') group();
+        }
+    };
+    while (i < text.size()) {
+        char c = text[i];
+        if (c == '"' || c == '\'') {
+            size_t end = skipQuoted(text, i);
+            out.append(text, i, end - i);
+            i = end;
+            continue;
+        }
+        if (c == '/' && i + 1 < text.size() && text[i + 1] == '/') {
+            size_t end = text.find('\n', i);
+            if (end == std::string::npos) end = text.size();
+            out.append(text, i, end - i);
+            i = end;
+            continue;
+        }
+        if (!identStart(c) || (i > 0 && (identPart(text[i - 1]) || text[i - 1] == '.'))) {
+            if (identStart(c) && i > 0 && text[i - 1] == '.') {
+                size_t start = i;
+                while (i < text.size() && identPart(text[i])) i++;
+                std::string word = text.substr(start, i - start);
+                out += word;
+                bool spritesGet = word == "get" && start >= 8 && text.compare(start - 8, 8, "sprites.") == 0;
+                if ((calls.count(word) || spritesGet) && i < text.size() && text[i] == '(') {
+                    group();
+                    chain();
+                } else if (word == "curAnim") {
+                    chain();
+                }
+                continue;
+            }
+            out += c;
+            i++;
+            continue;
+        }
+        size_t start = i;
+        while (i < text.size() && identPart(text[i])) i++;
+        std::string word = text.substr(start, i - start);
+        out += word;
+        if (calls.count(word) && i < text.size() && text[i] == '(') {
+            group();
+            chain();
+        } else if (fields.count(word)) {
+            chain();
+        }
+    }
+    return out;
 }
 
 std::string eventIdFor(const std::string& name) {
@@ -1035,7 +1141,7 @@ private:
         std::string params;
         for (size_t i = 0; i < func.params.size(); i++) {
             if (i) params += ", ";
-            params += declare(func.params[i]);
+            params += "?" + declare(func.params[i]);
         }
         if (func.vararg) {
             if (!params.empty()) params += ", ";
@@ -3006,7 +3112,7 @@ private:
             for (size_t i = 0; i < func->params.size(); i++) {
                 if (i) params += ", ";
                 std::string p = declare(func->params[i]);
-                params += p;
+                params += "?" + p;
                 if (i < hookParams.size() && hookMethods_.count(name)) params += ":" + hookParams[i].type;
             }
             if (func->vararg) {
@@ -3350,7 +3456,9 @@ private:
         out.close();
         std::string text;
         for (const std::string& l : out.lines()) text += (trim(l).empty() ? "" : l) + "\n";
-        return text;
+        std::set<std::string> nullable;
+        for (const auto& entry : tags_) nullable.insert(entry.second.field);
+        return nullSafe(text, nullable);
     }
 };
 

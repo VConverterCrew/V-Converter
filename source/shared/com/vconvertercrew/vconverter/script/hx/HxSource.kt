@@ -1,6 +1,5 @@
 package com.vconvertercrew.vconverter.script.hx
 
-import com.vconvertercrew.vconverter.core.fmt
 
 enum class HxKind { SPACE, IDENT, NUMBER, STRING, PUNCT }
 
@@ -423,7 +422,7 @@ object HxSource {
                 c == '\n' -> sb.append("\\n")
                 c == '\r' -> sb.append("\\r")
                 c == '\t' -> sb.append("\\t")
-                c.code < 0x20 -> sb.append(fmt("\\x%02X", c.code))
+                c.code == 0 -> {}
                 else -> sb.append(c)
             }
         }

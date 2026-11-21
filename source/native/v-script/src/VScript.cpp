@@ -3,6 +3,7 @@
 #include "Converter.hpp"
 #include "Funkin.hpp"
 #include "Generator.hpp"
+#include "HaxeLua.hpp"
 #include "Json.hpp"
 
 #include <cstdlib>
@@ -72,6 +73,45 @@ char* vscript_convert_lua(const char* source, const char* options_json) {
     Json api = Json::array();
     for (const std::string& a : result.apiCalls) api.push(Json::string(a));
     out.set("api", api);
+    return copy(out.dump());
+}
+
+char* vscript_convert_hx(const char* source, const char* options_json) {
+    using namespace vscript;
+    bool ok = false;
+    Json options = Json::parse(options_json ? options_json : "{}", ok);
+    if (!ok) options = Json::object();
+    HaxeLuaOptions o;
+    o.engine = options["engine"].text("vslice");
+    o.fileName = options["fileName"].text();
+    o.id = options["id"].text();
+    o.eventName = options["eventName"].text();
+    o.noteType = options["noteType"].text();
+    o.characterLayer = static_cast<int>(options["characterLayer"].asNumber(300));
+    for (const Json& prop : options["stageProps"].items()) o.stageProps.insert(prop.text());
+    HaxeLuaResult result = convertHaxeToLua(source ? source : "", o);
+    Json out = Json::object();
+    out.set("ok", Json::boolean(result.ok));
+    out.set("source", Json::string(result.source));
+    out.set("kind", Json::string(result.kind));
+    out.set("className", Json::string(result.className));
+    out.set("targetId", Json::string(result.targetId));
+    out.set("title", Json::string(result.title));
+    out.set("fallbacks", Json::number(result.fallbacks));
+    Json schema = Json::array();
+    for (const std::string& s : result.schema) schema.push(Json::string(s));
+    out.set("schema", schema);
+    Json callbacks = Json::array();
+    for (const std::string& c : result.callbacks) callbacks.push(Json::string(c));
+    out.set("callbacks", callbacks);
+    Json issues = Json::array();
+    for (const Issue& i : result.issues) {
+        Json item = Json::object();
+        item.set("line", Json::number(i.line));
+        item.set("message", Json::string(i.message));
+        issues.push(item);
+    }
+    out.set("issues", issues);
     return copy(out.dump());
 }
 

@@ -5,6 +5,7 @@ import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.toKString
 import vscript.vscript_builtin_event
 import vscript.vscript_convert_data
+import vscript.vscript_convert_hx
 import vscript.vscript_convert_lua
 import vscript.vscript_free
 import vscript.vscript_generate
@@ -22,6 +23,8 @@ object VScriptNative {
     }
 
     fun convertLua(source: String, options: String): String? = take(vscript_convert_lua(source, options))
+
+    fun convertHx(source: String, options: String): String? = take(vscript_convert_hx(source, options))
 
     fun generate(spec: String): String? = take(vscript_generate(spec))
 

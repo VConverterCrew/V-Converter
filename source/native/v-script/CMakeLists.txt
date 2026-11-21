@@ -22,6 +22,8 @@ add_library(VScript STATIC
     src/Chart.cpp
     src/Character.cpp
     src/Stage.cpp
+    src/HaxeParser.cpp
+    src/HaxeLua.cpp
     src/VScript.cpp
     include/vscript/VScript.h
 )

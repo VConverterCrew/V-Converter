@@ -269,6 +269,13 @@ class CodenameToPsychMod(
         step("Script ${target.substringAfterLast('/')}")
         return try {
             val source = path?.let { files.readText(it) } ?: ""
+            val lua = CodenameToPsychLua.convert(target, path?.substringAfterLast('/') ?: target, source, scope, context)
+            if (lua != null) {
+                write(lua.first, lua.second.source)
+                scripts++
+                report.section("Script · ${path?.let(scan::relative) ?: target}", lua.second.notes())
+                return true
+            }
             val result = CodenameToPsychScript(scope, context).convert(source)
             write(target, result.source)
             scripts++

@@ -5,6 +5,8 @@ object VScriptNative {
 
     fun convertLua(source: String, options: String): String? = null
 
+    fun convertHx(source: String, options: String): String? = null
+
     fun generate(spec: String): String? = null
 
     fun builtinEvent(name: String, className: String, id: String): String? = null
