@@ -1,5 +1,7 @@
 package com.vconvertercrew.vconverter.convert
 
+import com.vconvertercrew.vconverter.script.ShaderConverter
+import com.vconvertercrew.vconverter.character.BaseCharacterScripts
 import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
 import com.vconvertercrew.vconverter.chart.vslice.VSliceWriter
 import com.vconvertercrew.vconverter.codename.CodenameCharacterParser
@@ -145,7 +147,7 @@ class CodenameCharactersConverter : CodenameEngineConverter() {
         val atlases = items.filter { it.kind == "atlas" }.associate { PsychToVSliceCharacter.atlasKey(stem(it)) to SparrowAtlas.parse(it.text) }
         val characters = items.filter { it.kind == "character" }.associate { stem(it) to (it to CodenameCharacterParser.parse(stem(it), it.text)) }
         val report = ReportBuilder()
-        val outputs = characters.map { (id, pair) ->
+        val outputs = characters.flatMap { (id, pair) ->
             val (item, character) = pair
             val slot = item.slot ?: CharacterSlot.OPPONENT
             val gameOver = if (slot == CharacterSlot.PLAYER && character.animations.none { it.name == "firstDeath" }) {
@@ -156,7 +158,9 @@ class CodenameCharactersConverter : CodenameEngineConverter() {
             result.report.stats.firstOrNull { it.label == "Accuracy" }?.let { report.stat(id, it.value) }
             result.report.sections.forEach { report.section("$id · ${it.title}", it.lines) }
             result.report.warnings.forEach { report.warn("$id: $it") }
-            out("data/characters/$id.json", result.json)
+            val replaced = BaseCharacterScripts.replacement(id, result.json)
+            if (replaced != null) report.warn(BaseCharacterScripts.note(id))
+            listOfNotNull(out("data/characters/$id.json", result.json), replaced?.let { out(it.first, it.second) })
         }
         return ConvertedOutput(outputs, report.build())
     }
@@ -262,7 +266,7 @@ class CodenameScriptsConverter : CodenameEngineConverter() {
 
     override fun downloadName() = "scripts-vslice.zip"
 
-    override fun accept(file: ImportedFile) = file.extension in setOf("hx", "hxs", "hsc", "hscript") || file.extension == "xml" || file.extension == "json"
+    override fun accept(file: ImportedFile) = ShaderConverter.accepts(file) || file.extension in setOf("hx", "hxs", "hsc", "hscript") || file.extension == "xml" || file.extension == "json"
 
     private fun target(path: String, stem: String): CodenameScriptTarget {
         val parts = segments(path).map { it.lowercase() }
@@ -277,6 +281,7 @@ class CodenameScriptsConverter : CodenameEngineConverter() {
     }
 
     override fun classify(file: ImportedFile, text: String): PickedText {
+        if (ShaderConverter.accepts(file)) return ShaderConverter.pick(file, text)
         val stem = file.name.substringBeforeLast('.')
         return when (file.extension) {
             "xml" -> {
@@ -297,7 +302,9 @@ class CodenameScriptsConverter : CodenameEngineConverter() {
 
     override fun canConvert(items: List<PickedText>): Boolean = items.any { it.kind == "script" }
 
-    override fun build(items: List<PickedText>): ConvertedOutput {
+    override fun build(items: List<PickedText>): ConvertedOutput = ShaderConverter.merge(items, "codename", "vslice") { scripts -> buildScripts(scripts) }
+
+    private fun buildScripts(items: List<PickedText>): ConvertedOutput {
         val stages = items.filter { it.kind == "stage" }.associate { stem(it) to CodenameStageParser.parse(stem(it), it.text) }
         val events: Map<String, EventDefinition> = items.filter { it.kind == "event" }.associate { stem(it) to CodenameEvents.parseDefinition(stem(it), it.text) }
         val report = ReportBuilder()

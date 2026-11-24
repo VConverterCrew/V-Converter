@@ -10,6 +10,7 @@ object VScriptNative {
     fun fixLua(source: String, options: String): String? = null
 
     fun fixHx(source: String, options: String): String? = null
+    fun convertShader(source: String, options: String): String? = null
 
     fun generate(spec: String): String? = null
 

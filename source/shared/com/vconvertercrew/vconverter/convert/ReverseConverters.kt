@@ -1,5 +1,6 @@
 package com.vconvertercrew.vconverter.convert
 
+import com.vconvertercrew.vconverter.script.ShaderConverter
 import com.vconvertercrew.vconverter.core.AnimateAtlases
 import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.ReportBuilder
@@ -207,15 +208,18 @@ class ReverseScriptsConverter : FileConverter() {
 
     override fun downloadName() = "scripts-psych.zip"
 
-    override fun accept(file: ImportedFile) = file.extension == "hxc"
+    override fun accept(file: ImportedFile) = file.extension == "hxc" || ShaderConverter.accepts(file)
 
     override fun classify(file: ImportedFile, text: String): PickedText {
+        if (ShaderConverter.accepts(file)) return ShaderConverter.pick(file, text)
         require(file.extension == "hxc") { "not a .hxc script" }
         val result = HxcToPsych.convert(file.name, text)
         return PickedText(file.path, file.name, file.path, text, "script", result.kind.label + if (result.targetId.isNotEmpty()) " · ${result.targetId}" else "")
     }
 
-    override fun build(items: List<PickedText>): ConvertedOutput {
+    override fun build(items: List<PickedText>): ConvertedOutput = ShaderConverter.merge(items, "vslice", "psych") { scripts -> buildScripts(scripts) }
+
+    private fun buildScripts(items: List<PickedText>): ConvertedOutput {
         val results = mutableListOf<Pair<String, HxcResult>>()
         val failures = mutableListOf<String>()
         items.forEach { item ->

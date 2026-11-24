@@ -1,5 +1,6 @@
 package com.vconvertercrew.vconverter.codename
 
+import com.vconvertercrew.vconverter.mod.copyAsset
 import com.vconvertercrew.vconverter.script.ScriptDoctor
 import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
 import com.vconvertercrew.vconverter.core.AnimateAtlas
@@ -405,7 +406,7 @@ class CodenameToPsychMod(
 
     private fun copy(source: String, target: String) {
         try {
-            writer.copyFrom(target, files, source)
+            writer.copyAsset(target, files, source, "codename", "psych")?.let { report.section("Shader · $target", it) }
             if (writtenPaths.add(target)) written++
         } catch (e: Exception) {
             report.warn("Could not copy $target: ${e.message}")

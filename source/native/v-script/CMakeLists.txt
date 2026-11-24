@@ -26,6 +26,7 @@ add_library(VScript STATIC
     src/HaxeLua.cpp
     src/ApiData.cpp
     src/Doctor.cpp
+    src/Shader.cpp
     src/VScript.cpp
     include/vscript/VScript.h
 )

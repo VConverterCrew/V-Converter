@@ -24,6 +24,7 @@ object VScriptNative {
     fun fixLua(source: String, options: String): String? = if (available) nativeFixLua(source, options) else null
 
     fun fixHx(source: String, options: String): String? = if (available) nativeFixHx(source, options) else null
+    fun convertShader(source: String, options: String): String? = if (available) nativeConvertShader(source, options) else null
 
     fun generate(spec: String): String? = if (available) nativeGenerate(spec) else null
 
@@ -39,6 +40,7 @@ object VScriptNative {
     @JvmStatic private external fun nativeConvertHx(source: String, options: String): String?
     @JvmStatic private external fun nativeFixLua(source: String, options: String): String?
     @JvmStatic private external fun nativeFixHx(source: String, options: String): String?
+    @JvmStatic private external fun nativeConvertShader(source: String, options: String): String?
     @JvmStatic private external fun nativeGenerate(spec: String): String?
     @JvmStatic private external fun nativeBuiltinEvent(name: String, className: String, id: String): String?
     @JvmStatic private external fun nativeConvertData(kind: String, input: String): String?

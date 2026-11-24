@@ -1,5 +1,6 @@
 package com.vconvertercrew.vconverter.convert
 
+import com.vconvertercrew.vconverter.script.ShaderConverter
 import com.vconvertercrew.vconverter.character.PsychCharacterParser
 import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
 import com.vconvertercrew.vconverter.chart.ChartSource
@@ -295,7 +296,7 @@ class CodenameToPsychScriptsConverter : CodenameToPsychConverter() {
 
     override fun downloadName() = "scripts-psych.zip"
 
-    override fun accept(file: ImportedFile) = file.extension in setOf("hx", "hxs", "hsc", "hscript") || file.extension == "xml" || file.extension == "json"
+    override fun accept(file: ImportedFile) = ShaderConverter.accepts(file) || file.extension in setOf("hx", "hxs", "hsc", "hscript") || file.extension == "xml" || file.extension == "json"
 
     private fun target(path: String, stem: String): CodenameScriptTarget {
         val parts = pathParts(path).map { it.lowercase() }
@@ -310,6 +311,7 @@ class CodenameToPsychScriptsConverter : CodenameToPsychConverter() {
     }
 
     override fun classify(file: ImportedFile, text: String): PickedText {
+        if (ShaderConverter.accepts(file)) return ShaderConverter.pick(file, text)
         val stem = file.name.substringBeforeLast('.')
         return when (file.extension) {
             "xml" -> {
@@ -330,7 +332,9 @@ class CodenameToPsychScriptsConverter : CodenameToPsychConverter() {
 
     override fun canConvert(items: List<PickedText>): Boolean = items.any { it.kind == "script" }
 
-    override fun build(items: List<PickedText>): ConvertedOutput {
+    override fun build(items: List<PickedText>): ConvertedOutput = ShaderConverter.merge(items, "codename", "psych") { scripts -> buildScripts(scripts) }
+
+    private fun buildScripts(items: List<PickedText>): ConvertedOutput {
         val stages = items.filter { it.kind == "stage" }.associate { stem(it) to CodenameStageParser.parse(stem(it), it.text, includeLowMemory = true) }
         val events = items.filter { it.kind == "event" }.associate { stem(it) to CodenameEvents.parseDefinition(stem(it), it.text).params.size }
         val report = ReportBuilder()
@@ -577,7 +581,7 @@ class PsychToCodenameScriptsConverter : PsychToCodenameConverter() {
 
     override fun downloadName() = "scripts-codename.zip"
 
-    override fun accept(file: ImportedFile) = file.extension in setOf("lua", "hx", "hxs", "hscript") || (file.extension == "json" && pathParts(file.path).any { it.equals("stages", true) })
+    override fun accept(file: ImportedFile) = ShaderConverter.accepts(file) || file.extension in setOf("lua", "hx", "hxs", "hscript") || (file.extension == "json" && pathParts(file.path).any { it.equals("stages", true) })
 
     private fun scope(path: String): Pair<CodenameScope, String> {
         val parts = pathParts(path).map { it.lowercase() }
@@ -592,6 +596,7 @@ class PsychToCodenameScriptsConverter : PsychToCodenameConverter() {
     }
 
     override fun classify(file: ImportedFile, text: String): PickedText {
+        if (ShaderConverter.accepts(file)) return ShaderConverter.pick(file, text)
         if (file.extension == "json") {
             PsychStageParser.parse(text)
             return PickedText(file.path, file.name, file.path, text, "stage", "Stage objects")
@@ -603,7 +608,9 @@ class PsychToCodenameScriptsConverter : PsychToCodenameConverter() {
 
     override fun canConvert(items: List<PickedText>): Boolean = items.any { it.kind == "script" }
 
-    override fun build(items: List<PickedText>): ConvertedOutput {
+    override fun build(items: List<PickedText>): ConvertedOutput = ShaderConverter.merge(items, "psych", "codename") { scripts -> buildScripts(scripts) }
+
+    private fun buildScripts(items: List<PickedText>): ConvertedOutput {
         val report = ReportBuilder()
         val outputs = mutableListOf<OutputFile>()
         val stageObjects = items.filter { it.kind == "stage" }.associate { stem(it) to (PsychStageParser.parse(it.text).objects?.map { o -> o.name }?.toSet() ?: emptySet()) }

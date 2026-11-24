@@ -1,5 +1,6 @@
 package com.vconvertercrew.vconverter.reverse
 
+import com.vconvertercrew.vconverter.mod.copyAsset
 import com.vconvertercrew.vconverter.core.AnimateAtlas
 import com.vconvertercrew.vconverter.core.AnimateAtlases
 import com.vconvertercrew.vconverter.core.CharacterSlot
@@ -362,7 +363,7 @@ class VSliceModConverter(
     private fun copyAssets() {
         scan.assets.forEach { path ->
             val rel = scan.relative(path)
-            writer.copyFrom(rel, files, path)
+            writer.copyAsset(rel, files, path, "vslice", "psych")?.let { report.section("Shader · $rel", it) }
             written++
             done++
         }

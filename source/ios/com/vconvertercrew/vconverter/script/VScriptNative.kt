@@ -7,6 +7,7 @@ import vscript.vscript_builtin_event
 import vscript.vscript_convert_data
 import vscript.vscript_convert_hx
 import vscript.vscript_fix_hx
+import vscript.vscript_convert_shader
 import vscript.vscript_fix_lua
 import vscript.vscript_convert_lua
 import vscript.vscript_free
@@ -31,6 +32,7 @@ object VScriptNative {
     fun fixLua(source: String, options: String): String? = take(vscript_fix_lua(source, options))
 
     fun fixHx(source: String, options: String): String? = take(vscript_fix_hx(source, options))
+    fun convertShader(source: String, options: String): String? = take(vscript_convert_shader(source, options))
 
     fun generate(spec: String): String? = take(vscript_generate(spec))
 

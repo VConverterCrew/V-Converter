@@ -5,6 +5,7 @@
 #include "Generator.hpp"
 #include "HaxeLua.hpp"
 #include "Doctor.hpp"
+#include "Shader.hpp"
 #include "Json.hpp"
 
 #include <cstdlib>
@@ -146,6 +147,38 @@ static vscript::DoctorOptions doctorOptions(const char* options_json) {
     o.fileName = options["fileName"].text();
     o.id = options["id"].text();
     return o;
+}
+
+char* vscript_convert_shader(const char* source, const char* options_json) {
+    using namespace vscript;
+    bool ok = false;
+    Json options = Json::parse(options_json ? options_json : "{}", ok);
+    if (!ok) options = Json::object();
+    ShaderOptions o;
+    o.from = options["from"].text();
+    o.to = options["to"].text();
+    o.name = options["name"].text();
+    o.vertex = options["vertex"].asBool(false);
+    ShaderResult result = convertShader(source ? source : "", o);
+    Json out = Json::object();
+    out.set("source", Json::string(result.source));
+    out.set("changed", Json::boolean(result.changed));
+    auto list = [](const std::vector<Issue>& items) {
+        Json array = Json::array();
+        for (const Issue& i : items) {
+            Json item = Json::object();
+            item.set("line", Json::number(i.line));
+            item.set("message", Json::string(i.message));
+            array.push(item);
+        }
+        return array;
+    };
+    out.set("fixes", list(result.fixes));
+    out.set("problems", list(result.problems));
+    Json uniforms = Json::array();
+    for (const std::string& u : result.uniforms) uniforms.push(Json::string(u));
+    out.set("uniforms", uniforms);
+    return copy(out.dump());
 }
 
 char* vscript_fix_lua(const char* source, const char* options_json) {

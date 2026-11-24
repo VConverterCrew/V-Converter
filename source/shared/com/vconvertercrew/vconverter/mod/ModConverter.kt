@@ -1,5 +1,6 @@
 package com.vconvertercrew.vconverter.mod
 
+import com.vconvertercrew.vconverter.character.BaseCharacterScripts
 import com.vconvertercrew.vconverter.character.CharacterSource
 import com.vconvertercrew.vconverter.character.PsychCharacter
 import com.vconvertercrew.vconverter.character.PsychCharacterParser
@@ -301,6 +302,10 @@ class ModConverter(
                 }.toMap()
                 val result = PsychToVSliceCharacter.convert(CharacterSource(id, character, slot, atlases, animate = animateAtlas(character.image)))
                 writer.writeText("data/characters/$id.json", result.json)
+                BaseCharacterScripts.replacement(id, result.json)?.let { (path, text) ->
+                    writer.writeText(path, text)
+                    report.warn(BaseCharacterScripts.note(id))
+                }
                 written++
                 if (result.report.stats.any { it.label == "Accuracy" && it.value != "Exact" }) approximate++
                 result.report.warnings
@@ -405,7 +410,7 @@ class ModConverter(
             val target = scan.relative(path)
             step(target)
             try {
-                writer.copyFrom(target, files, path)
+                writer.copyAsset(target, files, path, "psych", "vslice")?.let { report.section("Shader · $target", it) }
                 written++
             } catch (e: Exception) {
                 report.warn("Could not copy $target: ${e.message}")

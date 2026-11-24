@@ -21,6 +21,8 @@ VSCRIPT_API char* vscript_convert_lua(const char* source, const char* options_js
 
 VSCRIPT_API char* vscript_convert_hx(const char* source, const char* options_json);
 
+VSCRIPT_API char* vscript_convert_shader(const char* source, const char* options_json);
+
 VSCRIPT_API char* vscript_fix_lua(const char* source, const char* options_json);
 
 VSCRIPT_API char* vscript_fix_hx(const char* source, const char* options_json);

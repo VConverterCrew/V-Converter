@@ -180,20 +180,30 @@ fun MainMenuOverlay(state: AppState) {
         )
         return
     }
-    val options = if (list == "converter") Direction.entries.map { direction ->
-        MenuOption.Submenu("${direction.from.label} to ${direction.to.label}", direction.label, direction.label) {
-            Tab.entries.map { tab ->
-                MenuOption.Action(tab.title, "Convert ${tab.title.lowercase()} from ${direction.from.title} to ${direction.to.title}.") {
-                    com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
-                        state.direction = direction
-                        state.tab = tab
-                        state.tool = null
-                        MainMenu.close()
+    if (list == "converter") {
+        com.vconvertercrew.vconverter.overlay.FunkinEnginePicker(
+            title = "Converter",
+            art = listArt,
+            available = { from, to -> Direction.entries.any { it.from.key == from && it.to.key == to } },
+            options = { from, to ->
+                val direction = Direction.entries.first { it.from.key == from.key && it.to.key == to.key }
+                Tab.entries.map { tab ->
+                    MenuOption.Action(tab.title, "Convert ${tab.title.lowercase()} from ${direction.from.title} to ${direction.to.title}.") {
+                        com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
+                            state.direction = direction
+                            state.tab = tab
+                            state.tool = null
+                            MainMenu.close()
+                        }
                     }
                 }
-            }
-        }
-    } else generatorTools.map { tool ->
+            },
+            onClose = { MainMenu.list = null },
+            overlay = { DiscordBadge(Modifier.align(Alignment.TopEnd).padding(16.dp)) }
+        )
+        return
+    }
+    val options = generatorTools.map { tool ->
         MenuOption.Action(tool.title, tool.hint) {
             com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
                 state.tool = tool
@@ -203,7 +213,7 @@ fun MainMenuOverlay(state: AppState) {
     }
     key(list) {
         FunkinOptionsMenu(
-            title = if (list == "converter") "Converter" else "Generator",
+            title = "Generator",
             options = options,
             art = listArt,
             onClose = { MainMenu.list = null },

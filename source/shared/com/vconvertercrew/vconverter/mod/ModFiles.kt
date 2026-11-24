@@ -26,3 +26,16 @@ object SafePaths {
 
     fun copyStream(input: InputStream, output: OutputStream): Long = input.copyTo(output, 64 * 1024)
 }
+
+fun ModWriter.copyAsset(target: String, files: ModFiles, source: String, from: String, to: String): List<String>? {
+    if (!target.startsWith("shaders/") || !com.vconvertercrew.vconverter.script.ShaderConverter.isShader(target)) {
+        copyFrom(target, files, source)
+        return null
+    }
+    val result = com.vconvertercrew.vconverter.script.ShaderConverter.convert(
+        files.readText(source), target.substringAfterLast('/').substringBeforeLast('.'), from, to,
+        com.vconvertercrew.vconverter.script.ShaderConverter.isVertex(target)
+    )
+    writeText(com.vconvertercrew.vconverter.script.ShaderConverter.targetPath(target, to), result.source)
+    return result.lines().takeIf { result.changed || result.problems.isNotEmpty() }
+}

@@ -1,5 +1,6 @@
 package com.vconvertercrew.vconverter.convert
 
+import com.vconvertercrew.vconverter.character.BaseCharacterScripts
 import com.vconvertercrew.vconverter.character.CharacterSource
 import com.vconvertercrew.vconverter.character.PsychCharacterParser
 import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
@@ -17,6 +18,7 @@ import com.vconvertercrew.vconverter.core.SparrowAtlas
 import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.OutputFile
 import com.vconvertercrew.vconverter.script.ScriptConverter
+import com.vconvertercrew.vconverter.script.ShaderConverter
 import com.vconvertercrew.vconverter.script.ScriptSource
 import com.vconvertercrew.vconverter.stage.LuaStageExtractor
 import com.vconvertercrew.vconverter.stage.PsychStageParser
@@ -134,7 +136,7 @@ class PsychCharactersConverter : PsychToVSliceConverter() {
             listOf("$id-dead", "bf-dead").firstOrNull { it != id && it in parsed && slot == CharacterSlot.PLAYER && !id.endsWith("-dead") }
         val merged = items.filter { it.kind == "character" }.mapNotNull { deadFor(psychId(stem(it)), it.slot ?: CharacterSlot.OPPONENT) }.toSet()
         if (merged.isNotEmpty()) report.section("Game over characters", listOf("Merged into the players that use them (V-Slice keeps game over animations in the player character): ${merged.joinToString()}."))
-        val outputs = items.filter { it.kind == "character" && psychId(stem(it)) !in merged }.map { item ->
+        val outputs = items.filter { it.kind == "character" && psychId(stem(it)) !in merged }.flatMap { item ->
             val id = psychId(stem(item))
             val character = parsed.getValue(id)
             val animate = animates[PsychToVSliceCharacter.atlasKey(character.image)]
@@ -146,7 +148,9 @@ class PsychCharactersConverter : PsychToVSliceConverter() {
             converted.report.warnings.forEach { report.warn("$id: $it") }
             val missing = character.atlasImages.ifEmpty { listOf(character.image) }.filter { PsychToVSliceCharacter.atlasKey(it) !in atlases && PsychToVSliceCharacter.atlasKey(it) !in animates }
             if (missing.isNotEmpty()) report.warn("$id: add the spritesheet XML (${missing.joinToString()}), or Animation.json + spritemap for Animate atlases, for exact offsets.")
-            out("data/characters/$id.json", converted.json)
+            val replaced = BaseCharacterScripts.replacement(id, converted.json)
+            if (replaced != null) report.warn(BaseCharacterScripts.note(id))
+            listOfNotNull(out("data/characters/$id.json", converted.json), replaced?.let { out(it.first, it.second) })
         }
         return ConvertedOutput(outputs, report.build())
     }
@@ -239,14 +243,17 @@ class PsychScriptsConverter : PsychToVSliceConverter() {
 
     override fun downloadName() = "scripts-vslice.zip"
 
-    override fun accept(file: ImportedFile) = file.extension in setOf("lua", "hx", "hxs", "hscript")
+    override fun accept(file: ImportedFile) = file.extension in setOf("lua", "hx", "hxs", "hscript") || ShaderConverter.accepts(file)
 
     override fun classify(file: ImportedFile, text: String): PickedText {
+        if (ShaderConverter.accepts(file)) return ShaderConverter.pick(file, text)
         val target = ScriptConverter.detectTarget(file.path)
         return PickedText(file.path, file.name, file.path, text, "script", target.scope.label + if (target.key.isNotEmpty()) " · ${target.key}" else "")
     }
 
-    override fun build(items: List<PickedText>): ConvertedOutput {
+    override fun build(items: List<PickedText>): ConvertedOutput = ShaderConverter.merge(items, "psych", "vslice") { scripts -> buildScripts(scripts) }
+
+    private fun buildScripts(items: List<PickedText>): ConvertedOutput {
         val sources = items.map { ScriptSource(it.path, it.text, ScriptConverter.detectTarget(it.path)) }
         val noteTypes = sources.mapNotNull { it.target }.filter { it.scope == com.vconvertercrew.vconverter.script.ScriptScope.NOTE_TYPE }.map { it.key }
         val bundle = ScriptConverter.convert("VConverter", sources, ScriptConverter.noteTypeMap(noteTypes))

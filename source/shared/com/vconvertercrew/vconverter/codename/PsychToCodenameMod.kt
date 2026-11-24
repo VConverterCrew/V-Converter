@@ -12,6 +12,7 @@ import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.ReportBuilder
 import com.vconvertercrew.vconverter.core.SongPath
 import com.vconvertercrew.vconverter.mod.ModConversionResult
+import com.vconvertercrew.vconverter.mod.copyAsset
 import com.vconvertercrew.vconverter.mod.ModFiles
 import com.vconvertercrew.vconverter.mod.ModInfo
 import com.vconvertercrew.vconverter.mod.ModProgress
@@ -513,7 +514,7 @@ class PsychToCodenameMod(
 
     private fun copy(source: String, target: String) {
         try {
-            writer.copyFrom(target, files, source)
+            writer.copyAsset(target, files, source, "psych", "codename")?.let { report.section("Shader · $target", it) }
             if (writtenPaths.add(target)) written++
         } catch (e: Exception) {
             report.warn("Could not copy $target: ${e.message}")

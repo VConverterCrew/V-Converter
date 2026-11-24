@@ -17,7 +17,15 @@ namespace {
 const std::set<std::string> kHaxeReserved = {"abstract", "break", "case", "cast", "catch", "class", "continue", "default", "do", "dynamic", "else",
     "enum", "extends", "extern", "false", "final", "for", "function", "if", "implements", "import", "in", "inline", "interface", "macro", "new",
     "null", "operator", "overload", "override", "package", "private", "public", "return", "static", "super", "switch", "this", "throw", "true",
-    "try", "typedef", "untyped", "using", "var", "while", "event", "trace", "activeGame", "closed", "closedGame", "sprites", "create"};
+    "try", "typedef", "untyped", "using", "var", "while", "event", "trace", "activeGame", "closed", "closedGame", "sprites"};
+
+const std::set<std::string> kMemberReserved = {"create", "update", "draw", "destroy", "kill", "revive", "add", "remove", "insert", "refresh", "dance", "toString", "handleEvent", "getTitle", "getEventSchema", "songChecked",
+    "inSong", "eventInSong", "skipCountdown", "members", "length", "exists", "alive", "visible", "active", "camera", "cameras", "x", "y", "alpha", "angle", "scale",
+    "id", "zIndex"};
+
+const std::set<std::string> kVSliceMethods = {"onCreate", "onUpdate", "onBeatHit", "onStepHit", "onSongStart", "onSongEnd", "onPause", "onResume",
+    "onGameOver", "onDestroy", "onCountdownStart", "onCountdownStep", "onCountdownEnd", "onNoteHit", "onNoteMiss", "onNoteIncoming", "onNoteGhostMiss",
+    "onNoteHoldDrop", "onSongEvent", "onSongLoaded", "onSongRetry", "onScriptEvent", "onAdd", "onFocusLost", "onFocusGained"};
 
 const std::set<std::string> kTypeNames = {"Math", "Std", "String", "Array", "Reflect", "Type", "FlxG", "Paths", "Conductor", "PlayState", "Preferences",
     "Highscore", "FlxTween", "FlxEase", "FlxTimer", "FlxColor", "FlxText", "FlxSprite", "FunkinSprite", "FunkinSound", "StringTools", "Date",
@@ -465,6 +473,7 @@ private:
 
     std::string uniqueMember(const std::string& base) {
         std::string name = safeName(base);
+        if (kMemberReserved.count(name)) name += "_";
         std::string candidate = name;
         int n = 2;
         auto taken = [&](const std::string& c) {
@@ -610,6 +619,7 @@ private:
         }
         for (const std::string& name : functionOrder_) {
             if (!kKnownCallbacks.count(name)) methodNames_[name] = uniqueMember(name);
+            else if (kVSliceMethods.count(name)) methodNames_[name] = uniqueMember("lua" + std::string(1, static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])))) + name.substr(1));
         }
 
         std::set<std::string> called;
@@ -1448,6 +1458,10 @@ private:
     }
 
     std::string playStateField(const std::string& key) {
+        if (key == "skipCountdown") {
+            usesSkipCountdown_ = true;
+            return "skipCountdown";
+        }
         static const std::map<std::string, std::string> fields = {{"health", "PlayState.instance.health"},
             {"songScore", "PlayState.instance.songScore"}, {"songMisses", "Highscore.tallies.missed"}, {"combo", "Highscore.tallies.combo"},
             {"songHits", "Highscore.tallies.totalNotesHit"}, {"defaultCamZoom", "PlayState.instance.currentCameraZoom"},
@@ -2475,7 +2489,8 @@ private:
             use("FlxRuntimeShader");
             use("Assets");
             use("Paths");
-            return spriteRef(a0) + ".shader = new FlxRuntimeShader(Assets.getText(Paths.frag(" + arg(a, 1, "\"\"") + ")), null)";
+            std::string key = arg(a, 1, "\"\"");
+            return spriteRef(a0) + ".shader = Assets.exists(Paths.frag(" + key + ")) ? new FlxRuntimeShader(Assets.getText(Paths.frag(" + key + ")), null) : null";
         }
         if (name == "removeSpriteShader") return spriteRef(a0) + ".shader = null";
         if (name == "setShaderFloat") return spriteRef(a0) + ".shader.setFloat(" + arg(a, 1, "\"\"") + ", " + arg(a, 2, "0") + ")";
@@ -2878,8 +2893,9 @@ private:
             }
             if (psych == "onEvent" || psych == "onCountdownTick") use("Reflect");
             bool cancel = cancelable_;
-            if (cancel) code.line("if (" + psych + "(" + callArgs + ") == true) event.cancel();");
-            else code.line(psych + "(" + callArgs + ");");
+            std::string method = methodNames_.count(psych) ? methodNames_[psych] : psych;
+            if (cancel) code.line("if (" + method + "(" + callArgs + ") == true) event.cancel();");
+            else code.line(method + "(" + callArgs + ");");
             if (!extraCheck.empty()) code.close();
             hookMethods_.insert(psych);
             return psych;
@@ -2946,6 +2962,8 @@ private:
         }
     }
 
+    bool usesSongGuard_ = false;
+    bool usesSkipCountdown_ = false;
     std::set<std::string> methodForm_;
     std::set<std::string> hookMethods_;
 
@@ -2963,6 +2981,11 @@ private:
             if (opt_.scopeKind == "song") checks.push_back("PlayState.instance.currentSong == null || PlayState.instance.currentSong.id != " + hxString(opt_.scopeId));
             if (opt_.scopeKind == "stage") checks.push_back("PlayState.instance.currentStageId != " + hxString(opt_.scopeId));
         }
+        if (opt_.base == Base::SongEvent) {
+            use("PlayState");
+            usesSongGuard_ = true;
+            checks.push_back("!eventInSong()");
+        }
         if (needsCreate && hasCreate_ && opt_.base != Base::Module) {
             use("PlayState");
             checks.push_back("PlayState.instance == null");
@@ -2977,7 +3000,6 @@ private:
     }
 
     bool allowed(const std::string& method) const {
-        if (opt_.base == Base::SongEvent) return false;
         if (opt_.base == Base::NoteKind) {
             return method == "onCreate" || method == "onDestroy" || method == "onUpdate" || method == "onNoteIncoming" || method == "onNoteHit" || method == "onNoteMiss";
         }
@@ -3136,6 +3158,20 @@ private:
             popScope();
         }
 
+        if (usesSongGuard_) {
+            Code helper;
+            helper.setDepth(1);
+            helper.blank();
+            helper.open("function eventInSong():Bool");
+            helper.line("if (songChecked == PlayState.instance) return inSong;");
+            helper.line("songChecked = PlayState.instance;");
+            helper.line("inSong = false;");
+            helper.line("var chart = PlayState.instance?.currentChart;");
+            helper.line("if (chart != null) for (songEvent in chart.events) if (songEvent.eventKind == " + hxString(opt_.id) + ") inSong = true;");
+            helper.line("return inSong;");
+            helper.close();
+            for (const std::string& l : helper.lines()) methodsText_.push_back(l);
+        }
         if (lazyCreate()) {
             Code lazy;
             lazy.setDepth(1);
@@ -3220,11 +3256,27 @@ private:
         } else if (has("onStartCountdown") || has("onCountdownStarted")) {
             override(out, "onCountdownStart", "CountdownScriptEvent", [&](Code& c) { countdownParts(c); });
         }
-        if (opt_.base == Base::SongEvent) {
-            emitEventHook(out);
-            return;
+        if (opt_.base == Base::SongEvent) emitEventHook(out);
+        if (usesSkipCountdown_) {
+            imports_.insert("funkin.play.Countdown");
+            if (has("onCountdownTick")) markHandled("onCountdownTick");
+            out.blank();
+            out.open("public override function onCountdownStep(event:CountdownScriptEvent):Void");
+            out.line("super.onCountdownStep(event);");
+            std::string g = guard(true);
+            if (!g.empty()) out.line(g);
+            out.open("if (skipCountdown && Std.string(event.step) != \"BEFORE\")");
+            out.line("Countdown.skipCountdown();");
+            out.line("return;");
+            out.close();
+            if (has("onCountdownTick")) {
+                if (lazyCreate()) out.line("if (activeGame != PlayState.instance) create();");
+                hookBody("onCountdownTick", out);
+            }
+            out.close();
+        } else {
+            simple(out, "onCountdownTick", "onCountdownStep", "CountdownScriptEvent");
         }
-        simple(out, "onCountdownTick", "onCountdownStep", "CountdownScriptEvent");
         override(out, "onUpdate", "UpdateScriptEvent", [&](Code& c) {
             for (const char* psych : {"onUpdate", "onUpdatePost"}) {
                 if (!has(psych)) continue;
@@ -3312,10 +3364,14 @@ private:
             }
         });
         bool destroy = has("onDestroy") || hasCreate_;
-        if (destroy && opt_.base != Base::SongEvent) {
+        if (destroy) {
             out.blank();
             out.open("public override function onDestroy(event:ScriptEvent):Void");
             out.line("super.onDestroy(event);");
+            if (opt_.base == Base::SongEvent && has("onDestroy") && !hasCreate_) {
+                usesSongGuard_ = true;
+                out.line("if (!eventInSong()) return;");
+            }
             if (has("onDestroy")) {
                 markHandled("onDestroy");
                 if (hasCreate_) out.open("if (activeGame != null)");
@@ -3413,6 +3469,16 @@ private:
         }
         if (usesClose_) {
             out.line("var closedGame:PlayState = null;");
+            any = true;
+        }
+        if (usesSkipCountdown_) {
+            out.line("var skipCountdown:Bool = false;");
+            any = true;
+        }
+        if (usesSongGuard_) {
+            use("PlayState");
+            out.line("var songChecked:PlayState = null;");
+            out.line("var inSong:Bool = false;");
             any = true;
         }
         for (const std::string& tag : tagOrder_) {

@@ -6,6 +6,7 @@
 #include "Haxe.hpp"
 #include "Json.hpp"
 #include "Lua.hpp"
+#include "Shader.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -770,6 +771,103 @@ static void testDoctor() {
     }
 }
 
+static void testEventOverrides() {
+    vscript::ConvertOptions e;
+    e.base = vscript::Base::SongEvent;
+    e.className = "ShaderGlitchEvent";
+    e.id = "ShaderGlitch";
+    e.eventName = "ShaderGlitch";
+    vscript::ConvertResult r = vscript::convertLua(
+        "local t = 0\n"
+        "function onEvent(n, a, b) t = 1 end\n"
+        "function onUpdate(elapsed) t = t + elapsed end\n"
+        "function onDestroy() t = 0 end\n", e);
+    const std::string& s = r.source;
+    CHECK(has(s, "public override function onUpdate(event:UpdateScriptEvent):Void"));
+    CHECK(has(s, "public override function onDestroy(event:ScriptEvent):Void"));
+    CHECK(has(s, "if (!eventInSong() || PlayState.instance == null) return;"));
+    CHECK(has(s, "function eventInSong():Bool"));
+    CHECK(has(s, "public override function handleEvent(data:SongEventData):Void"));
+    CHECK(lacks(s, "function onUpdate(elapsed"));
+    CHECK(lacks(s, "function onDestroy()"));
+    CHECK(braceBalance(s) == 0);
+
+    vscript::ConvertResult c = convert("function onCreate() setProperty('skipCountdown', true) end\nfunction onCountdownTick(t) debugPrint(t) end", vscript::Base::Song);
+    CHECK(has(c.source, "var skipCountdown:Bool = false;"));
+    CHECK(has(c.source, "Countdown.skipCountdown();"));
+    CHECK(has(c.source, "import funkin.play.Countdown;"));
+    CHECK(lacks(c.source, "PlayState.instance.skipCountdown"));
+    CHECK(braceBalance(c.source) == 0);
+
+    vscript::ConvertResult sh = convert("function onCreate() makeLuaSprite('a', 'bg', 0, 0) setSpriteShader('a', 'chromToggle') end", vscript::Base::Song);
+    CHECK(has(sh.source, "Assets.exists(Paths.frag("));
+
+    vscript::ConvertResult x = convert("function onCreate() local x = 2 local alpha = x end", vscript::Base::Song);
+    CHECK(has(x.source, "var x = 2;"));
+    vscript::ConvertOptions m;
+    m.base = vscript::Base::Module;
+    m.className = "Glitch";
+    m.id = "glitch";
+    vscript::ConvertResult mod = vscript::convertLua("function onDestroy() debugPrint('a') end\nfunction onUpdatePost(e) end\nfunction onCustom() onDestroy() end", m);
+    int destroys = 0;
+    for (size_t at = mod.source.find("function onDestroy"); at != std::string::npos; at = mod.source.find("function onDestroy", at + 1)) destroys++;
+    CHECK(destroys == 1);
+    CHECK(braceBalance(mod.source) == 0);
+    vscript::ConvertResult gx = convert("x = 2\nfunction onCreate() x = 3 end", vscript::Base::Stage);
+    CHECK(has(gx.source, "x_"));
+}
+
+static void testShader() {
+    vscript::ShaderOptions o;
+    vscript::ShaderResult toy = vscript::convertShader(
+        "#version 330\n"
+        "uniform sampler2D iChannel0;\n"
+        "void mainImage(out vec4 fragColor, in vec2 fragCoord) {\n"
+        "  vec2 uv = fragCoord / iResolution.xy;\n"
+        "  fragColor = texture(iChannel0, uv + sin(iTime));\n"
+        "}\n", o);
+    CHECK(toy.changed);
+    CHECK(has(toy.source, "#pragma header"));
+    CHECK(lacks(toy.source, "#version"));
+    CHECK(has(toy.source, "uniform float iTime;"));
+    CHECK(has(toy.source, "#define iResolution vec3(openfl_TextureSize, 0.0)"));
+    CHECK(has(toy.source, "flixel_texture2D(bitmap, uv + sin(iTime))"));
+    CHECK(has(toy.source, "mainImage(gl_FragColor, openfl_TextureCoordv * openfl_TextureSize);"));
+    CHECK(toy.problems.empty());
+
+    vscript::ShaderResult es = vscript::convertShader(
+        "#pragma header\n"
+        "in vec2 uv2;\n"
+        "out vec4 outColor;\n"
+        "uniform float amount;\n"
+        "void main() { outColor = texture(bitmap, openfl_TextureCoordv) * amount; }\n", o);
+    CHECK(has(es.source, "varying vec2 uv2;"));
+    CHECK(has(es.source, "gl_FragColor = flixel_texture2D(bitmap, openfl_TextureCoordv) * amount;"));
+    CHECK(lacks(es.source, "outColor"));
+    CHECK(es.uniforms.size() == 1 && es.uniforms[0] == "amount");
+
+    vscript::ShaderResult same = vscript::convertShader("#pragma header\nvoid main() { gl_FragColor = flixel_texture2D(bitmap, openfl_TextureCoordv); }\n", o);
+    CHECK(!same.changed);
+    CHECK(same.fixes.empty());
+
+    vscript::ShaderOptions v;
+    v.vertex = true;
+    vscript::ShaderResult vert = vscript::convertShader("#version 300 es\nin vec4 pos;\nout vec2 uv;\nvoid main() { gl_Position = pos; }\n", v);
+    CHECK(has(vert.source, "attribute vec4 pos;"));
+    CHECK(has(vert.source, "varying vec2 uv;"));
+
+    vscript::ShaderResult broken = vscript::convertShader("uniform float a;\n", o);
+    CHECK(!broken.problems.empty());
+
+    char* raw = vscript_convert_shader("#version 330\nvoid main() { gl_FragColor = vec4(1.0); }", "{\"name\":\"x\"}");
+    bool ok = false;
+    vscript::Json j = vscript::Json::parse(raw, ok);
+    vscript_free(raw);
+    CHECK(ok);
+    CHECK(j["changed"].asBool(false));
+    CHECK(lacks(j["source"].asString(), "#version"));
+}
+
 int main() {
     testParser();
     testStage();
@@ -784,6 +882,8 @@ int main() {
     testRuntimeSafety();
     testHaxeToLua();
     testDoctor();
+    testEventOverrides();
+    testShader();
     if (failures == 0) std::printf("v-script: all tests passed\n");
     return failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

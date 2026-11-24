@@ -1,5 +1,7 @@
 package com.vconvertercrew.vconverter.codename
 
+import com.vconvertercrew.vconverter.mod.copyAsset
+import com.vconvertercrew.vconverter.character.BaseCharacterScripts
 import com.vconvertercrew.vconverter.chart.ChartSource
 import com.vconvertercrew.vconverter.chart.ConversionOptions
 import com.vconvertercrew.vconverter.chart.PsychToVSliceChart
@@ -230,6 +232,10 @@ class CodenameModConverter(
                 val result = CodenameToVSliceCharacter.convert(character, slot, atlasesFor(images), gameOver)
                 val json = if (animate) JSONObject(result.json).put("renderType", "animateatlas").toString(2) else result.json
                 writer.writeText("data/characters/$id.json", json)
+                BaseCharacterScripts.replacement(id, json)?.let { (path, text) ->
+                    writer.writeText(path, text)
+                    report.warn(BaseCharacterScripts.note(id))
+                }
                 written++
                 result.report.warnings
                     .filterNot { it.startsWith("Spritesheet XML not provided") }
@@ -363,7 +369,7 @@ class CodenameModConverter(
 
     private fun copy(source: String, target: String) {
         try {
-            writer.copyFrom(target, files, source)
+            writer.copyAsset(target, files, source, "codename", "vslice")?.let { report.section("Shader · $target", it) }
             written++
         } catch (e: Exception) {
             report.warn("Could not copy $target: ${e.message}")

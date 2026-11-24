@@ -481,16 +481,15 @@ fun MainScreen() {
         Section.GENERATOR -> MENU_GENERATOR
         else -> MENU_MAIN
     }
-    val converterOptions = Direction.entries.map { option ->
-        MenuOption.Submenu("${option.from.label} to ${option.to.label}", option.label, option.label) {
-            Tab.entries.map { target ->
-                MenuOption.Action(target.title, target.describe(option)) {
-                    com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
-                        direction = option
-                        converterTab = target
-                        section = Section.CONVERTER
-                        menuScreen = MENU_NONE
-                    }
+    val converterOptions: (com.vconvertercrew.vconverter.overlay.EngineChoice, com.vconvertercrew.vconverter.overlay.EngineChoice) -> List<MenuOption> = { from, to ->
+        val option = Direction.entries.first { it.from.key == from.key && it.to.key == to.key }
+        Tab.entries.map { target ->
+            MenuOption.Action(target.title, target.describe(option)) {
+                com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
+                    direction = option
+                    converterTab = target
+                    section = Section.CONVERTER
+                    menuScreen = MENU_NONE
                 }
             }
         }
@@ -555,14 +554,26 @@ fun MainScreen() {
             androidx.compose.runtime.key(menuScreen) {
                 var listBack by remember { mutableStateOf(0) }
                 androidx.activity.compose.BackHandler(enabled = !optionsOpen) { listBack++ }
-                FunkinOptionsMenu(
-                    title = if (menuScreen == MENU_CONVERTER) "Converter" else "Generator",
-                    options = if (menuScreen == MENU_CONVERTER) converterOptions else generatorOptions,
-                    art = listArt,
-                    onClose = { menuScreen = MENU_MAIN },
-                    closeRequests = listBack,
-                    overlay = { DiscordBadge(Modifier.align(Alignment.TopEnd).displayCutoutPadding().padding(16.dp)) }
-                )
+                if (menuScreen == MENU_CONVERTER) {
+                    com.vconvertercrew.vconverter.overlay.FunkinEnginePicker(
+                        title = "Converter",
+                        art = listArt,
+                        available = { from, to -> Direction.entries.any { it.from.key == from && it.to.key == to } },
+                        options = converterOptions,
+                        onClose = { menuScreen = MENU_MAIN },
+                        closeRequests = listBack,
+                        overlay = { DiscordBadge(Modifier.align(Alignment.TopEnd).displayCutoutPadding().padding(16.dp)) }
+                    )
+                } else {
+                    FunkinOptionsMenu(
+                        title = "Generator",
+                        options = generatorOptions,
+                        art = listArt,
+                        onClose = { menuScreen = MENU_MAIN },
+                        closeRequests = listBack,
+                        overlay = { DiscordBadge(Modifier.align(Alignment.TopEnd).displayCutoutPadding().padding(16.dp)) }
+                    )
+                }
             }
         } else if (section == Section.ONLINE) {
             var onlineBack by remember { mutableStateOf(0) }
