@@ -58,6 +58,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.vconvertercrew.vconverter.R
 import com.vconvertercrew.vconverter.overlay.FpsCounter
 import com.vconvertercrew.vconverter.ui.characters.CharactersScreen
@@ -349,7 +351,7 @@ fun MainScreen() {
     val noteStyles = Direction.entries.associateWith { d ->
         viewModel<com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel>(
             key = "notestyle-${d.name}",
-            factory = androidx.lifecycle.viewmodel.viewModelFactory { androidx.lifecycle.viewmodel.initializer { com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel(noteStyleApp, com.vconvertercrew.vconverter.notestyle.NoteStyleConverter(d.from.key, d.to.key)) } }
+            factory = viewModelFactory { initializer { com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel(noteStyleApp, com.vconvertercrew.vconverter.notestyle.NoteStyleConverter(d.from.key, d.to.key)) } }
         )
     }
     remember {
@@ -747,7 +749,9 @@ fun MainScreen() {
                     }
                     TabHero(current, currentDirection)
                     Spacer(Modifier.size(16.dp))
-                    if (currentDirection in com.vconvertercrew.vconverter.ui.nmv.nmvDirections && current is Tab) {
+                    if (current == Tab.NOTESTYLES) {
+                        ReverseScreen(noteStyles.getValue(currentDirection), Funkin.Pink, "Note Styles", "Add note skins", "Pick the note skin spritesheets (.png and .xml) with their splash sheets and configs, or a whole mod archive.", R.drawable.ic_tab_notestyle, folderName, save, buttonText = "Convert to " + currentDirection.to.title)
+                    } else if (currentDirection in com.vconvertercrew.vconverter.ui.nmv.nmvDirections && current is Tab) {
                         com.vconvertercrew.vconverter.ui.nmv.NmvTabScreen(nmv, currentDirection, current, folderName, save)
                     } else if (currentDirection == Direction.CODENAME_TO_VSLICE && current is Tab) when (current) {
                         Tab.MOD -> CodenameModScreen(cnMod, folderName, save)
@@ -756,6 +760,7 @@ fun MainScreen() {
                         Tab.STAGES -> ReverseScreen(cnStages, Funkin.Up, "Stages", "Add Codename stages", "Pick data/stages/*.xml. Add the stage images (.png and spritesheet .xml) so scaled sprites keep their exact spot.", R.drawable.ic_tab_stage, folderName, save, buttonText = "Convert to V-Slice")
                         Tab.WEEKS -> ReverseScreen(cnWeeks, Funkin.Right, "Weeks", "Add Codename weeks", "Pick data/weeks/weeks/*.xml plus data/weeks/characters/*.xml for the menu characters.", R.drawable.ic_tab_week, folderName, save, buttonText = "Convert to V-Slice")
                         Tab.SCRIPTS -> ReverseScreen(cnScripts, Funkin.Lavender, "Scripts", "Add Codename scripts", "Pick .hx scripts. Add the stage XML for stage scripts and data/events/*.json for custom events. Archives keep the folders, so song, stage, event and note scripts get the right scope.", R.drawable.ic_tab_script, folderName, save, buttonText = "Convert to V-Slice")
+                        Tab.NOTESTYLES -> Unit
                     } else if (currentDirection == Direction.CODENAME_TO_PSYCH && current is Tab) when (current) {
                         Tab.MOD -> CodenameModScreen(
                             c2pMod, folderName, save,
@@ -768,6 +773,7 @@ fun MainScreen() {
                         Tab.STAGES -> ReverseScreen(c2pStages, Funkin.Up, "Stages", "Add Codename stages", "Pick data/stages/*.xml. Sprites become stage objects; beat dancers, blends and extra settings go into a stage script.", R.drawable.ic_tab_stage, folderName, save)
                         Tab.WEEKS -> ReverseScreen(c2pWeeks, Funkin.Right, "Weeks", "Add Codename weeks", "Pick data/weeks/weeks/*.xml, data/weeks/characters/*.xml and the songs' meta.json for freeplay icons and colors.", R.drawable.ic_tab_week, folderName, save)
                         Tab.SCRIPTS -> ReverseScreen(c2pScripts, Funkin.Lavender, "Scripts", "Add Codename scripts", "Pick .hx scripts. Add the stage XML for stage scripts and data/events/*.json for custom events. Archives keep the folders, so song, stage, event and note scripts land in the right Psych folder.", R.drawable.ic_tab_script, folderName, save)
+                        Tab.NOTESTYLES -> Unit
                     } else if (currentDirection == Direction.PSYCH_TO_CODENAME && current is Tab) when (current) {
                         Tab.MOD -> ModScreen(
                             p2cMod, folderName, save,
@@ -780,6 +786,7 @@ fun MainScreen() {
                         Tab.STAGES -> ReverseScreen(p2cStages, Funkin.Up, "Stages", "Add Psych stages", "Pick stages/*.json and, if the stage builds its sprites in Lua, stages/<stage>.lua: those sprites move into the stage XML.", R.drawable.ic_tab_stage, folderName, save, buttonText = "Convert to Codename")
                         Tab.WEEKS -> ReverseScreen(p2cWeeks, Funkin.Right, "Weeks", "Add Psych weeks", "Pick weeks/*.json and images/menucharacters/*.json.", R.drawable.ic_tab_week, folderName, save, buttonText = "Convert to Codename")
                         Tab.SCRIPTS -> ReverseScreen(p2cScripts, Funkin.Lavender, "Scripts", "Add Lua / HScript", "Pick .lua and .hx scripts. Archives keep the folders, so scripts/, data/<song>/, stages/, custom_events/ and custom_notetypes/ land in the right Codename folder. Add stages/*.json for stage scripts.", R.drawable.ic_tab_script, folderName, save, buttonText = "Convert to Codename")
+                        Tab.NOTESTYLES -> Unit
                     } else if (currentDirection == Direction.VSLICE_TO_PSYCH) when (current) {
                         Tab.MOD -> ReverseModScreen(revMod, folderName, save)
                         Tab.CHARTS -> ChartsScreen(revCharts, folderName, save)

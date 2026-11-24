@@ -211,5 +211,6 @@ fun NmvTabScreen(models: NmvModels, direction: Direction, tab: Tab, folderName: 
         Tab.STAGES -> ReverseScreen(models.files.getValue(direction to tab), Funkin.Up, "Stages", "Add stages", hint(direction, tab), R.drawable.ic_tab_stage, folderName, save, buttonText = button)
         Tab.WEEKS -> ReverseScreen(models.files.getValue(direction to tab), Funkin.Right, "Weeks", "Add weeks", hint(direction, tab), R.drawable.ic_tab_week, folderName, save, buttonText = button)
         Tab.SCRIPTS -> ReverseScreen(models.files.getValue(direction to tab), Funkin.Lavender, "Scripts", "Add scripts", hint(direction, tab), R.drawable.ic_tab_script, folderName, save, buttonText = button)
+        Tab.NOTESTYLES -> Unit
     }
 }
