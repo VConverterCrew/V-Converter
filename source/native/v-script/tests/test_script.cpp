@@ -7,6 +7,7 @@
 #include "Json.hpp"
 #include "Lua.hpp"
 #include "Shader.hpp"
+#include "Image.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -868,6 +869,50 @@ static void testShader() {
     CHECK(lacks(j["source"].asString(), "#version"));
 }
 
+static void testImage() {
+    vscript::Image image;
+    image.width = 37;
+    image.height = 23;
+    image.rgba.resize(size_t(image.width) * image.height * 4);
+    for (int y = 0; y < image.height; y++) for (int x = 0; x < image.width; x++) {
+        uint8_t* p = &image.rgba[(size_t(y) * image.width + x) * 4];
+        p[0] = uint8_t(x * 7);
+        p[1] = uint8_t(y * 11);
+        p[2] = uint8_t((x * y) & 0xFF);
+        p[3] = uint8_t(x < 5 ? 0 : 255 - y);
+    }
+    std::vector<uint8_t> png = vscript::encodePng(image, 6);
+    CHECK(png.size() > 33 && png[25] == 6);
+    vscript::Image back;
+    std::string error;
+    CHECK(vscript::decodePng(png.data(), png.size(), back, error));
+    CHECK(back.width == 37 && back.height == 23 && back.rgba == image.rgba);
+
+    vscript::Image opaque = image;
+    for (size_t i = 3; i < opaque.rgba.size(); i += 4) opaque.rgba[i] = 255;
+    std::vector<uint8_t> rgb = vscript::encodePng(opaque, 6);
+    CHECK(rgb[25] == 2);
+    CHECK(vscript::decodePng(rgb.data(), rgb.size(), back, error) && back.rgba == opaque.rgba);
+    CHECK(!vscript::decodePng(rgb.data(), 20, back, error));
+
+    vscript::Image half = vscript::resizeImage(opaque, 18, 11, true);
+    CHECK(half.width == 18 && half.height == 11 && half.rgba[3] == 255);
+    vscript::Image big = vscript::resizeImage(opaque, 74, 46, false);
+    CHECK(big.rgba[0] == opaque.rgba[0] && big.rgba[(size_t(45) * 74 + 73) * 4] == opaque.rgba[(size_t(22) * 37 + 36) * 4]);
+
+    vscript::Image red;
+    red.width = 1;
+    red.height = 1;
+    red.rgba = {255, 0, 0, 255};
+    vscript::bakeColors(red, 0xFFC24B99u, 0xFFFFFFFFu, 0xFF3C1F56u);
+    CHECK(red.rgba[0] == 0xC2 && red.rgba[1] == 0x4B && red.rgba[2] == 0x99);
+
+    int w = 0, h = 0;
+    unsigned char* pixels = vscript_png_decode(png.data(), png.size(), &w, &h);
+    CHECK(pixels && w == 37 && h == 23);
+    vscript_free_bytes(pixels);
+}
+
 int main() {
     testParser();
     testStage();
@@ -884,6 +929,7 @@ int main() {
     testDoctor();
     testEventOverrides();
     testShader();
+    testImage();
     if (failures == 0) std::printf("v-script: all tests passed\n");
     return failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

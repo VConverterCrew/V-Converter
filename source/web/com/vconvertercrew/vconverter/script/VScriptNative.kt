@@ -18,5 +18,13 @@ object VScriptNative {
 
     fun convertData(kind: String, input: String): String? = null
 
+    fun pngDecode(png: ByteArray): Triple<Int, Int, ByteArray>? = null
+
+    fun pngEncode(rgba: ByteArray, width: Int, height: Int, level: Int): ByteArray? = null
+
+    fun imageResize(rgba: ByteArray, width: Int, height: Int, newWidth: Int, newHeight: Int, smooth: Boolean): ByteArray? = null
+
+    fun imageBake(rgba: ByteArray, width: Int, height: Int, r: Int, g: Int, b: Int): ByteArray? = null
+
     fun convertCharts(difficulties: Array<String>, texts: Array<String>, options: String): Array<String>? = null
 }

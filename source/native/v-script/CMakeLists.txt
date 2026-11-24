@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(VScript
     VERSION 1.0.0
     DESCRIPTION "Converts Psych Engine Lua scripts into V-Slice HScript classes and generates V-Slice scripts, written in C++"
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -27,6 +27,8 @@ add_library(VScript STATIC
     src/ApiData.cpp
     src/Doctor.cpp
     src/Shader.cpp
+    src/Image.cpp
+    src/Miniz.c
     src/VScript.cpp
     include/vscript/VScript.h
 )
@@ -35,10 +37,15 @@ add_library(VScript::VScript ALIAS VScript)
 target_include_directories(VScript PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_target_properties(VScript PROPERTIES OUTPUT_NAME "vscript" POSITION_INDEPENDENT_CODE ON)
 
+find_package(Threads)
+if(Threads_FOUND)
+    target_link_libraries(VScript PUBLIC Threads::Threads)
+endif()
+
 if(MSVC)
-    target_compile_options(VScript PRIVATE /O2 /utf-8 /EHsc)
+    target_compile_options(VScript PRIVATE /O2 /utf-8 $<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
 else()
-    target_compile_options(VScript PRIVATE -O2 -Wall -Wextra)
+    target_compile_options(VScript PRIVATE -O2 $<$<COMPILE_LANGUAGE:CXX>:-Wall;-Wextra>)
 endif()
 
 if(VSCRIPT_BUILD_TESTS)

@@ -34,7 +34,7 @@ val vscriptSource = File(source, "native/v-script")
 
 fun vscriptLibrary(target: String): File = layout.buildDirectory.dir("vscript/$target").get().asFile
 
-val vscriptFiles = listOf("Json", "LuaParser", "Converter", "Builtins", "Generator", "Funkin", "Chart", "Character", "Stage", "HaxeParser", "HaxeLua", "ApiData", "Doctor", "Shader", "VScript")
+val vscriptFiles = listOf("Json", "LuaParser", "Converter", "Builtins", "Generator", "Funkin", "Chart", "Character", "Stage", "HaxeParser", "HaxeLua", "ApiData", "Doctor", "Shader", "Image", "VScript")
 
 val vscriptTasks = mapOf(
     "iosArm64" to ("iphoneos" to "arm64-apple-ios14.0"),
@@ -49,10 +49,12 @@ val vscriptTasks = mapOf(
                 "-I '${File(vscriptSource, "include").absolutePath}' -I '${File(vscriptSource, "src").absolutePath}' " +
                 "-c '${File(vscriptSource, "src/$name.cpp").absolutePath}' -o '${out.absolutePath}/$name.o'"
         }
-        val objects = vscriptFiles.joinToString(" ") { "'${out.absolutePath}/$it.o'" }
+        val miniz = "xcrun -sdk ${platform.first} clang -O2 -target ${platform.second} " +
+            "-c '${File(vscriptSource, "src/Miniz.c").absolutePath}' -o '${out.absolutePath}/Miniz.o'"
+        val objects = (vscriptFiles + "Miniz").joinToString(" ") { "'${out.absolutePath}/$it.o'" }
         commandLine(
             "sh", "-c",
-            "mkdir -p '${out.absolutePath}' && $compile && rm -f '${out.absolutePath}/libvscript.a' && " +
+            "mkdir -p '${out.absolutePath}' && $compile && $miniz && rm -f '${out.absolutePath}/libvscript.a' && " +
                 "xcrun -sdk ${platform.first} ar rcs '${out.absolutePath}/libvscript.a' $objects"
         )
     }

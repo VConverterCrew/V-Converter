@@ -15,6 +15,11 @@ object FpsIcon {
     }
 
     fun decode(png: ByteArray): RgbaImage? {
+        com.vconvertercrew.vconverter.script.VScriptNative.pngDecode(png)?.let { (w, h, pixels) -> return RgbaImage(w, h, pixels) }
+        return decodeKotlin(png)
+    }
+
+    fun decodeKotlin(png: ByteArray): RgbaImage? {
         if (png.size < 33 || !png.copyOfRange(0, 8).contentEquals(signature)) return null
         var i = 8
         var width = 0

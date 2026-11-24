@@ -57,6 +57,63 @@ JNIEXPORT jstring JNICALL VCS_FUNCTION(nativeFixHx)(JNIEnv* env, jclass, jstring
     return take(env, vscript_fix_hx(code.c_str(), json.c_str()));
 }
 
+JNIEXPORT jbyteArray JNICALL VCS_FUNCTION(nativePngDecode)(JNIEnv* env, jclass, jbyteArray png) {
+    if (png == nullptr) return nullptr;
+    jsize size = env->GetArrayLength(png);
+    std::vector<unsigned char> data(static_cast<size_t>(size));
+    env->GetByteArrayRegion(png, 0, size, reinterpret_cast<jbyte*>(data.data()));
+    int width = 0;
+    int height = 0;
+    unsigned char* pixels = vscript_png_decode(data.data(), data.size(), &width, &height);
+    if (pixels == nullptr) return nullptr;
+    size_t count = static_cast<size_t>(width) * height * 4;
+    jbyteArray out = env->NewByteArray(static_cast<jsize>(count + 8));
+    if (out != nullptr) {
+        jbyte header[8] = {
+            jbyte(width >> 24), jbyte(width >> 16), jbyte(width >> 8), jbyte(width),
+            jbyte(height >> 24), jbyte(height >> 16), jbyte(height >> 8), jbyte(height)
+        };
+        env->SetByteArrayRegion(out, 0, 8, header);
+        env->SetByteArrayRegion(out, 8, static_cast<jsize>(count), reinterpret_cast<const jbyte*>(pixels));
+    }
+    vscript_free_bytes(pixels);
+    return out;
+}
+
+JNIEXPORT jbyteArray JNICALL VCS_FUNCTION(nativePngEncode)(JNIEnv* env, jclass, jbyteArray rgba, jint width, jint height, jint level) {
+    if (rgba == nullptr || width <= 0 || height <= 0 || env->GetArrayLength(rgba) < static_cast<jsize>(static_cast<size_t>(width) * height * 4)) return nullptr;
+    jbyte* pixels = env->GetByteArrayElements(rgba, nullptr);
+    size_t size = 0;
+    unsigned char* png = vscript_png_encode(reinterpret_cast<const unsigned char*>(pixels), width, height, level, &size);
+    env->ReleaseByteArrayElements(rgba, pixels, JNI_ABORT);
+    if (png == nullptr) return nullptr;
+    jbyteArray out = env->NewByteArray(static_cast<jsize>(size));
+    if (out != nullptr) env->SetByteArrayRegion(out, 0, static_cast<jsize>(size), reinterpret_cast<const jbyte*>(png));
+    vscript_free_bytes(png);
+    return out;
+}
+
+JNIEXPORT jbyteArray JNICALL VCS_FUNCTION(nativeImageResize)(JNIEnv* env, jclass, jbyteArray rgba, jint width, jint height, jint newWidth, jint newHeight, jboolean smooth) {
+    if (rgba == nullptr || width <= 0 || height <= 0 || newWidth <= 0 || newHeight <= 0 || env->GetArrayLength(rgba) < static_cast<jsize>(static_cast<size_t>(width) * height * 4)) return nullptr;
+    jbyte* pixels = env->GetByteArrayElements(rgba, nullptr);
+    unsigned char* resized = vscript_image_resize(reinterpret_cast<const unsigned char*>(pixels), width, height, newWidth, newHeight, smooth ? 1 : 0);
+    env->ReleaseByteArrayElements(rgba, pixels, JNI_ABORT);
+    if (resized == nullptr) return nullptr;
+    jsize count = static_cast<jsize>(static_cast<size_t>(newWidth) * newHeight * 4);
+    jbyteArray out = env->NewByteArray(count);
+    if (out != nullptr) env->SetByteArrayRegion(out, 0, count, reinterpret_cast<const jbyte*>(resized));
+    vscript_free_bytes(resized);
+    return out;
+}
+
+JNIEXPORT jboolean JNICALL VCS_FUNCTION(nativeImageBake)(JNIEnv* env, jclass, jbyteArray rgba, jint width, jint height, jint r, jint g, jint b) {
+    if (rgba == nullptr || width <= 0 || height <= 0 || env->GetArrayLength(rgba) < static_cast<jsize>(static_cast<size_t>(width) * height * 4)) return JNI_FALSE;
+    jbyte* pixels = env->GetByteArrayElements(rgba, nullptr);
+    vscript_image_bake(reinterpret_cast<unsigned char*>(pixels), width, height, static_cast<unsigned int>(r), static_cast<unsigned int>(g), static_cast<unsigned int>(b));
+    env->ReleaseByteArrayElements(rgba, pixels, 0);
+    return JNI_TRUE;
+}
+
 JNIEXPORT jstring JNICALL VCS_FUNCTION(nativeConvertShader)(JNIEnv* env, jclass, jstring source, jstring options) {
     std::string code = text(env, source);
     std::string json = text(env, options);

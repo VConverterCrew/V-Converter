@@ -47,6 +47,7 @@ object NoteImages {
     }
 
     fun bake(image: RgbaImage, rgb: Rgb): RgbaImage {
+        com.vconvertercrew.vconverter.script.VScriptNative.imageBake(image.pixels, image.width, image.height, rgb.r, rgb.g, rgb.b)?.let { return RgbaImage(image.width, image.height, it) }
         val r = channels(rgb.r)
         val g = channels(rgb.g)
         val b = channels(rgb.b)
@@ -71,6 +72,7 @@ object NoteImages {
         val w = max(1, width)
         val h = max(1, height)
         if (w == image.width && h == image.height) return image
+        com.vconvertercrew.vconverter.script.VScriptNative.imageResize(image.pixels, image.width, image.height, w, h, smooth)?.let { return RgbaImage(w, h, it) }
         val out = RgbaImage.blank(w, h)
         val sx = image.width.toDouble() / w
         val sy = image.height.toDouble() / h

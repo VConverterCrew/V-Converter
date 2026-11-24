@@ -73,6 +73,11 @@ object PngWriter {
     }
 
     fun encode(image: RgbaImage): ByteArray {
+        com.vconvertercrew.vconverter.script.VScriptNative.pngEncode(image.pixels, image.width, image.height, 6)?.let { return it }
+        return encodeKotlin(image)
+    }
+
+    fun encodeKotlin(image: RgbaImage): ByteArray {
         val header = int(image.width) + int(image.height) + byteArrayOf(8, 6, 0, 0, 0)
         return signature + chunk("IHDR", header) + chunk("IDAT", ZlibDeflate.compress(filtered(image))) + chunk("IEND", ByteArray(0))
     }

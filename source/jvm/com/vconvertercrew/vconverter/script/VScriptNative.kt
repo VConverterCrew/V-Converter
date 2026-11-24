@@ -35,6 +35,28 @@ object VScriptNative {
     fun convertCharts(difficulties: Array<String>, texts: Array<String>, options: String): Array<String>? =
         if (available) nativeConvertCharts(difficulties, texts, options) else null
 
+    fun pngDecode(png: ByteArray): Triple<Int, Int, ByteArray>? {
+        if (!available) return null
+        val out = nativePngDecode(png) ?: return null
+        fun int(at: Int) = ((out[at].toInt() and 0xFF) shl 24) or ((out[at + 1].toInt() and 0xFF) shl 16) or ((out[at + 2].toInt() and 0xFF) shl 8) or (out[at + 3].toInt() and 0xFF)
+        return Triple(int(0), int(4), out.copyOfRange(8, out.size))
+    }
+
+    fun pngEncode(rgba: ByteArray, width: Int, height: Int, level: Int): ByteArray? = if (available) nativePngEncode(rgba, width, height, level) else null
+
+    fun imageResize(rgba: ByteArray, width: Int, height: Int, newWidth: Int, newHeight: Int, smooth: Boolean): ByteArray? =
+        if (available) nativeImageResize(rgba, width, height, newWidth, newHeight, smooth) else null
+
+    fun imageBake(rgba: ByteArray, width: Int, height: Int, r: Int, g: Int, b: Int): ByteArray? {
+        if (!available) return null
+        val copy = rgba.copyOf()
+        return if (nativeImageBake(copy, width, height, r, g, b)) copy else null
+    }
+
+    @JvmStatic private external fun nativePngDecode(png: ByteArray): ByteArray?
+    @JvmStatic private external fun nativePngEncode(rgba: ByteArray, width: Int, height: Int, level: Int): ByteArray?
+    @JvmStatic private external fun nativeImageResize(rgba: ByteArray, width: Int, height: Int, newWidth: Int, newHeight: Int, smooth: Boolean): ByteArray?
+    @JvmStatic private external fun nativeImageBake(rgba: ByteArray, width: Int, height: Int, r: Int, g: Int, b: Int): Boolean
     @JvmStatic private external fun nativeVersion(): String
     @JvmStatic private external fun nativeConvertLua(source: String, options: String): String?
     @JvmStatic private external fun nativeConvertHx(source: String, options: String): String?

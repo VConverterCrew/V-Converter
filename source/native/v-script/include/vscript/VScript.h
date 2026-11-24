@@ -37,6 +37,16 @@ VSCRIPT_API char* vscript_convert_charts(const char* const* difficulties, const 
 
 VSCRIPT_API void vscript_free_files(char** files, size_t file_count);
 
+VSCRIPT_API unsigned char* vscript_png_decode(const unsigned char* data, size_t size, int* width, int* height);
+
+VSCRIPT_API unsigned char* vscript_png_encode(const unsigned char* rgba, int width, int height, int level, size_t* size);
+
+VSCRIPT_API unsigned char* vscript_image_resize(const unsigned char* rgba, int width, int height, int new_width, int new_height, int smooth);
+
+VSCRIPT_API void vscript_image_bake(unsigned char* rgba, int width, int height, unsigned int r, unsigned int g, unsigned int b);
+
+VSCRIPT_API void vscript_free_bytes(unsigned char* data);
+
 VSCRIPT_API void vscript_free(char* text);
 
 #ifdef __cplusplus

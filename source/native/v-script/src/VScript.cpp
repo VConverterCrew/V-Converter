@@ -6,6 +6,7 @@
 #include "HaxeLua.hpp"
 #include "Doctor.hpp"
 #include "Shader.hpp"
+#include "Image.hpp"
 #include "Json.hpp"
 
 #include <cstdlib>
@@ -288,6 +289,57 @@ void vscript_free_files(char** files, size_t file_count) {
     if (!files) return;
     for (size_t i = 0; i < file_count; i++) std::free(files[i]);
     std::free(files);
+}
+
+namespace {
+
+unsigned char* copyBytes(const std::vector<uint8_t>& bytes) {
+    unsigned char* out = static_cast<unsigned char*>(std::malloc(bytes.empty() ? 1 : bytes.size()));
+    if (out && !bytes.empty()) std::memcpy(out, bytes.data(), bytes.size());
+    return out;
+}
+
+vscript::Image wrap(const unsigned char* rgba, int width, int height) {
+    vscript::Image image;
+    image.width = width;
+    image.height = height;
+    image.rgba.assign(rgba, rgba + size_t(width) * height * 4);
+    return image;
+}
+
+}
+
+unsigned char* vscript_png_decode(const unsigned char* data, size_t size, int* width, int* height) {
+    if (!data || !width || !height) return nullptr;
+    vscript::Image image;
+    std::string error;
+    if (!vscript::decodePng(data, size, image, error)) return nullptr;
+    *width = image.width;
+    *height = image.height;
+    return copyBytes(image.rgba);
+}
+
+unsigned char* vscript_png_encode(const unsigned char* rgba, int width, int height, int level, size_t* size) {
+    if (!rgba || width <= 0 || height <= 0 || !size) return nullptr;
+    std::vector<uint8_t> png = vscript::encodePng(wrap(rgba, width, height), level);
+    *size = png.size();
+    return copyBytes(png);
+}
+
+unsigned char* vscript_image_resize(const unsigned char* rgba, int width, int height, int new_width, int new_height, int smooth) {
+    if (!rgba || width <= 0 || height <= 0 || new_width <= 0 || new_height <= 0) return nullptr;
+    return copyBytes(vscript::resizeImage(wrap(rgba, width, height), new_width, new_height, smooth != 0).rgba);
+}
+
+void vscript_image_bake(unsigned char* rgba, int width, int height, unsigned int r, unsigned int g, unsigned int b) {
+    if (!rgba || width <= 0 || height <= 0) return;
+    vscript::Image image = wrap(rgba, width, height);
+    vscript::bakeColors(image, r, g, b);
+    std::memcpy(rgba, image.rgba.data(), image.rgba.size());
+}
+
+void vscript_free_bytes(unsigned char* data) {
+    std::free(data);
 }
 
 void vscript_free(char* text) {
