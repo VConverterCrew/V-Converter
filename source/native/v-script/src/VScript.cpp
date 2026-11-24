@@ -7,6 +7,7 @@
 #include "Doctor.hpp"
 #include "Shader.hpp"
 #include "Image.hpp"
+#include "Reverse.hpp"
 #include "Json.hpp"
 
 #include <cstdlib>
@@ -282,6 +283,39 @@ char* vscript_convert_charts(const char* const* difficulties, const char* const*
     if (files) *files = texts_out;
     else if (texts_out) vscript_free_files(texts_out, list.size());
     if (file_count) *file_count = list.size();
+    return copy(out.dump());
+}
+
+char* vscript_convert_files(const char* kind, const char* const* names, const char* const* texts, size_t count, const char* options_json, char*** files, size_t* file_count) {
+    using namespace vscript;
+    if (files) *files = nullptr;
+    if (file_count) *file_count = 0;
+    NamedTexts inputs;
+    inputs.reserve(count);
+    for (size_t i = 0; i < count; i++) inputs.emplace_back(names && names[i] ? names[i] : "", texts && texts[i] ? texts[i] : "");
+    bool ok = false;
+    Json options = Json::parse(options_json && *options_json ? options_json : "{}", ok);
+    if (!ok) options = Json::object();
+    NamedTexts outputs;
+    std::string error;
+    Json result = convertFiles(kind ? kind : "", inputs, options, outputs, error);
+    Json out = Json::object();
+    out.set("ok", Json::boolean(error.empty()));
+    if (!error.empty()) {
+        out.set("error", Json::string(error));
+        return copy(out.dump());
+    }
+    out.set("result", std::move(result));
+    Json paths = Json::array();
+    char** texts_out = static_cast<char**>(std::calloc(outputs.empty() ? 1 : outputs.size(), sizeof(char*)));
+    for (size_t i = 0; i < outputs.size(); i++) {
+        paths.push(Json::string(outputs[i].first));
+        if (texts_out) texts_out[i] = copy(outputs[i].second);
+    }
+    out.set("files", std::move(paths));
+    if (files) *files = texts_out;
+    else if (texts_out) vscript_free_files(texts_out, outputs.size());
+    if (file_count) *file_count = outputs.size();
     return copy(out.dump());
 }
 

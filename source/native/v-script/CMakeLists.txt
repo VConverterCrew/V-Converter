@@ -28,6 +28,7 @@ add_library(VScript STATIC
     src/Doctor.cpp
     src/Shader.cpp
     src/Image.cpp
+    src/Reverse.cpp
     src/Miniz.c
     src/VScript.cpp
     include/vscript/VScript.h

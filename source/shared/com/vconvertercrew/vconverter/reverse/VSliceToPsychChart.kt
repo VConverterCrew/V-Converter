@@ -51,6 +51,29 @@ object VSliceToPsychChart {
     fun songIdFor(songId: String, variation: String): String =
         formatToSongPath(if (variation.isEmpty() || variation == "default") songId else "$songId-$variation").ifEmpty { "song" }
 
+    fun convertTexts(songId: String, inputs: List<Triple<String, String, String>>, stageZoom: Double?, single: Boolean): List<ReverseChartResult>? {
+        val options = JSONObject().put("songId", songId).put("single", single)
+            .put("stages", JSONObject().also { o -> reverseStages.forEach { (k, v) -> o.put(k, v) } })
+            .put("eventNames", JSONObject().also { o -> runCatching { psychNames }.getOrNull()?.forEach { (k, v) -> o.put(k, v) } })
+        if (stageZoom != null) options.put("stageZoom", stageZoom)
+        val (result, files) = com.vconvertercrew.vconverter.script.NativeData.convertFiles("vslice-psych-charts", inputs.map { (role, variation, text) -> "$role:$variation" to text }, options) ?: return null
+        val list = result.optJSONArray("results") ?: return null
+        val texts = files.toMap()
+        return runCatching {
+            (0 until list.length()).map { i ->
+                val r = list.getJSONObject(i)
+                val paths = com.vconvertercrew.vconverter.script.NativeData.strings(r.optJSONArray("files"))
+                ReverseChartResult(
+                    r.getString("songId"),
+                    r.getString("songName"),
+                    paths.map { PsychChartFile(it, texts.getValue(it)) },
+                    com.vconvertercrew.vconverter.script.NativeData.strings(r.optJSONArray("difficulties")),
+                    com.vconvertercrew.vconverter.script.NativeData.report(r.optJSONObject("report"))
+                )
+            }
+        }.getOrNull()
+    }
+
     fun convertAll(songId: String, sources: List<VSliceSongSource>, stageZoom: Double? = null): List<ReverseChartResult> {
         require(sources.isNotEmpty()) { "Add the song's metadata and chart files." }
         return sources.groupBy { it.variation }.toSortedMutableMap().map { (variation, group) ->

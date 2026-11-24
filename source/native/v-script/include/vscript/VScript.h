@@ -35,6 +35,8 @@ VSCRIPT_API char* vscript_convert_data(const char* kind, const char* input_json)
 
 VSCRIPT_API char* vscript_convert_charts(const char* const* difficulties, const char* const* texts, size_t count, const char* options_json, char*** files, size_t* file_count);
 
+VSCRIPT_API char* vscript_convert_files(const char* kind, const char* const* names, const char* const* texts, size_t count, const char* options_json, char*** files, size_t* file_count);
+
 VSCRIPT_API void vscript_free_files(char** files, size_t file_count);
 
 VSCRIPT_API unsigned char* vscript_png_decode(const unsigned char* data, size_t size, int* width, int* height);

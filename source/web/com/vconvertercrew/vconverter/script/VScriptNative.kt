@@ -26,5 +26,7 @@ object VScriptNative {
 
     fun imageBake(rgba: ByteArray, width: Int, height: Int, r: Int, g: Int, b: Int): ByteArray? = null
 
+    fun convertFiles(kind: String, names: Array<String>, texts: Array<String>, options: String): Array<String>? = null
+
     fun convertCharts(difficulties: Array<String>, texts: Array<String>, options: String): Array<String>? = null
 }

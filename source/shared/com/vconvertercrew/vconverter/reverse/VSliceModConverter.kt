@@ -260,7 +260,19 @@ class VSliceModConverter(
         scan.songs.forEach { song ->
             step("Song ${song.id}")
             val metas = metadata[song.id] ?: emptyMap()
-            val sources = song.charts.mapNotNull { (variation, path) ->
+            val fast = song.charts.mapNotNull { (variation, path) ->
+                val meta = metas[variation] ?: return@mapNotNull null
+                if (meta.raw.isEmpty()) return@mapNotNull null
+                val text = runCatching { files.readText(path) }.getOrNull() ?: return@mapNotNull null
+                val psychId = VSliceToPsychChart.songIdFor(song.id, variation)
+                val converted = VSliceToPsychChart.convertTexts(psychId, listOf(Triple("metadata", variation, meta.raw), Triple("chart", variation, text)), zooms[meta.stage], single = true)?.singleOrNull() ?: return@mapNotNull null
+                converted.files.forEach { write(it.path, it.json) }
+                converted.report.warnings.forEach { report.warn("Song $psychId: $it") }
+                result.getOrPut(song.id) { mutableMapOf() }[variation] = LevelSongInfo(converted.songName, icons[meta.opponent] ?: meta.opponent, converted.difficulties)
+                copyAudio(song, variation, psychId, meta)
+                variation
+            }.toSet()
+            val sources = song.charts.filterKeys { it !in fast }.mapNotNull { (variation, path) ->
                 val meta = metas[variation] ?: return@mapNotNull null.also { report.warn("Song ${song.id}: chart ${scan.relative(path)} has no matching metadata file.") }
                 runCatching { VSliceSongSource(variation, meta, VSliceParser.chart(files.readText(path))) }
                     .onFailure { report.warn("Chart ${scan.relative(path)} could not be read: ${it.message}") }

@@ -913,6 +913,36 @@ static void testImage() {
     vscript_free_bytes(pixels);
 }
 
+static void testReverseFiles() {
+    const char* names[] = {"metadata:", "chart:"};
+    const char* texts[] = {
+        "{\"songName\":\"Tiny\",\"timeChanges\":[{\"t\":0,\"bpm\":120,\"n\":4}],\"playData\":{\"difficulties\":[\"normal\",\"erect\"],\"characters\":{\"player\":\"bf\",\"opponent\":\"dad\"},\"stage\":\"mainStage\",\"noteStyle\":\"funkin\"}}",
+        "{\"scrollSpeed\":{\"default\":2},\"events\":[{\"t\":0,\"e\":\"FocusCamera\",\"v\":{\"char\":0}},{\"t\":10,\"e\":\"Weird\",\"v\":[1,2]}],\"notes\":{\"normal\":[{\"t\":2500,\"d\":1,\"l\":0,\"k\":\"alt\"},{\"t\":0.5,\"d\":9,\"l\":100}]}}"
+    };
+    char** files = nullptr;
+    size_t count = 0;
+    char* header = vscript_convert_files("vslice-psych-charts", names, texts, 2, "{\"songId\":\"Tiny\"}", &files, &count);
+    bool ok = false;
+    vscript::Json h = vscript::Json::parse(header, ok);
+    CHECK(ok && h["ok"].asBool(false));
+    CHECK(count == 2);
+    CHECK(count == 2 && has(files[0], "\"song\":\"Tiny\"") && has(files[0], "[2500,1,0,\"Alt Animation\"]") && has(files[0], "[0.5,7,100]"));
+    CHECK(count == 2 && has(files[0], "\"mustHitSection\":true") && has(files[0], "[\"Weird\",\"[1,2]\",\"\"]"));
+    vscript_free(header);
+    vscript_free_files(files, count);
+
+    const char* probe[] = {"{\"playData\":{},\"x\":[1]}"};
+    const char* probeNames[] = {""};
+    header = vscript_convert_files("json-keys", probeNames, probe, 1, "{}", &files, &count);
+    CHECK(has(header, "[\"playData\",\"object\"]") && has(header, "[\"x\",\"array\"]"));
+    vscript_free(header);
+    vscript_free_files(files, count);
+    header = vscript_convert_files("nope", probeNames, probe, 1, "{}", &files, &count);
+    CHECK(has(header, "\"ok\":false"));
+    vscript_free(header);
+    vscript_free_files(files, count);
+}
+
 int main() {
     testParser();
     testStage();
@@ -930,6 +960,7 @@ int main() {
     testEventOverrides();
     testShader();
     testImage();
+    testReverseFiles();
     if (failures == 0) std::printf("v-script: all tests passed\n");
     return failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

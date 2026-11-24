@@ -26,7 +26,8 @@ data class VMetadata(
     val stage: String,
     val noteStyle: String,
     val timeChanges: List<VTimeChange>,
-    val offsetInstrumental: Double
+    val offsetInstrumental: Double,
+    val raw: String = ""
 )
 
 data class VNote(val time: Double, val data: Int, val length: Double, val kind: String)
@@ -178,7 +179,8 @@ object VSliceParser {
             stage = play.value("stage").asText().ifEmpty { "mainStage" },
             noteStyle = play.value("noteStyle").asText().ifEmpty { "funkin" },
             timeChanges = changes,
-            offsetInstrumental = offsets?.value("instrumental").asDouble(0.0)
+            offsetInstrumental = offsets?.value("instrumental").asDouble(0.0),
+            raw = raw
         )
     }
 

@@ -32,6 +32,9 @@ object VScriptNative {
 
     fun convertData(kind: String, input: String): String? = if (available) nativeConvertData(kind, input) else null
 
+    fun convertFiles(kind: String, names: Array<String>, texts: Array<String>, options: String): Array<String>? =
+        if (available) nativeConvertFiles(kind, names, texts, options) else null
+
     fun convertCharts(difficulties: Array<String>, texts: Array<String>, options: String): Array<String>? =
         if (available) nativeConvertCharts(difficulties, texts, options) else null
 
@@ -66,5 +69,6 @@ object VScriptNative {
     @JvmStatic private external fun nativeGenerate(spec: String): String?
     @JvmStatic private external fun nativeBuiltinEvent(name: String, className: String, id: String): String?
     @JvmStatic private external fun nativeConvertData(kind: String, input: String): String?
+    @JvmStatic private external fun nativeConvertFiles(kind: String, names: Array<String>, texts: Array<String>, options: String): Array<String>?
     @JvmStatic private external fun nativeConvertCharts(difficulties: Array<String>, texts: Array<String>, options: String): Array<String>?
 }

@@ -2,7 +2,14 @@ package com.vconvertercrew.vconverter.script
 
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.CPointerVar
 import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.allocArray
+import kotlinx.cinterop.cstr
+import kotlinx.cinterop.get
+import kotlinx.cinterop.set
+import vscript.vscript_convert_files
+import vscript.vscript_free_files
 import kotlinx.cinterop.ULongVar
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
@@ -98,6 +105,27 @@ object VScriptNative {
         val copy = rgba.copyOf()
         copy.usePinned { vscript_image_bake(it.addressOf(0).reinterpret(), width, height, r.convert(), g.convert(), b.convert()) }
         return copy
+    }
+
+    fun convertFiles(kind: String, names: Array<String>, texts: Array<String>, options: String): Array<String>? = memScoped {
+        val count = texts.size
+        val nameArray = allocArray<CPointerVar<ByteVar>>(maxOf(1, count))
+        val textArray = allocArray<CPointerVar<ByteVar>>(maxOf(1, count))
+        for (i in 0 until count) {
+            nameArray[i] = names[i].cstr.ptr
+            textArray[i] = texts[i].cstr.ptr
+        }
+        val files = alloc<CPointerVar<CPointerVar<ByteVar>>>()
+        val fileCount = alloc<ULongVar>()
+        val header = vscript_convert_files(kind, nameArray, textArray, count.convert(), options, files.ptr, fileCount.ptr) ?: return@memScoped null
+        val total = fileCount.value.toInt()
+        val list = files.value
+        try {
+            Array(total + 1) { i -> if (i == 0) header.toKString() else list?.get(i - 1)?.toKString() ?: "" }
+        } finally {
+            vscript_free(header)
+            vscript_free_files(list, fileCount.value)
+        }
     }
 
     fun convertCharts(difficulties: Array<String>, texts: Array<String>, options: String): Array<String>? = null

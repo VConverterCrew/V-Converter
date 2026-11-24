@@ -28,6 +28,12 @@ class ReverseChartsConverter : FileConverter() {
         val base = file.name.substringBeforeLast('.')
         val meta = Regex("^(.+)-metadata(?:-(.+))?$").find(base)
         val chart = Regex("^(.+)-chart(?:-(.+))?$").find(base)
+        val keys = com.vconvertercrew.vconverter.script.NativeData.jsonKeys(text)
+        if (keys != null) return when {
+            meta != null && keys["playData"] == "object" -> PickedText(file.path, file.name, file.path, text, "metadata", (meta.groupValues[2].ifEmpty { "default" }))
+            chart != null && keys["scrollSpeed"] == "object" && keys.containsKey("notes") -> PickedText(file.path, file.name, file.path, text, "chart", (chart.groupValues[2].ifEmpty { "default" }))
+            else -> throw IllegalArgumentException("not a V-Slice <song>-metadata.json or <song>-chart.json file")
+        }
         return when {
             meta != null && VSliceParser.isMetadata(text) -> {
                 VSliceParser.metadata(text)
@@ -52,6 +58,21 @@ class ReverseChartsConverter : FileConverter() {
         val files = mutableListOf<OutputFile>()
         val bySong = items.groupBy { songAndVariation(it).first }
         bySong.forEach { (song, group) ->
+            val metaVariations = group.filter { it.kind == "metadata" }.map { songAndVariation(it).second }.toSet()
+            val native = VSliceToPsychChart.convertTexts(song, group.map { Triple(it.kind, songAndVariation(it).second, it.text) }, null, single = false)
+            if (native != null && native.isNotEmpty()) {
+                group.filter { it.kind == "chart" && songAndVariation(it).second !in metaVariations }.forEach { item ->
+                    val variation = songAndVariation(item).second
+                    report.warn("$song: ${item.name} needs its metadata file (${song}-metadata${if (variation.isEmpty()) "" else "-$variation"}.json).")
+                }
+                native.forEach { result ->
+                    result.files.forEach { files += out(it.path, it.json) }
+                    result.report.stats.forEach { report.stat("${result.songId} ${it.label}", it.value) }
+                    result.report.sections.forEach { report.section("${result.songId} · ${it.title}", it.lines) }
+                    result.report.warnings.forEach { report.warn("${result.songId}: $it") }
+                }
+                return@forEach
+            }
             val metas = group.filter { it.kind == "metadata" }.associate { songAndVariation(it).second to VSliceParser.metadata(it.text) }
             val sources = group.filter { it.kind == "chart" }.mapNotNull { item ->
                 val variation = songAndVariation(item).second
