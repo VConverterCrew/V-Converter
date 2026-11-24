@@ -67,7 +67,7 @@ fun rememberNmvModels(): NmvModels {
     val app = LocalContext.current.applicationContext as Application
     val files = LinkedHashMap<Pair<Direction, Tab>, NmvFileViewModel>()
     nmvDirections.forEach { direction ->
-        Tab.entries.filter { it != Tab.MOD }.forEach { tab ->
+        Tab.entries.filter { it != Tab.MOD && it != Tab.NOTESTYLES }.forEach { tab ->
             files[direction to tab] = viewModel<NmvFileViewModel>(
                 key = "nmv-${direction.name}-${tab.name}",
                 factory = viewModelFactory { initializer { NmvFileViewModel(app, NmvConverters.create(direction.from.key, direction.to.key, nmvTab(tab))) } }
@@ -98,6 +98,7 @@ fun nmvDescription(direction: Direction, tab: Tab): String {
         Tab.STAGES -> "${direction.from.title} stages into BaseStage classes (.hxc) with their scripts."
         Tab.WEEKS -> "${direction.from.title} weeks into FPS Plus weeks and story menu characters."
         Tab.SCRIPTS -> "${direction.from.title} scripts (Lua too) into FPS Plus Script classes (.hxc)."
+        Tab.NOTESTYLES -> com.vconvertercrew.vconverter.ui.noteStyleDescription(direction)
     }
     return if (direction.from == Engine.NMV) when (tab) {
         Tab.MOD -> "A full NightmareVision mod into a $target mod: charts, HScript, characters, stages, weeks and audio."
@@ -106,6 +107,7 @@ fun nmvDescription(direction: Direction, tab: Tab): String {
         Tab.STAGES -> "data/stages/<stage>/data.json and its stageObjects into $target stages."
         Tab.WEEKS -> "data/weeks and story menu characters into $target weeks."
         Tab.SCRIPTS -> "NightmareVision HScript into $target scripts."
+        Tab.NOTESTYLES -> com.vconvertercrew.vconverter.ui.noteStyleDescription(direction)
     } else when (tab) {
         Tab.MOD -> "A full ${direction.from.title} mod into a NightmareVision mod, with Lua turned into HScript."
         Tab.CHARTS -> "${direction.from.title} charts into nmv2 charts with meta.json."
@@ -113,6 +115,7 @@ fun nmvDescription(direction: Direction, tab: Tab): String {
         Tab.STAGES -> "${direction.from.title} stages into data/stages/<stage>/data.json with stageObjects."
         Tab.WEEKS -> "${direction.from.title} weeks into data/weeks and story menu characters."
         Tab.SCRIPTS -> "${direction.from.title} scripts (Lua too) into NightmareVision HScript."
+        Tab.NOTESTYLES -> com.vconvertercrew.vconverter.ui.noteStyleDescription(direction)
     }
 }
 

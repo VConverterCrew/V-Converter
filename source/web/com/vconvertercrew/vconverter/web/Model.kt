@@ -126,7 +126,8 @@ enum class Tab(val label: String, val title: String, val accent: Color) {
     CHARACTERS("Characters", "Characters", Palette.Left),
     STAGES("Stages", "Stages", Palette.Up),
     WEEKS("Weeks", "Weeks", Palette.Right),
-    SCRIPTS("Scripts", "Scripts", Palette.Lavender)
+    SCRIPTS("Scripts", "Scripts", Palette.Lavender),
+    NOTESTYLES("Note Styles", "Note styles", Palette.Pink)
 }
 
 sealed interface Status {
@@ -140,7 +141,7 @@ sealed interface Status {
 object Workspace {
     val cache: File by lazy { File(File.temporaryDirectory, "v-converter").apply { mkdirs() } }
 
-    fun converter(direction: Direction, tab: Tab): FileConverter = when (direction) {
+    fun converter(direction: Direction, tab: Tab): FileConverter = if (tab == Tab.NOTESTYLES) com.vconvertercrew.vconverter.notestyle.NoteStyleConverter(direction.from.key, direction.to.key) else when (direction) {
         Direction.PSYCH_TO_VSLICE -> when (tab) {
             Tab.CHARTS -> PsychChartsConverter()
             Tab.CHARACTERS -> PsychCharactersConverter()
@@ -193,6 +194,7 @@ object Workspace {
             Tab.STAGES -> "stages/*.json and stages/<stage>.lua when the stage builds its sprites in Lua."
             Tab.WEEKS -> "weeks/*.json and images/menucharacters/*.json."
             Tab.SCRIPTS -> "Lua and HScript files. Archives keep the folders, so scripts/, data/<song>/, stages/, custom_events/ and custom_notetypes/ keep their scope."
+            Tab.NOTESTYLES -> "images/noteSkins/NOTE_assets-*.png + .xml (or any note sheet) and images/noteSplashes/*.png + .xml + .json."
         }
         Engine.CODENAME -> when (tab) {
             Tab.MOD -> "Pick the mod folder inside Codename's mods directory, or a .zip / .rar / .7z with the mod."
@@ -201,6 +203,7 @@ object Workspace {
             Tab.STAGES -> "data/stages/*.xml (and the stage images for exact positions)."
             Tab.WEEKS -> "data/weeks/weeks/*.xml and data/weeks/characters/*.xml."
             Tab.SCRIPTS -> ".hx scripts, plus stage XMLs and data/events/*.json for context."
+            Tab.NOTESTYLES -> "images/game/notes/*.png + .xml, data/splashes/*.xml and the splash images."
         }
         Engine.VSLICE -> when (tab) {
             Tab.MOD -> "Pick the mod folder inside V-Slice's mods directory, or a .zip / .rar / .7z with the mod."
@@ -209,6 +212,7 @@ object Workspace {
             Tab.STAGES -> "data/stages/*.json."
             Tab.WEEKS -> "data/levels/*.json plus the songs' -metadata.json files."
             Tab.SCRIPTS -> ".hxc scripts."
+            Tab.NOTESTYLES -> "data/notestyles/*.json with the images it uses (.png + .xml, and the hold note strip .png)."
         }
         Engine.NMV -> when (tab) {
             Tab.MOD -> "Pick the mod folder inside NightmareVision's content directory, or a .zip / .rar / .7z with the mod."
@@ -217,6 +221,7 @@ object Workspace {
             Tab.STAGES -> "data/stages/<stage>/data.json and script.hx."
             Tab.WEEKS -> "data/weeks/*.json and images/menus/story/characters/*.json."
             Tab.SCRIPTS -> ".hx scripts. Archives keep the folders, so songs/<song>/, data/scripts/, data/stages/, data/events/ and data/notetypes/ keep their scope."
+            Tab.NOTESTYLES -> "data/noteskins/*.json with its note and splash images (.png + .xml)."
         }
         Engine.FPSPLUS -> ""
     }

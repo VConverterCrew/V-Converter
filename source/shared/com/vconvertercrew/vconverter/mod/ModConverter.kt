@@ -187,6 +187,7 @@ class ModConverter(
         if (!PsychNoteStyles.isCustom(skin)) return null
         val key = skin.trim().lowercase() + "|" + splash.trim().lowercase() + "|" + strumline
         return noteStyles.getOrPut(key) {
+            fullNoteStyle(skin, splash, strumline, label)?.let { return@getOrPut it }
             val notes = sheet(skin)
             if (notes == null) report.warn("Note skin images/$skin.xml was not found; ${label.ifBlank { "its songs" }} keep the default note style.")
             val style = notes?.let { PsychNoteStyles.build(skin, it, splash.takeIf { s -> s.isNotBlank() }, splash.takeIf { s -> s.isNotBlank() }?.let(::sheet), strumline) }
@@ -199,6 +200,32 @@ class ModConverter(
                 id
             }
         }
+    }
+
+    private fun fullNoteStyle(skin: String, splash: String, strumline: Boolean, label: String): String? {
+        fun input(image: String, ext: String): com.vconvertercrew.vconverter.notestyle.NoteStyleInput? {
+            val rel = "images/" + image.trim().removePrefix("images/").removeSuffix(".png") + ".$ext"
+            val path = pathIndex["${scan.root}$rel".lowercase()] ?: return null
+            return runCatching {
+                if (ext == "png") com.vconvertercrew.vconverter.notestyle.NoteStyleInput(rel, null, files.open(path).use { com.vconvertercrew.vconverter.fpsplus.FpsIcon.decode(it.readBytes()) } ?: return null)
+                else com.vconvertercrew.vconverter.notestyle.NoteStyleInput(rel, files.readText(path), null)
+            }.getOrNull()
+        }
+        val inputs = listOf(skin to "png", skin to "xml").mapNotNull { (image, ext) -> input(image, ext) }
+        if (inputs.size < 2) return null
+        val splashInputs = if (splash.isNotBlank()) listOf("png", "xml", "json", "txt").mapNotNull { input(splash, it) } else emptyList()
+        val styles = runCatching { com.vconvertercrew.vconverter.notestyle.NoteStyleReaders.read("psych", com.vconvertercrew.vconverter.notestyle.NoteStyleFiles(inputs + splashInputs)) }.getOrNull() ?: return null
+        val found = styles.firstOrNull { it.complete } ?: return null
+        val style = if (strumline) found else com.vconvertercrew.vconverter.notestyle.NoteStyle(found.id + "-notes", found.name, found.author, found.notes, emptyMap(), found.holds, emptyMap(),
+            found.noteScale, found.strumScale, found.holdScale, found.splashScale, found.splashAlpha, found.pixel, found.rgb, null, found.info)
+        val result = runCatching { com.vconvertercrew.vconverter.notestyle.NoteStyleWriters.write("vslice", style) }.getOrNull() ?: return null
+        result.files.forEach { file ->
+            if (file.bytes != null) writer.copy(file.path) { file.bytes.inputStream() } else writer.writeText(file.path, file.text ?: "")
+            written++
+        }
+        result.sections.forEach { (title, lines) -> report.section(title, listOf("Made from images/$skin for ${label.ifBlank { "its songs" }}.") + lines) }
+        result.warnings.forEach { report.warn(it) }
+        return style.id
     }
 
     private fun animateAtlas(image: String): AnimateAtlas? {

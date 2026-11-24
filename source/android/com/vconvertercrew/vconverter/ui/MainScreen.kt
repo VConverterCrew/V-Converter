@@ -189,7 +189,8 @@ enum class Tab(
     CHARACTERS("Chars", R.drawable.ic_tab_character, Funkin.Left, "Characters", "Character JSON + spritesheet XML, pixel-exact offsets.", "V-Slice characters back to Psych, exact with the XML.", "Character XML + spritesheet XML, scaled offsets and game over merged."),
     STAGES("Stages", R.drawable.ic_tab_stage, Funkin.Up, "Stages", "Stage layouts, cameras and editor props.", "V-Slice stages into Psych stage editor files.", "Stage XML sprites, boxes and character spots into V-Slice props."),
     WEEKS("Weeks", R.drawable.ic_tab_week, Funkin.Right, "Weeks", "Story weeks into V-Slice levels with menu props.", "V-Slice levels into Psych weeks and menu characters.", "Week XMLs and menu characters into V-Slice levels."),
-    SCRIPTS("Scripts", R.drawable.ic_tab_script, Funkin.Lavender, "Scripts", "Lua and HScript into V-Slice modules.", ".hxc scripts into Psych HScript (.hx).", "Codename HScript (.hx) into V-Slice modules and song events.");
+    SCRIPTS("Scripts", R.drawable.ic_tab_script, Funkin.Lavender, "Scripts", "Lua and HScript into V-Slice modules.", ".hxc scripts into Psych HScript (.hx).", "Codename HScript (.hx) into V-Slice modules and song events."),
+    NOTESTYLES("Notes", R.drawable.ic_tab_notestyle, Funkin.Pink, "Note Styles", "Psych note skins and splashes into V-Slice note styles with hold strips.", "V-Slice note styles into Psych note skins and splash configs.", "Codename note sheets and splash XMLs into V-Slice note styles.");
 
     fun describe(direction: Direction): String = when (direction) {
         Direction.PSYCH_TO_VSLICE -> description
@@ -202,6 +203,7 @@ enum class Tab(
             STAGES -> "Stage XML into Psych stage JSON plus a stage script."
             WEEKS -> "Week XMLs into Psych weeks, weekList.txt and menu characters."
             SCRIPTS -> "Codename HScript into Psych HScript (.hx) with the right callbacks."
+            NOTESTYLES -> noteStyleDescription(direction)
         }
         Direction.PSYCH_TO_CODENAME -> when (this) {
             MOD -> "A full Psych mod into a Codename mod: songs, Lua/HScript, events and audio."
@@ -210,10 +212,14 @@ enum class Tab(
             STAGES -> "Stage JSON (and stage Lua sprites) into Codename stage XML."
             WEEKS -> "Psych weeks into week XMLs, weeks.txt and menu characters."
             SCRIPTS -> "Lua and HScript into Codename HScript with Psych helpers."
+            NOTESTYLES -> noteStyleDescription(direction)
         }
         else -> com.vconvertercrew.vconverter.ui.nmv.nmvDescription(direction, this)
     }
 }
+
+fun noteStyleDescription(direction: Direction): String =
+    "${direction.from.title} note skins and splashes into ${direction.to.title}: new spritesheets, colors painted in where needed and the config files."
 
 enum class Engine(val label: String, val title: String, val detail: String, val color: Color) {
     PSYCH("PSYCH", "Psych Engine", "Lua · HScript · JSON", Funkin.Left),
@@ -339,6 +345,13 @@ fun MainScreen() {
     val p2cWeeks: PsychToCodenameWeeksViewModel = viewModel()
     val p2cScripts: PsychToCodenameScriptsViewModel = viewModel()
     val nmv = com.vconvertercrew.vconverter.ui.nmv.rememberNmvModels()
+    val noteStyleApp = androidx.compose.ui.platform.LocalContext.current.applicationContext as android.app.Application
+    val noteStyles = Direction.entries.associateWith { d ->
+        viewModel<com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel>(
+            key = "notestyle-${d.name}",
+            factory = androidx.lifecycle.viewmodel.viewModelFactory { androidx.lifecycle.viewmodel.initializer { com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel(noteStyleApp, com.vconvertercrew.vconverter.notestyle.NoteStyleConverter(d.from.key, d.to.key)) } }
+        )
+    }
     remember {
         listOf(charts, characters, stages, weeks, mod, scripts, psychStages, psychWeeks, psychScripts, cnMod, cnCharts, cnCharacters, cnStages, cnWeeks, cnScripts, genMod, genScript)
             .forEach { it.vsliceTarget = true }
@@ -360,7 +373,8 @@ fun MainScreen() {
         Section.PLAYTEST -> playTab
     }
 
-    fun converterFor(target: AppTab): BaseConverterViewModel = if (direction in com.vconvertercrew.vconverter.ui.nmv.nmvDirections && target is Tab) nmv.forTab(direction, target)
+    fun converterFor(target: AppTab): BaseConverterViewModel = if (target == Tab.NOTESTYLES) noteStyles.getValue(direction)
+    else if (direction in com.vconvertercrew.vconverter.ui.nmv.nmvDirections && target is Tab) nmv.forTab(direction, target)
     else if (direction == Direction.VSLICE_TO_PSYCH && target is Tab) when (target) {
         Tab.MOD -> revMod
         Tab.CHARTS -> revCharts
@@ -368,6 +382,7 @@ fun MainScreen() {
         Tab.STAGES -> revStages
         Tab.WEEKS -> revWeeks
         Tab.SCRIPTS -> revScripts
+        Tab.NOTESTYLES -> noteStyles.getValue(direction)
     } else if (direction == Direction.CODENAME_TO_VSLICE && target is Tab) when (target) {
         Tab.MOD -> cnMod
         Tab.CHARTS -> cnCharts
@@ -375,6 +390,7 @@ fun MainScreen() {
         Tab.STAGES -> cnStages
         Tab.WEEKS -> cnWeeks
         Tab.SCRIPTS -> cnScripts
+        Tab.NOTESTYLES -> noteStyles.getValue(direction)
     } else if (direction == Direction.CODENAME_TO_PSYCH && target is Tab) when (target) {
         Tab.MOD -> c2pMod
         Tab.CHARTS -> c2pCharts
@@ -382,6 +398,7 @@ fun MainScreen() {
         Tab.STAGES -> c2pStages
         Tab.WEEKS -> c2pWeeks
         Tab.SCRIPTS -> c2pScripts
+        Tab.NOTESTYLES -> noteStyles.getValue(direction)
     } else if (direction == Direction.PSYCH_TO_CODENAME && target is Tab) when (target) {
         Tab.MOD -> p2cMod
         Tab.CHARTS -> p2cCharts
@@ -389,6 +406,7 @@ fun MainScreen() {
         Tab.STAGES -> p2cStages
         Tab.WEEKS -> p2cWeeks
         Tab.SCRIPTS -> p2cScripts
+        Tab.NOTESTYLES -> noteStyles.getValue(direction)
     } else when (target) {
         Tab.MOD -> mod
         Tab.CHARTS -> charts
@@ -396,6 +414,7 @@ fun MainScreen() {
         Tab.STAGES -> psychStages
         Tab.WEEKS -> psychWeeks
         Tab.SCRIPTS -> psychScripts
+        Tab.NOTESTYLES -> noteStyles.getValue(direction)
         GenTab.MOD -> genMod
         GenTab.SONG -> genSong
         GenTab.CHARACTER -> genCharacter
@@ -593,7 +612,9 @@ fun MainScreen() {
             }
             val nmvDirection = direction in com.vconvertercrew.vconverter.ui.nmv.nmvDirections
             Box(Modifier.fillMaxSize()) {
-                if (converterTab == Tab.MOD && nmvDirection) {
+                if (converterTab == Tab.NOTESTYLES) {
+                    com.vconvertercrew.vconverter.ui.converter.FunkinFilesConverter(noteStyles.getValue(direction), converterTab.title, label, converterTab.accent, folderName, save, converterBack, badge)
+                } else if (converterTab == Tab.MOD && nmvDirection) {
                     val from = direction.from.title
                     val to = direction.to.title
                     when (val model = nmv.mod(direction)) {
