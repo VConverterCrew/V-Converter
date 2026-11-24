@@ -12,9 +12,24 @@ internal object JsonText {
     fun quote(text: String?): String {
         if (text == null) return "\"\""
         val sb = StringBuilder(text.length + 2)
+        quoteTo(text, sb)
+        return sb.toString()
+    }
+
+    private fun plain(c: Char): Boolean = c >= ' ' && c != '\\' && c != '"' && c != '/' && c < '\u0080'
+
+    fun quoteTo(text: String, sb: StringBuilder) {
         sb.append('"')
-        var previous = ' '
-        for (c in text) {
+        var start = 0
+        while (start < text.length && plain(text[start])) start++
+        if (start == text.length) {
+            sb.append(text).append('"')
+            return
+        }
+        sb.append(text, 0, start)
+        var previous = if (start > 0) text[start - 1] else ' '
+        for (index in start until text.length) {
+            val c = text[index]
             when {
                 c == '\\' || c == '"' -> sb.append('\\').append(c)
                 c == '/' && previous == '<' -> sb.append("\\/")
@@ -31,7 +46,7 @@ internal object JsonText {
             }
             previous = c
         }
-        return sb.append('"').toString()
+        sb.append('"')
     }
 
     fun number(value: Number): String {
@@ -67,7 +82,7 @@ internal object JsonText {
             null -> sb.append("null")
             is JSONObject -> value.write(sb, indent, level)
             is JSONArray -> value.write(sb, indent, level)
-            is String -> sb.append(quote(value))
+            is String -> quoteTo(value, sb)
             is Number -> sb.append(number(value))
             is Boolean -> sb.append(value.toString())
             is Map<*, *> -> JSONObject(value).write(sb, indent, level)
@@ -143,6 +158,11 @@ internal class JsonParser(private val text: String) {
     private fun skip() {
         while (i < text.length) {
             val c = text[i]
+            if (c == ' ' || c == '\n' || c == '\t' || c == '\r') {
+                i++
+                continue
+            }
+            if (c > ' ' && c != '/' && c != '#' && c != '\uFEFF' && c < '\u0080') return
             when {
                 c.isWhitespace() || c == '﻿' -> i++
                 c == '/' && i + 1 < text.length && text[i + 1] == '/' -> {
@@ -179,7 +199,7 @@ internal class JsonParser(private val text: String) {
             '\u0000' -> throw error("Unexpected end of text")
             else -> {
                 val start = i
-                while (i < text.length && text[i] !in ",:]}/\\\"[{;=#" && !text[i].isWhitespace()) i++
+                while (i < text.length && !stops(text[i])) i++
                 val raw = text.substring(start, i).trim()
                 if (raw.isEmpty()) throw error("Missing value")
                 JsonText.stringToValue(raw)
@@ -187,9 +207,27 @@ internal class JsonParser(private val text: String) {
         }
     }
 
+    private fun stops(c: Char): Boolean = when (c) {
+        ',', ':', ']', '}', '/', '\\', '"', '[', '{', ';', '=', '#', ' ', '\n', '\t', '\r' -> true
+        else -> c > '\u007F' && c.isWhitespace() || c < ' ' && c.isWhitespace()
+    }
+
     private fun string(quote: Char): String {
         i++
-        val sb = StringBuilder()
+        val begin = i
+        var j = i
+        while (j < text.length) {
+            val c = text[j]
+            if (c == quote) {
+                i = j + 1
+                return text.substring(begin, j)
+            }
+            if (c == '\\' || (quote == '\'' && (c == '\n' || c == '\r'))) break
+            j++
+        }
+        val sb = StringBuilder(j - begin + 16)
+        sb.append(text, begin, j)
+        i = j
         while (true) {
             if (i >= text.length) throw error("Unterminated string")
             val c = text[i++]
@@ -472,7 +510,9 @@ class JSONObject() {
         }
         if (map.size == 1) {
             val (k, v) = map.entries.first()
-            sb.append('{').append(JsonText.quote(k)).append(':')
+            sb.append('{')
+            JsonText.quoteTo(k, sb)
+            sb.append(':')
             if (indent > 0) sb.append(' ')
             JsonText.write(v, indent, level, sb)
             sb.append('}')
@@ -486,7 +526,8 @@ class JSONObject() {
             first = false
             if (indent > 0) sb.append('\n')
             JsonText.pad(sb, inner)
-            sb.append(JsonText.quote(k)).append(':')
+            JsonText.quoteTo(k, sb)
+            sb.append(':')
             if (indent > 0) sb.append(' ')
             JsonText.write(v, indent, inner, sb)
         }
