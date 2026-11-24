@@ -7,6 +7,10 @@ object VScriptNative {
 
     fun convertHx(source: String, options: String): String? = null
 
+    fun fixLua(source: String, options: String): String? = null
+
+    fun fixHx(source: String, options: String): String? = null
+
     fun generate(spec: String): String? = null
 
     fun builtinEvent(name: String, className: String, id: String): String? = null

@@ -13,6 +13,7 @@ add_subdirectory(v-touch)
 add_subdirectory(v-launcher)
 add_subdirectory(v-script)
 add_subdirectory(v-archive)
+add_subdirectory(v-banana)
 
 add_library(vconverter_audio SHARED bridge/vconverter_audio_jni.c)
 
@@ -40,7 +41,13 @@ target_link_libraries(vconverter_archive PRIVATE VArchive::VArchive)
 
 set_target_properties(vconverter_archive PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 
-set(VCA_TARGETS vconverter_audio vconverter_touch vconverter_launcher vconverter_script vconverter_archive)
+add_library(vconverter_banana SHARED bridge/vconverter_banana_jni.cpp)
+
+target_link_libraries(vconverter_banana PRIVATE VBanana::VBanana)
+
+set_target_properties(vconverter_banana PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+
+set(VCA_TARGETS vconverter_audio vconverter_touch vconverter_launcher vconverter_script vconverter_archive vconverter_banana)
 
 if(NOT ANDROID)
     set(VCA_JAVA_HOME "$ENV{JAVA_HOME}" CACHE PATH "JDK used for the JNI headers")
@@ -70,7 +77,7 @@ if(NOT ANDROID)
         foreach(target IN LISTS VCA_TARGETS)
             target_compile_options(${target} PRIVATE /O2)
         endforeach()
-        set_property(TARGET vconverter_audio vconverter_touch vconverter_launcher vconverter_script vconverter_archive VMiniAudio VTouch VLauncher VScript VArchive PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+        set_property(TARGET vconverter_audio vconverter_touch vconverter_launcher vconverter_script vconverter_archive vconverter_banana VMiniAudio VTouch VLauncher VScript VArchive VBanana PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     else()
         foreach(target IN LISTS VCA_TARGETS)
             target_compile_options(${target} PRIVATE -O2)
@@ -80,6 +87,7 @@ if(NOT ANDROID)
             target_link_options(vconverter_launcher PRIVATE -static-libstdc++ -static-libgcc)
             target_link_options(vconverter_script PRIVATE -static-libstdc++ -static-libgcc)
             target_link_options(vconverter_archive PRIVATE -static-libstdc++ -static-libgcc)
+            target_link_options(vconverter_banana PRIVATE -static-libstdc++ -static-libgcc)
         endif()
     endif()
 

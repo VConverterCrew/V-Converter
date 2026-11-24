@@ -21,6 +21,7 @@ import com.vconvertercrew.vconverter.codename.CodenameToPsychCharacter
 import com.vconvertercrew.vconverter.codename.CodenameToPsychChart
 import com.vconvertercrew.vconverter.codename.CodenameToPsychEvents
 import com.vconvertercrew.vconverter.codename.CodenameToPsychLua
+import com.vconvertercrew.vconverter.script.ScriptDoctor
 import com.vconvertercrew.vconverter.codename.CodenameToPsychScript
 import com.vconvertercrew.vconverter.codename.CodenameToPsychStage
 import com.vconvertercrew.vconverter.codename.CodenameToPsychWeek
@@ -356,8 +357,11 @@ class CodenameToPsychScriptsConverter : CodenameToPsychConverter() {
                 CodenameScope.EVENT -> if (CodenameToPsychEvents.script(target.key) != null) "scripts/${CodenameEvents.eventId(target.key)}Event.hx" else "custom_events/${target.key}.hx"
                 CodenameScope.NOTE_TYPE -> "custom_notetypes/${CodenameToPsychChart.noteTypeFor(target.key)}.hx"
             }
-            val lua = CodenameToPsychLua.convert(path, item.name, item.text, target, context)
-            val result = if (lua == null) CodenameToPsychScript(target, context).convert(item.text) else null
+            val check = ScriptDoctor.haxe(item.text, item.name, "codename")
+            val text = check?.source ?: item.text
+            if (check != null && !check.isClean) report.section("${item.name} · fixes", check.lines())
+            val lua = CodenameToPsychLua.convert(path, item.name, text, target, context)
+            val result = if (lua == null) CodenameToPsychScript(target, context).convert(text) else null
             if (lua != null) {
                 outputs += out(lua.first, lua.second.source)
                 report.section(item.name, lua.second.notes())

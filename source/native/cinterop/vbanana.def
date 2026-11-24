@@ -1,0 +1,5 @@
+package = vbanana
+headers = vbanana/VBanana.h
+headerFilter = vbanana/VBanana.h
+staticLibraries = libvbanana.a
+linkerOpts = -lc++

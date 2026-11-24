@@ -2,6 +2,8 @@
 
 #include "Converter.hpp"
 #include "HaxeLua.hpp"
+#include "Doctor.hpp"
+#include "Haxe.hpp"
 #include "Json.hpp"
 #include "Lua.hpp"
 
@@ -618,6 +620,156 @@ static void testHaxeToLua() {
     }
 }
 
+static void testDoctor() {
+    vscript::DoctorOptions lua;
+    const std::string broken =
+        "// stage\n"
+        "function oncreate()\n"
+        "  makeluaSprite('bg', 'back', 0, 0)\n"
+        "  luaSpriteAddAnimationByPrefix('bg', 'idle', 'bg idle', 24, true)\n"
+        "  setPropertyLuaSprite('bg', 'alpha', 0.5)\n"
+        "  var count = 0\n"
+        "  if getPropertyFromClass('ClientPrefs', 'downScroll') && count != 1 then\n"
+        "    count += 1\n"
+        "  end\n"
+        "end\n"
+        "function onBeatHit()\n"
+        "  if curBeat % 2 == 0\n"
+        "    objectPlayAnimation('bg', 'idle', true, 0)\n"
+        "    characterPlayAnim('bf', 'hey', true)\n"
+        "  else if curBeat % 3 == 0 then\n"
+        "    trace('three')\n"
+        "  end\n"
+        "end\n"
+        "function onUpdate(elapsed: Float)\n"
+        "  if !inCutscene then setProperty('health', 1) end\n"
+        "end\n";
+    vscript::DoctorResult r = vscript::fixLuaScript(broken, lua);
+    const std::string& s = r.source;
+    CHECK(r.changed);
+    CHECK(has(s, "-- stage"));
+    CHECK(has(s, "function onCreate()"));
+    CHECK(has(s, "makeLuaSprite('bg', 'back', 0, 0)"));
+    CHECK(has(s, "addAnimationByPrefix('bg', 'idle', 'bg idle', 24, true)"));
+    CHECK(has(s, "setProperty('bg.alpha', 0.5)"));
+    CHECK(has(s, "local count = 0"));
+    CHECK(has(s, "getPropertyFromClass('backend.ClientPrefs', 'data.downScroll') and count ~= 1 then"));
+    CHECK(has(s, "count = count + 1"));
+    CHECK(has(s, "if curBeat % 2 == 0 then"));
+    CHECK(has(s, "playAnim('bg', 'idle', true, false, 0)"));
+    CHECK(has(s, "playAnim('boyfriend', 'hey', true)"));
+    CHECK(has(s, "elseif curBeat % 3 == 0 then"));
+    CHECK(has(s, "debugPrint('three')"));
+    CHECK(has(s, "function onUpdate(elapsed)"));
+    CHECK(has(s, "if not inCutscene then"));
+    CHECK(r.problems.empty());
+    bool parsed = true;
+    try {
+        vscript::parseLua(s);
+    } catch (...) {
+        parsed = false;
+    }
+    CHECK(parsed);
+
+    const std::string good =
+        "local tags = {}\n"
+        "local function spawn(name) makeLuaSprite(name, 'x', 0, 0) table.insert(tags, name) end\n"
+        "function onCreatePost() spawn('a') helper(1) local f = function(v) return v end f(2) end\n"
+        "function helper(n) return n + 1 end\n"
+        "function onEvent(name, v1, v2) if name ~= 'x' then return end end\n";
+    r = vscript::fixLuaScript(good, lua);
+    CHECK(!r.changed);
+    CHECK(r.fixes.empty());
+    CHECK(r.problems.empty());
+
+    vscript::DoctorOptions hx;
+    hx.id = "spooky";
+    const std::string stage =
+        "import states.PlayState;\n"
+        "import funkin.play.Conductor;\n"
+        "import backend.ClientPrefs;\n"
+        "class SpookyStage extends Stage\n"
+        "{\n"
+        "  var light:FunkinSprite;\n"
+        "  function onCreate(event)\n"
+        "  {\n"
+        "    light = FunkinSprite.create(0, 0, Paths.image('halloween_bg'));\n"
+        "    FlxTween.tween(light, {alpha: 1}, 0.5, {ease: FlxEase.quadOut});\n"
+        "  }\n"
+        "  function onUpdate(elapsed:Float)\n"
+        "  {\n"
+        "    if (ClientPrefs.data.flashing) light.alpha -= elapsed;\n"
+        "    trace(\"time \\x41 \" + Conductor.songPosition);\n"
+        "  }\n"
+        "  override function onBeathit(event:SongTimeScriptEvent)\n"
+        "  {\n"
+        "    super.onBeatHit(event);\n"
+        "    game.boyfriend.playAnim('scared', true);\n"
+        "  }\n"
+        "}\n";
+    r = vscript::fixHaxeScript(stage, hx);
+    const std::string& h = r.source;
+    CHECK(has(h, "import funkin.play.PlayState;"));
+    CHECK(has(h, "import funkin.Conductor;"));
+    CHECK(lacks(h, "ClientPrefs"));
+    CHECK(has(h, "import flixel.tweens.FlxTween;"));
+    CHECK(has(h, "import flixel.tweens.FlxEase;"));
+    CHECK(has(h, "import funkin.graphics.FunkinSprite;"));
+    CHECK(has(h, "import funkin.play.stage.Stage;"));
+    CHECK(has(h, "public function new()"));
+    CHECK(has(h, "super(\"spooky\");"));
+    CHECK(has(h, "super.onCreate(event);"));
+    CHECK(has(h, "FunkinSprite.create(0, 0, 'halloween_bg')"));
+    CHECK(has(h, "function onUpdate(event:UpdateScriptEvent)"));
+    CHECK(has(h, "light.alpha -= event.elapsed;"));
+    CHECK(has(h, "Preferences.flashingLights"));
+    CHECK(has(h, "\"time A \" + Conductor.instance.songPosition"));
+    CHECK(has(h, "function onBeatHit(event:SongTimeScriptEvent)"));
+    CHECK(has(h, "PlayState.instance.currentStage.getBoyfriend().playAnimation('scared', true);"));
+    CHECK(lacks(h, "\\x"));
+    bool hxParsed = true;
+    try {
+        vscript::parseHaxe(h);
+    } catch (...) {
+        hxParsed = false;
+    }
+    CHECK(hxParsed);
+    for (const vscript::Issue& i : r.fixes) {
+        if (i.message.find("FlxTween was used") != std::string::npos) CHECK(i.line == 10);
+        if (i.message.find("\"elapsed\" is") != std::string::npos) CHECK(i.line == 12);
+    }
+
+    const std::string fine =
+        "import funkin.play.song.Song;\n"
+        "import funkin.modding.events.ScriptEvent;\n"
+        "class DadSong extends Song {\n"
+        "  function new() { super('dad'); }\n"
+        "  function onSongRetry(event:ScriptEvent) { super.onSongRetry(event); }\n"
+        "  public override function onSongEnd(event:CountdownScriptEvent):Void { super.onSongEnd(event); var p:FlxPoint = null; }\n"
+        "}\n";
+    r = vscript::fixHaxeScript(fine, hx);
+    CHECK(!r.changed);
+    CHECK(r.problems.empty());
+
+    const char* pieces[] = {"function", "end", "if", "then", "(", ")", "'x'", "local", "=", "+=", "!=", "&&", "!", "//", "/*", "*/", "else if",
+        "makeluaSprite", "objectPlayAnimation", "getPropertyLuaSprite", "class", "extends", "Stage", "{", "}", "import", ";", "\"\\x4\"", "onCreate", ","};
+    unsigned seed = 7;
+    for (int round = 0; round < 3000; round++) {
+        std::string text;
+        int n = 1 + static_cast<int>(seed % 40);
+        for (int i = 0; i < n; i++) {
+            seed = seed * 1103515245u + 12345u;
+            text += pieces[(seed >> 8) % (sizeof(pieces) / sizeof(pieces[0]))];
+            text += (seed >> 20) % 4 == 0 ? '\n' : ' ';
+        }
+        char* a = vscript_fix_lua(text.c_str(), "{}");
+        char* b = vscript_fix_hx(text.c_str(), round % 2 ? "{\"engine\":\"codename\"}" : "{}");
+        CHECK(a != nullptr && b != nullptr);
+        vscript_free(a);
+        vscript_free(b);
+    }
+}
+
 int main() {
     testParser();
     testStage();
@@ -631,6 +783,7 @@ int main() {
     testChangeCharacter();
     testRuntimeSafety();
     testHaxeToLua();
+    testDoctor();
     if (failures == 0) std::printf("v-script: all tests passed\n");
     return failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

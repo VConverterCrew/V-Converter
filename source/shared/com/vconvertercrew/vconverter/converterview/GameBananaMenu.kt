@@ -431,7 +431,7 @@ private fun ModRow(
     onGet: () -> Unit
 ) {
     val mono = FontFamily.Monospace
-    val engine = GameBanana.engineOf(mod.name + " " + mod.category)
+    val engine = mod.engine ?: GameBanana.engineOf(mod.name + " " + mod.category)
     Row(
         Modifier
             .fillMaxWidth()
@@ -499,6 +499,16 @@ private fun DetailsPanel(state: GameBananaState, details: GameBananaDetails, mod
             fontFamily = mono,
             fontSize = 12.sp
         )
+        details.detection?.let { found ->
+            Text("Engine: ${found.label} (${found.confidence}% sure)", color = Banana.copy(alpha = 0.85f), fontFamily = mono, fontSize = 12.sp)
+        }
+        if (details.requirements.isNotEmpty()) {
+            Text("Needs: " + details.requirements.joinToString { it.title }, color = Color.White.copy(alpha = 0.7f), fontFamily = mono, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        val summary = details.description.ifBlank { details.text }
+        if (summary.isNotBlank()) {
+            Text(summary, color = Color.White.copy(alpha = 0.6f), fontFamily = mono, fontSize = 11.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
+        }
         Text("FILES", color = Color.White, fontFamily = mono, fontSize = 14.sp, fontWeight = FontWeight.Bold)
         if (details.files.isEmpty()) Text("This mod has no files on GameBanana.", color = Color.White.copy(alpha = 0.7f), fontFamily = mono, fontSize = 12.sp)
         val best = GameBanana.bestFile(details.files)
@@ -521,11 +531,25 @@ private fun FileRow(file: GameBananaFile, recommended: Boolean, enabled: Boolean
         Column(Modifier.weight(1f)) {
             Text(file.name, color = Color.White, fontFamily = mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                listOfNotNull(size(file.size), "${count(file.downloads)} downloads", "recommended".takeIf { recommended }, "not scanned clean".takeIf { !file.clean }).joinToString(" · "),
+                listOfNotNull(
+                    size(file.size),
+                    "${count(file.downloads)} downloads",
+                    when (file.role) {
+                        "mod" -> "mod folder"
+                        "build" -> "game build"
+                        "source" -> "source code"
+                        "patch" -> "patch"
+                        else -> null
+                    },
+                    file.engine,
+                    "recommended".takeIf { recommended },
+                    "not scanned clean".takeIf { !file.clean }
+                ).joinToString(" · "),
                 color = if (file.clean) Color.White.copy(alpha = 0.65f) else Color(0xFFFFB86B),
                 fontFamily = mono,
                 fontSize = 11.sp
             )
+            if (file.warning.isNotBlank()) Text(file.warning, color = Color(0xFFFFB86B), fontFamily = mono, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (file.description.isNotBlank()) Text(file.description, color = Color.White.copy(alpha = 0.55f), fontFamily = mono, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         Text(

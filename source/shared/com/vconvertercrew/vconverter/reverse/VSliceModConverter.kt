@@ -345,7 +345,7 @@ class VSliceModConverter(
             try {
                 val name = path.substringAfterLast('/')
                 val text = files.readText(path)
-                val result = HxcToPsych.toLua(HxcToPsych.convert(name, text) { stageLayers[it] }, text, name)
+                val result = HxcToPsych.convertFixed(name, text) { stageLayers[it] }
                 result.files.forEach { write(it.path, it.content) }
                 results += scan.relative(path) to result
             } catch (e: Exception) {

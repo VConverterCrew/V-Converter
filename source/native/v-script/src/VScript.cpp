@@ -4,6 +4,7 @@
 #include "Funkin.hpp"
 #include "Generator.hpp"
 #include "HaxeLua.hpp"
+#include "Doctor.hpp"
 #include "Json.hpp"
 
 #include <cstdlib>
@@ -113,6 +114,46 @@ char* vscript_convert_hx(const char* source, const char* options_json) {
     }
     out.set("issues", issues);
     return copy(out.dump());
+}
+
+static char* doctorJson(const vscript::DoctorResult& result) {
+    using namespace vscript;
+    Json out = Json::object();
+    out.set("source", Json::string(result.source));
+    out.set("changed", Json::boolean(result.changed));
+    auto list = [](const std::vector<Issue>& items) {
+        Json array = Json::array();
+        for (const Issue& i : items) {
+            Json item = Json::object();
+            item.set("line", Json::number(i.line));
+            item.set("message", Json::string(i.message));
+            array.push(item);
+        }
+        return array;
+    };
+    out.set("fixes", list(result.fixes));
+    out.set("problems", list(result.problems));
+    return copy(out.dump());
+}
+
+static vscript::DoctorOptions doctorOptions(const char* options_json) {
+    using namespace vscript;
+    bool ok = false;
+    Json options = Json::parse(options_json ? options_json : "{}", ok);
+    if (!ok) options = Json::object();
+    DoctorOptions o;
+    o.engine = options["engine"].text("vslice");
+    o.fileName = options["fileName"].text();
+    o.id = options["id"].text();
+    return o;
+}
+
+char* vscript_fix_lua(const char* source, const char* options_json) {
+    return doctorJson(vscript::fixLuaScript(source ? source : "", doctorOptions(options_json)));
+}
+
+char* vscript_fix_hx(const char* source, const char* options_json) {
+    return doctorJson(vscript::fixHaxeScript(source ? source : "", doctorOptions(options_json)));
 }
 
 char* vscript_generate(const char* spec_json) {

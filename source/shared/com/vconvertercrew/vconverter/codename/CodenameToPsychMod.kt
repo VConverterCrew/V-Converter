@@ -1,5 +1,6 @@
 package com.vconvertercrew.vconverter.codename
 
+import com.vconvertercrew.vconverter.script.ScriptDoctor
 import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
 import com.vconvertercrew.vconverter.core.AnimateAtlas
 import com.vconvertercrew.vconverter.core.AnimateAtlases
@@ -268,7 +269,10 @@ class CodenameToPsychMod(
     private fun convertScript(path: String?, target: String, scope: CodenameScriptTarget, context: CodenamePsychScriptContext): Boolean {
         step("Script ${target.substringAfterLast('/')}")
         return try {
-            val source = path?.let { files.readText(it) } ?: ""
+            val raw = path?.let { files.readText(it) } ?: ""
+            val check = if (path != null) ScriptDoctor.haxe(raw, path.substringAfterLast('/'), "codename") else null
+            val source = check?.source ?: raw
+            if (check != null && !check.isClean) report.section("Script fixes · ${path?.let(scan::relative) ?: target}", check.lines())
             val lua = CodenameToPsychLua.convert(target, path?.substringAfterLast('/') ?: target, source, scope, context)
             if (lua != null) {
                 write(lua.first, lua.second.source)

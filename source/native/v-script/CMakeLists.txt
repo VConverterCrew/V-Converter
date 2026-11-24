@@ -24,6 +24,8 @@ add_library(VScript STATIC
     src/Stage.cpp
     src/HaxeParser.cpp
     src/HaxeLua.cpp
+    src/ApiData.cpp
+    src/Doctor.cpp
     src/VScript.cpp
     include/vscript/VScript.h
 )

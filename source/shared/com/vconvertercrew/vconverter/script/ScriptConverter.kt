@@ -217,13 +217,15 @@ $body
         planned.forEach { plan ->
             val (source, target, className, host, ownEvent) = plan
             val ext = source.path.substringAfterLast('.', "").lowercase()
+            val check = if (ext == "lua") ScriptDoctor.lua(source.text, source.path) else null
+            val text = check?.source ?: source.text
             val generated = try {
                 if (ext == "lua") {
                     val direct = if (NativeScripts.available) {
-                        NativeScripts.convert(source.text, className, NativeScripts.options(className, host, target, noteTypes, eventNames, source.skipLines))
+                        NativeScripts.convert(text, className, NativeScripts.options(className, host, target, noteTypes, eventNames, source.skipLines))
                     } else null
                     if (direct != null) nativeScripts++
-                    direct ?: LuaToHScript(className, host.id, target, siblings, noteTypeArray, eventNames, ownEvent, source.skipLines, host).convert(source.text)
+                    direct ?: LuaToHScript(className, host.id, target, siblings, noteTypeArray, eventNames, ownEvent, source.skipLines, host).convert(text)
                 } else {
                     PsychHScriptWrapper(className, host.id, target, siblings, noteTypeArray, eventNames, ownEvent, host = host).convert(source.text)
                 }
@@ -244,6 +246,7 @@ $body
             hooks += generated.callbacks.size
             apiUsed += generated.apiCalls
             val lines = mutableListOf("Callbacks: ${generated.callbacks.joinToString().ifEmpty { "none" }}")
+            check?.lines()?.take(40)?.let { lines += it }
             generated.issues.take(40).forEach { lines += if (it.line > 0) "Line ${it.line}: ${it.message}" else it.message }
             if (generated.issues.size > 40) lines += "…and ${generated.issues.size - 40} more notes"
             report.section(label, lines)

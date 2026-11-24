@@ -44,6 +44,13 @@ object GameBananaDownloads {
                     }
                 }
                 if (done == 0L) throw GameBananaException("GameBanana sent an empty file.")
+                if (file.md5.length == 32 && VBananaNative.available) {
+                    val sum = VBananaNative.md5File(partial.absolutePath)
+                    if (sum != null && !sum.equals(file.md5, ignoreCase = true)) {
+                        partial.delete()
+                        throw GameBananaException("The download is damaged (its MD5 doesn't match GameBanana's). Try again.")
+                    }
+                }
                 target.delete()
                 if (!partial.renameTo(target)) {
                     partial.copyTo(target, overwrite = true)

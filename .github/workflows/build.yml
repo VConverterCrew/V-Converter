@@ -178,6 +178,9 @@ jobs:
           cmake -S source/native/v-archive -B build/v-archive -DVARCHIVE_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release > /dev/null
           cmake --build build/v-archive --parallel
           ctest --test-dir build/v-archive --output-on-failure
+          cmake -S source/native/v-banana -B build/v-banana -DVBANANA_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release > /dev/null
+          cmake --build build/v-banana --parallel
+          ctest --test-dir build/v-banana --output-on-failure
 
       - name: Build package and portable app
         env:

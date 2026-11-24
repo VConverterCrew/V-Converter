@@ -34,7 +34,7 @@ val vscriptSource = File(source, "native/v-script")
 
 fun vscriptLibrary(target: String): File = layout.buildDirectory.dir("vscript/$target").get().asFile
 
-val vscriptFiles = listOf("Json", "LuaParser", "Converter", "Builtins", "Generator", "Funkin", "Chart", "Character", "Stage", "VScript")
+val vscriptFiles = listOf("Json", "LuaParser", "Converter", "Builtins", "Generator", "Funkin", "Chart", "Character", "Stage", "HaxeParser", "HaxeLua", "ApiData", "Doctor", "VScript")
 
 val vscriptTasks = mapOf(
     "iosArm64" to ("iphoneos" to "arm64-apple-ios14.0"),
@@ -54,6 +54,34 @@ val vscriptTasks = mapOf(
             "sh", "-c",
             "mkdir -p '${out.absolutePath}' && $compile && rm -f '${out.absolutePath}/libvscript.a' && " +
                 "xcrun -sdk ${platform.first} ar rcs '${out.absolutePath}/libvscript.a' $objects"
+        )
+    }
+}
+
+val vbananaSource = File(source, "native/v-banana")
+
+fun vbananaLibrary(target: String): File = layout.buildDirectory.dir("vbanana/$target").get().asFile
+
+val vbananaFiles = listOf("Json", "Banana")
+
+val vbananaTasks = mapOf(
+    "iosArm64" to ("iphoneos" to "arm64-apple-ios14.0"),
+    "iosSimulatorArm64" to ("iphonesimulator" to "arm64-apple-ios14.0-simulator")
+).mapValues { (target, platform) ->
+    tasks.register<Exec>("buildVBanana${target.replaceFirstChar { it.uppercase() }}") {
+        val out = vbananaLibrary(target)
+        inputs.dir(vbananaSource)
+        outputs.file(File(out, "libvbanana.a"))
+        val compile = vbananaFiles.joinToString(" && ") { name ->
+            "xcrun -sdk ${platform.first} clang++ -std=c++17 -O2 -target ${platform.second} " +
+                "-I '${File(vbananaSource, "include").absolutePath}' -I '${File(vbananaSource, "src").absolutePath}' " +
+                "-c '${File(vbananaSource, "src/$name.cpp").absolutePath}' -o '${out.absolutePath}/$name.o'"
+        }
+        val objects = vbananaFiles.joinToString(" ") { "'${out.absolutePath}/$it.o'" }
+        commandLine(
+            "sh", "-c",
+            "mkdir -p '${out.absolutePath}' && $compile && rm -f '${out.absolutePath}/libvbanana.a' && " +
+                "xcrun -sdk ${platform.first} ar rcs '${out.absolutePath}/libvbanana.a' $objects"
         )
     }
 }
@@ -87,6 +115,14 @@ kotlin {
         }
         tasks.named(vscriptInterop.interopProcessingTaskName) {
             dependsOn(vscriptTasks.getValue(target.name))
+        }
+        val vbananaInterop = target.compilations.getByName("main").cinterops.create("vbanana") {
+            defFile(File(source, "native/cinterop/vbanana.def"))
+            includeDirs(File(vbananaSource, "include"))
+            extraOpts("-libraryPath", vbananaLibrary(target.name).absolutePath)
+        }
+        tasks.named(vbananaInterop.interopProcessingTaskName) {
+            dependsOn(vbananaTasks.getValue(target.name))
         }
     }
 

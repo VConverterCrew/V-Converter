@@ -4,6 +4,7 @@ import com.vconvertercrew.vconverter.core.Report
 import com.vconvertercrew.vconverter.core.ReportBuilder
 import com.vconvertercrew.vconverter.script.HaxeToLua
 import com.vconvertercrew.vconverter.script.HxImports
+import com.vconvertercrew.vconverter.script.ScriptDoctor
 import com.vconvertercrew.vconverter.script.ReflectCalls
 
 enum class HxcKind(val label: String) {
@@ -57,6 +58,13 @@ object HxcToPsych {
         "funkin.play.event.SongEvent", "funkin.data.event.SongEventSchema", "funkin.play.notes.notekind.NoteKind", "funkin.Preferences",
         "funkin.modding.events.ScriptEvent", "funkin.util.HapticUtil", "funkin.FunkinMemory"
     ) + (characterParents - "BaseCharacter").map { "funkin.play.character.$it" }
+
+    fun convertFixed(fileName: String, source: String, stageLayers: (String) -> Map<String, Int>? = { null }): HxcResult {
+        val check = ScriptDoctor.haxe(source, fileName)
+        val fixed = check?.source ?: source
+        val result = toLua(convert(fileName, fixed, stageLayers), fixed, fileName)
+        return if (check == null || check.isClean) result else result.copy(notes = check.lines() + result.notes)
+    }
 
     fun toLua(result: HxcResult, source: String, fileName: String): HxcResult {
         if (result.kind == HxcKind.OTHER) return result
