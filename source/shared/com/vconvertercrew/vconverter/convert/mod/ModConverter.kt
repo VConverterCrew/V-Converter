@@ -1,5 +1,6 @@
 package com.vconvertercrew.vconverter.convert.mod
 
+import com.vconvertercrew.vconverter.platform.inputStream
 import com.vconvertercrew.vconverter.convert.character.BaseCharacterScripts
 import com.vconvertercrew.vconverter.convert.character.CharacterSource
 import com.vconvertercrew.vconverter.convert.character.PsychCharacter

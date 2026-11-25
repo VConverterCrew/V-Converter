@@ -178,7 +178,7 @@ object NoteStyleReaders {
         val info = ArrayList<String>()
         val shared = ArrayList<Anim>()
         val strumAnims = HashMap<NoteDir, MutableList<Anim>>()
-        val strumBlock = Regex("<strum\\b([^>]*)>(.*?)</strum>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+        val strumBlock = Regex("<strum\\b([^>]*)>([\\s\\S]*?)</strum>", RegexOption.IGNORE_CASE)
         val animTag = Regex("<anim\\b([^>]*)/?>", RegexOption.IGNORE_CASE)
         fun anim(a: Map<String, String>): Anim? {
             val prefix = a["anim"] ?: a["name"] ?: return null
