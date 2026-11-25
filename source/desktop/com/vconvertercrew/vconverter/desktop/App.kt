@@ -373,8 +373,9 @@ private fun ModScreen(state: AppState) {
                 state.tool = EditorTool.PLAYTEST
             }
         }
-        if (mod.report != null && state.lastMod != null && mod.direction.to == Engine.VSLICE) {
-            Primary("Test in Friday Night Funkin'", accent, !busy) { state.testInFunkin { mod.status = it } }
+        val game = state.lastGame
+        if (mod.report != null && state.lastMod != null && game != null && game.engine == mod.direction.to.key) {
+            Primary(game.testLabel, accent, !busy) { state.testInGame { mod.status = it } }
         }
         mod.report?.let { ReportView(it, accent) }
     }

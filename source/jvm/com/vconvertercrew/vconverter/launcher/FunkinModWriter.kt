@@ -4,7 +4,7 @@ import com.vconvertercrew.vconverter.mod.ModConverter
 import com.vconvertercrew.vconverter.mod.ModWriter
 import com.vconvertercrew.vconverter.platform.InputStream
 
-class FunkinModWriter(private val target: ModWriter, private val prefix: String) : ModWriter {
+class FunkinModWriter(private val target: ModWriter, private val prefix: String, private val game: LaunchGame = LaunchGame.FUNKIN) : ModWriter {
     var count = 0
         private set
     private var hasMeta = false
@@ -21,13 +21,13 @@ class FunkinModWriter(private val target: ModWriter, private val prefix: String)
         val clean = path.replace('\\', '/').trimStart('/')
         synchronized(this) {
             count++
-            if (clean == META) hasMeta = true
+            if (clean.equals(game.metaFile, ignoreCase = true)) hasMeta = true
         }
         return clean
     }
 
     fun finish(title: String) {
-        if (!hasMeta) writeText(META, metadata(title))
+        if (!hasMeta) writeText(game.metaFile, if (game == LaunchGame.PSYCH) psychPack(title) else metadata(title))
     }
 
     companion object {
@@ -51,6 +51,8 @@ class FunkinModWriter(private val target: ModWriter, private val prefix: String)
 
         fun metadata(title: String): String =
             "{\n  \"title\": ${quote(title)},\n  \"description\": \"Converted with V-Converter.\",\n  \"contributors\": [],\n  \"homepage\": \"\",\n  \"api_version\": \"${ModConverter.API_VERSION}\",\n  \"mod_version\": \"1.0.0\",\n  \"license\": \"\"\n}"
+
+        fun psychPack(title: String): String = com.vconvertercrew.vconverter.psych.PsychWriters.pack(title.ifBlank { "Converted Mod" }, "Converted with V-Converter.")
 
         fun prefix(name: String, insideMods: Boolean): String = if (insideMods) "$name/" else "mods/$name/"
     }

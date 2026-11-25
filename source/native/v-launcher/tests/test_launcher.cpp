@@ -120,6 +120,38 @@ static void testLaunch(const fs::path& root) {
 #endif
 }
 
+static void testPsych(const fs::path& root) {
+    char out[4096];
+    fs::path folder = root / "psych" / "PsychEngine-1.0.4";
+#if defined(_WIN32)
+    fs::path game = folder / "PsychEngine.exe";
+    writeFile(game, "MZ");
+#else
+    fs::path game = folder / "PsychEngine";
+    writeFile(game, "#!/bin/sh\n");
+    fs::permissions(game, fs::perms::owner_all | fs::perms::group_read | fs::perms::others_read);
+#endif
+    std::string top = (root / "psych").string();
+    CHECK(vlauncher_resolve_game(VLAUNCHER_GAME_PSYCH, top.c_str(), out, sizeof out) == VLAUNCHER_OK);
+    CHECK(fs::equivalent(out, game));
+    CHECK(vlauncher_resolve_game(VLAUNCHER_GAME_FUNKIN, top.c_str(), out, sizeof out) == VLAUNCHER_NOT_FOUND);
+    std::string funkinOnly = (root / "funkin-linux-64bit").string();
+    CHECK(vlauncher_resolve_game(VLAUNCHER_GAME_PSYCH, funkinOnly.c_str(), out, sizeof out) == VLAUNCHER_NOT_FOUND);
+    CHECK(vlauncher_resolve_game(7, top.c_str(), out, sizeof out) == VLAUNCHER_INVALID);
+    const char* roots[] = {funkinOnly.c_str(), top.c_str()};
+    CHECK(vlauncher_search_game(VLAUNCHER_GAME_PSYCH, roots, 2, out, sizeof out) == VLAUNCHER_OK);
+    CHECK(fs::equivalent(out, game));
+
+    char mods[4096];
+    CHECK(vlauncher_mods_folder(game.string().c_str(), mods, sizeof mods) == VLAUNCHER_OK);
+    writeFile(folder / "modsList.txt", "Other|1\r\nMy Mod|0\nMy Mod|1\n");
+    CHECK(vlauncher_enable_psych_mod(mods, "My Mod") == VLAUNCHER_OK);
+    CHECK(readFile(folder / "modsList.txt") == "Other|1\nMy Mod|1");
+    CHECK(vlauncher_enable_psych_mod(mods, "New: Mod") == VLAUNCHER_OK);
+    CHECK(readFile(folder / "modsList.txt") == "New_ Mod|1\nOther|1\nMy Mod|1");
+    CHECK(vlauncher_enable_psych_mod(mods, "..") == VLAUNCHER_INVALID);
+}
+
 int main() {
     fs::path root = fs::temp_directory_path() / ("vlauncher-test-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     fs::create_directories(root);
@@ -129,6 +161,7 @@ int main() {
     testResolve(root);
     testInstall(root);
     testLaunch(root);
+    testPsych(root);
     std::error_code error;
     fs::remove_all(root, error);
     if (failures == 0) std::printf("v-launcher: all tests passed\n");

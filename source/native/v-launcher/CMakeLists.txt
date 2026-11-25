@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(VLauncher
-    VERSION 1.0.0
-    DESCRIPTION "Finds, fills and opens a Friday Night Funkin' install for V-Converter, written in C++"
+    VERSION 1.1.0
+    DESCRIPTION "Finds, fills and opens Friday Night Funkin' and Psych Engine installs for V-Converter, written in C++"
     LANGUAGES CXX
 )
 

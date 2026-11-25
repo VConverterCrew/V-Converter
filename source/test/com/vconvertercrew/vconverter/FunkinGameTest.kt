@@ -2,6 +2,7 @@ package com.vconvertercrew.vconverter
 
 import com.vconvertercrew.vconverter.launcher.FunkinGame
 import com.vconvertercrew.vconverter.launcher.FunkinModWriter
+import com.vconvertercrew.vconverter.launcher.LaunchGame
 import com.vconvertercrew.vconverter.mod.ModWriter
 import com.vconvertercrew.vconverter.launcher.NativeLauncher
 import org.junit.Assert.assertEquals
@@ -70,7 +71,7 @@ class FunkinGameTest {
     fun nativeFindsInstallsAndLaunches() {
         if (System.getProperty("vconverter.launcher.library") == null) return
         assertTrue(NativeLauncher.loadError ?: "", NativeLauncher.loaded)
-        assertEquals("1.0.0", NativeLauncher.version())
+        assertEquals("1.1.0", NativeLauncher.version())
         val dir = Files.createTempDirectory("funkin-native").toFile().canonicalFile
         try {
             val folder = File(dir, "funkin-linux-64bit").apply { mkdirs() }
@@ -104,6 +105,47 @@ class FunkinGameTest {
         } finally {
             dir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun nativeFindsPsychEngine() {
+        if (System.getProperty("vconverter.launcher.library") == null) return
+        val dir = Files.createTempDirectory("psych-native").toFile().canonicalFile
+        try {
+            val folder = File(dir, "PsychEngine-1.0.4").apply { mkdirs() }
+            val game = File(folder, "PsychEngine")
+            game.writeText("#!/bin/sh\n")
+            game.setExecutable(true)
+            assertNull(FunkinGame.search(listOf(dir.path), LaunchGame.FUNKIN))
+            val install = FunkinGame.search(listOf(dir.path), LaunchGame.PSYCH)
+            assertNotNull(install)
+            assertEquals(game, install!!.executable)
+            assertEquals(LaunchGame.PSYCH, install.game)
+            File(folder, "modsList.txt").writeText("Converted|0\nOther|1")
+            val converted = File(dir, "out/Converted").apply { mkdirs() }
+            File(converted, "data").mkdirs()
+            File(converted, "data/a.json").writeText("a")
+            val installed = FunkinGame.install(install, converted, "x")
+            assertTrue(File(install.mods, "Converted/pack.json").isFile)
+            assertEquals("Converted", com.vconvertercrew.vconverter.json.JSONObject(File(install.mods, "Converted/pack.json").readText()).getString("name"))
+            assertEquals("Converted|1\nOther|1", File(folder, "modsList.txt").readText())
+            assertEquals(1, installed.files)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun gamesMatchEngines() {
+        assertEquals(LaunchGame.PSYCH, LaunchGame.forEngine("psych"))
+        assertEquals(LaunchGame.FUNKIN, LaunchGame.forEngine("vslice"))
+        assertNull(LaunchGame.forEngine("codename"))
+        val recorder = Recorder()
+        val writer = FunkinModWriter(recorder, FunkinModWriter.prefix("P", false), LaunchGame.PSYCH)
+        writer.writeText("data/x.json", "{}")
+        writer.finish("P")
+        assertEquals(listOf("mods/P/data/x.json", "mods/P/pack.json"), recorder.files.keys.toList())
+        assertEquals("P", com.vconvertercrew.vconverter.json.JSONObject(recorder.files.getValue("mods/P/pack.json")).getString("name"))
     }
 
     private class Recorder : ModWriter {

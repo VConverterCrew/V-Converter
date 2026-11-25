@@ -98,6 +98,21 @@ object AppSettings {
         runCatching { if (value.isEmpty()) prefs?.remove("funkinPath") else prefs?.put("funkinPath", value) }
     }
 
+    var psychPath by mutableStateOf(prefs?.get("psychPath", "") ?: "")
+        private set
+
+    fun updatePsychPath(value: String) {
+        psychPath = value
+        runCatching { if (value.isEmpty()) prefs?.remove("psychPath") else prefs?.put("psychPath", value) }
+    }
+
+    fun gamePath(game: com.vconvertercrew.vconverter.launcher.LaunchGame): String =
+        if (game == com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH) psychPath else funkinPath
+
+    fun updateGamePath(game: com.vconvertercrew.vconverter.launcher.LaunchGame, value: String) {
+        if (game == com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH) updatePsychPath(value) else updateFunkinPath(value)
+    }
+
     var vslicePreview by mutableStateOf(prefs?.getBoolean("vslicePreview", false) ?: false)
         private set
 
@@ -277,6 +292,11 @@ fun OptionsOverlay() {
         MenuOption.Action("Friday Night Funkin' Game", "Picks the Friday Night Funkin' folder that Test In Friday Night Funkin' installs mods into and opens. Now: ${AppSettings.funkinPath.ifEmpty { "found automatically" }}.") {
             Dialogs.chooseFolder("Choose the Friday Night Funkin' folder")?.let { picked ->
                 runCatching { com.vconvertercrew.vconverter.launcher.FunkinGame.resolve(picked) }.getOrNull()?.let { AppSettings.updateFunkinPath(it.executable.path) }
+            }
+        },
+        MenuOption.Action("Psych Engine Game", "Picks the Psych Engine folder that Test In Psych Engine installs mods into and opens. Now: ${AppSettings.psychPath.ifEmpty { "found automatically" }}.") {
+            Dialogs.chooseFolder("Choose the Psych Engine folder")?.let { picked ->
+                runCatching { com.vconvertercrew.vconverter.launcher.FunkinGame.resolve(picked, com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH) }.getOrNull()?.let { AppSettings.updatePsychPath(it.executable.path) }
             }
         },
         MenuOption.TextEntry("Online Server", "Leave it empty to connect to a V-Converter server automatically, or type the address of your own server. Press Enter on it to edit.", { AppSettings.serverUrl }, AppSettings::updateServerUrl, "Automatic"),

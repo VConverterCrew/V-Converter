@@ -56,14 +56,15 @@ private fun rememberPicker(onPick: (List<android.net.Uri>) -> Unit): () -> Unit 
     return { launcher.launch(arrayOf("*/*")) }
 }
 
-private class GameTest(val action: (() -> Unit)?, val problem: String?)
+private class GameTest(val action: (() -> Unit)?, val problem: String?, val label: String, val note: String)
 
 @Composable
 private fun rememberGameTest(viewModel: BaseConverterViewModel): GameTest {
     var problem by remember { mutableStateOf<String?>(null) }
     val open = rememberFunkinInstaller(viewModel) { problem = it }
     LaunchedEffect(viewModel.download, viewModel.output) { problem = null }
-    return GameTest(if (viewModel.vsliceOutput && viewModel.download != null) open else null, problem)
+    val game = viewModel.testGame ?: com.vconvertercrew.vconverter.launcher.LaunchGame.FUNKIN
+    return GameTest(if (viewModel.testGame != null && viewModel.download != null) open else null, problem, game.testLabel, game.testNote)
 }
 
 internal fun status(viewModel: BaseConverterViewModel): Pair<String?, Boolean> =
@@ -116,6 +117,8 @@ fun FunkinChartsConverter(
         zipLabel = "Download Zip",
         folderLabel = if (modFolderName != null) "Save Into Mod" else "Save To Mod Folder",
         onTestGame = game.action,
+        testGameLabel = game.label,
+        testGameNote = game.note,
         onPlayTest = if (launcher != null && playable(output) && output != null) {
             { launcher.files(output.files.map { it.relativePath to (it.bytes ?: it.content.toByteArray()) }, "Charts result") }
         } else null,
@@ -176,6 +179,8 @@ fun FunkinFilesConverter(
         zipLabel = "Download Zip",
         folderLabel = if (modFolderName != null) "Save Into Mod" else "Save To Mod Folder",
         onTestGame = game.action,
+        testGameLabel = game.label,
+        testGameNote = game.note,
         onBack = onBack
     )
     FunkinConverterMenu(spec, art, FunkinStripColors, overlay = overlay)
@@ -227,6 +232,8 @@ fun FunkinCharactersConverter(
         zipLabel = "Download Zip",
         folderLabel = if (modFolderName != null) "Save Into Mod" else "Save To Mod Folder",
         onTestGame = game.action,
+        testGameLabel = game.label,
+        testGameNote = game.note,
         onBack = onBack
     )
     FunkinConverterMenu(spec, art, FunkinStripColors, overlay = overlay)
@@ -301,6 +308,8 @@ internal fun FunkinModConverterMenu(
         installLabel = if (modFolderName != null) "Convert Into Mod" else "Convert Into Folder",
         zipLabel = "Download Zip",
         onTestGame = game.action,
+        testGameLabel = game.label,
+        testGameNote = game.note,
         onBack = onBack
     )
     FunkinModMenu(spec, art, gameBanana = banana, overlay = overlay)

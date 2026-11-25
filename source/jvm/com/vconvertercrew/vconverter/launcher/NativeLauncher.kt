@@ -26,6 +26,9 @@ object NativeLauncher {
     @JvmStatic external fun version(): String
     @JvmStatic external fun resolve(path: String): String?
     @JvmStatic external fun search(roots: Array<String>): String?
+    @JvmStatic external fun resolveGame(game: Int, path: String): String?
+    @JvmStatic external fun searchGame(game: Int, roots: Array<String>): String?
+    @JvmStatic external fun enablePsychMod(mods: String, name: String): Int
     @JvmStatic external fun modsFolder(executable: String): String?
     @JvmStatic external fun installFolder(source: String, mods: String, name: String): Int
     @JvmStatic external fun launch(executable: String): Int

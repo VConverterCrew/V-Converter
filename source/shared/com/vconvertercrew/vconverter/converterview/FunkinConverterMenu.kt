@@ -107,6 +107,7 @@ class ConverterMenuSpec(
     val onPlayTest: (() -> Unit)? = null,
     val onTestGame: (() -> Unit)? = null,
     val testGameLabel: String = "Test In Friday Night Funkin'",
+    val testGameNote: String = "Puts the mod in Friday Night Funkin's mods folder and switches to the game.",
     val options: List<MenuOption> = emptyList(),
     val previews: List<ChartPreview> = emptyList(),
     val preview: ChartPreview? = null,
@@ -261,7 +262,7 @@ fun FunkinConverterMenu(spec: ConverterMenuSpec, art: ConverterArt, stripColors:
         spec.onSaveFolder?.let { save -> add(ConverterItem(spec.folderLabel, "Converts if needed, then writes into a mod folder.", "pico", spec.canConvert && !spec.busy, run = { whenReady(save) })) }
         add(ConverterItem(spec.zipLabel, "Converts if needed, then saves one .zip.", "pico", spec.canConvert && !spec.busy, run = { whenReady(spec.onSaveZip) }))
         spec.onPlayTest?.let { play -> add(ConverterItem("PlayTest", "Plays the converted result.", "bf", ready && !spec.busy, run = play)) }
-        spec.onTestGame?.let { test -> add(ConverterItem(spec.testGameLabel, "Puts the mod in Friday Night Funkin's mods folder and switches to the game.", "bf", !spec.busy, run = test)) }
+        spec.onTestGame?.let { test -> add(ConverterItem(spec.testGameLabel, spec.testGameNote, "bf", !spec.busy, run = test)) }
         if (spec.rows.isNotEmpty()) add(ConverterItem("Clear All", "Removes every file.", "face", !spec.busy, run = spec.onClear))
         add(ConverterItem("Back", spec.backHint, null, true, run = { leaving = true }))
     }

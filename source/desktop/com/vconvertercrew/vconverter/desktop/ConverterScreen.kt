@@ -75,9 +75,11 @@ fun FunkinConverterScreen(state: AppState) {
         onPlayTest = if (output != null && output.files.any { playableResult(it.relativePath) }) {
             { state.playTestFiles(output.files.map { it.relativePath to (it.bytes ?: it.content.encodeToByteArray()) }, "${state.tab.label} result") }
         } else null,
-        onTestGame = if (state.lastMod != null && state.direction.to == Engine.VSLICE && output != null) {
-            { state.testInFunkin { files.status = it } }
+        onTestGame = if (state.lastMod != null && state.lastGame?.engine == state.direction.to.key && output != null) {
+            { state.testInGame { files.status = it } }
         } else null,
+        testGameLabel = state.lastGame?.testLabel ?: "Test In Friday Night Funkin'",
+        testGameNote = state.lastGame?.testNote ?: "Puts the mod in Friday Night Funkin's mods folder and switches to the game.",
         options = if (charts && files.items.any { it.kind == "chart" }) ConverterMenus.chartOptions(
             files.chartFields,
             { files.tweaks },
@@ -148,9 +150,11 @@ fun FunkinModScreen(state: AppState) {
                 state.tool = EditorTool.PLAYTEST
             }
         } else null,
-        onTestGame = if (mod.report != null && state.lastMod != null && state.direction.to == Engine.VSLICE) {
-            { state.testInFunkin { mod.status = it } }
+        onTestGame = if (mod.report != null && state.lastMod != null && state.lastGame?.engine == state.direction.to.key) {
+            { state.testInGame { mod.status = it } }
         } else null,
+        testGameLabel = state.lastGame?.testLabel ?: "Test In Friday Night Funkin'",
+        testGameNote = state.lastGame?.testNote ?: "Puts the mod in Friday Night Funkin's mods folder and switches to the game.",
         onBack = {
             MainMenu.open = true
             MainMenu.list = "converter"

@@ -77,6 +77,17 @@ abstract class BaseConverterViewModel(application: Application) : AndroidViewMod
 
     open val vsliceOutput: Boolean get() = vsliceTarget
 
+    var psychTarget: Boolean = false
+
+    open val psychOutput: Boolean get() = psychTarget
+
+    val testGame: com.vconvertercrew.vconverter.launcher.LaunchGame?
+        get() = when {
+            vsliceOutput -> com.vconvertercrew.vconverter.launcher.LaunchGame.FUNKIN
+            psychOutput -> com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH
+            else -> null
+        }
+
     protected open val wholeMod: Boolean get() = false
 
     protected open fun writeDownload(writer: ModWriter) {
@@ -115,20 +126,21 @@ abstract class BaseConverterViewModel(application: Application) : AndroidViewMod
 
     fun installToFunkin(tree: Uri, onInstalled: () -> Unit, onFailed: () -> Unit) {
         if (!canDownload) return
+        val game = testGame ?: return
         val name = funkinModName()
         runTask {
             try {
                 val count = withContext(Dispatchers.IO) {
                     val inside = com.vconvertercrew.vconverter.launcher.FunkinFolder.insideMods(context, tree)
-                    val writer = com.vconvertercrew.vconverter.launcher.FunkinModWriter(com.vconvertercrew.vconverter.io.TreeModWriter(context, tree), com.vconvertercrew.vconverter.launcher.FunkinModWriter.prefix(name, inside))
+                    val writer = com.vconvertercrew.vconverter.launcher.FunkinModWriter(com.vconvertercrew.vconverter.io.TreeModWriter(context, tree), com.vconvertercrew.vconverter.launcher.FunkinModWriter.prefix(name, inside), game)
                     VSlicePreview.write(writer, vsliceOutput && !wholeMod) { writeDownload(it) }
                     writer.finish(name)
                     writer.count
                 }
-                status = StatusMessage.Success("Installed $count file(s) into Friday Night Funkin' (mods/$name). Turn it on in the game's Mods menu.")
+                status = StatusMessage.Success("Installed $count file(s) into ${game.title} (mods/$name). ${game.turnOn}")
                 onInstalled()
             } catch (e: Exception) {
-                status = failureMessage(e, "Could not write into Friday Night Funkin's mods folder.")
+                status = failureMessage(e, "Could not write into ${game.title}'s mods folder.")
                 if (e !is ModCancelledException) onFailed()
             }
         }

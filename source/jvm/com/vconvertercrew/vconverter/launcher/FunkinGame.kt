@@ -3,7 +3,7 @@ package com.vconvertercrew.vconverter.launcher
 import java.io.File
 import java.util.zip.ZipFile
 
-class FunkinInstall(val executable: File, val mods: File)
+class FunkinInstall(val executable: File, val mods: File, val game: LaunchGame = LaunchGame.FUNKIN)
 
 class InstalledMod(val folder: File, val files: Int)
 
@@ -38,17 +38,25 @@ object FunkinGame {
         return roots.distinct()
     }
 
-    fun resolve(path: File): FunkinInstall? {
+    fun resolve(path: File, game: LaunchGame = LaunchGame.FUNKIN): FunkinInstall? {
         native()
-        val executable = NativeLauncher.resolve(path.absolutePath) ?: return null
+        val executable = NativeLauncher.resolveGame(game.id, path.absolutePath) ?: return null
         val mods = NativeLauncher.modsFolder(executable) ?: throw FunkinLaunchException("Could not open the mods folder of $executable.")
-        return FunkinInstall(File(executable), File(mods))
+        return FunkinInstall(File(executable), File(mods), game)
     }
 
-    fun search(roots: List<String> = searchRoots()): FunkinInstall? {
+    fun search(roots: List<String> = searchRoots(), game: LaunchGame = LaunchGame.FUNKIN): FunkinInstall? {
         native()
-        val found = NativeLauncher.search(roots.toTypedArray()) ?: return null
-        return resolve(File(found))
+        val found = NativeLauncher.searchGame(game.id, roots.toTypedArray()) ?: return null
+        return resolve(File(found), game)
+    }
+
+    private fun finish(game: FunkinInstall, installed: InstalledMod): InstalledMod {
+        if (game.game != LaunchGame.PSYCH) return installed
+        val pack = File(installed.folder, LaunchGame.PSYCH.metaFile)
+        if (!pack.exists()) pack.writeText(FunkinModWriter.psychPack(installed.folder.name))
+        if (NativeLauncher.loaded) NativeLauncher.enablePsychMod(game.mods.absolutePath, installed.folder.name)
+        return installed
     }
 
     fun install(game: FunkinInstall, output: File, fallbackName: String): InstalledMod {
@@ -63,9 +71,9 @@ object FunkinGame {
                     else -> "Could not copy the mod into ${game.mods.path}."
                 }
             )
-            return InstalledMod(File(game.mods, name), files)
+            return finish(game, InstalledMod(File(game.mods, name), files))
         }
-        return extract(output, game.mods, fallbackName)
+        return finish(game, extract(output, game.mods, fallbackName))
     }
 
     fun zipRoot(names: List<String>): String? {
@@ -99,7 +107,7 @@ object FunkinGame {
         when (NativeLauncher.launch(game.executable.absolutePath)) {
             NativeLauncher.OK -> Unit
             NativeLauncher.NOT_FOUND -> throw FunkinLaunchException("${game.executable.path} is gone.")
-            else -> throw FunkinLaunchException("Could not open ${game.executable.name}.")
+            else -> throw FunkinLaunchException("Could not open ${game.game.title} (${game.executable.name}).")
         }
     }
 }

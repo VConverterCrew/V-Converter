@@ -358,6 +358,12 @@ fun MainScreen() {
         listOf(charts, characters, stages, weeks, mod, scripts, psychStages, psychWeeks, psychScripts, cnMod, cnCharts, cnCharacters, cnStages, cnWeeks, cnScripts, genMod, genScript)
             .forEach { it.vsliceTarget = true }
         Tab.entries.forEach { tab -> runCatching { nmv.forTab(Direction.NMV_TO_VSLICE, tab).vsliceTarget = true } }
+        listOf(revMod, revCharts, revCharacters, revStages, revWeeks, revScripts, c2pMod, c2pCharts, c2pCharacters, c2pStages, c2pWeeks, c2pScripts).forEach { it.psychTarget = true }
+        Tab.entries.forEach { tab -> runCatching { nmv.forTab(Direction.NMV_TO_PSYCH, tab).psychTarget = true } }
+        noteStyles.forEach { (d, model) ->
+            if (d.to == Engine.VSLICE) model.vsliceTarget = true
+            if (d.to == Engine.PSYCH) model.psychTarget = true
+        }
         true
     }
     var direction by rememberSaveable { mutableStateOf(Direction.PSYCH_TO_VSLICE) }

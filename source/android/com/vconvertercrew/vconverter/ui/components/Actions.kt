@@ -163,15 +163,15 @@ fun DownloadCard(viewModel: BaseConverterViewModel, accent: Color) {
                     OutlineButton("Downloads", Funkin.Up, viewModel::openDownloads, Modifier.weight(1f), R.drawable.ic_folder)
                 }
             }
-            if (viewModel.vsliceOutput) FunkinTestPanel(viewModel)
+            if (viewModel.testGame != null) FunkinTestPanel(viewModel)
         }
     }
 }
 
-private fun openFunkin(context: android.content.Context): String? = when (FunkinApp.open(context)) {
+private fun openGame(context: android.content.Context, game: com.vconvertercrew.vconverter.launcher.LaunchGame): String? = when (FunkinApp.open(context, game)) {
     FunkinOpen.OPENED -> null
-    FunkinOpen.MISSING -> if (FunkinApp.openStore(context)) "Friday Night Funkin' isn't installed, so its store page was opened." else "Friday Night Funkin' isn't installed."
-    FunkinOpen.FAILED -> "Could not open Friday Night Funkin'."
+    FunkinOpen.MISSING -> if (FunkinApp.openStore(context, game)) "${game.title} isn't installed, so its download page was opened." else "${game.title} isn't installed."
+    FunkinOpen.FAILED -> "Could not open ${game.title}."
 }
 
 @Composable
@@ -179,26 +179,31 @@ fun rememberFunkinInstaller(viewModel: BaseConverterViewModel, onProblem: (Strin
     val context = LocalContext.current
     val model by rememberUpdatedState(viewModel)
     val report by rememberUpdatedState(onProblem)
-    val install = { tree: android.net.Uri ->
-        model.installToFunkin(tree, onInstalled = { report(openFunkin(context)) }, onFailed = { FunkinFolder.forget(context) })
+    var picking by remember { mutableStateOf(com.vconvertercrew.vconverter.launcher.LaunchGame.FUNKIN) }
+    val install = { tree: android.net.Uri, game: com.vconvertercrew.vconverter.launcher.LaunchGame ->
+        model.installToFunkin(tree, onInstalled = { report(openGame(context, game)) }, onFailed = { FunkinFolder.forget(context, game) })
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
         if (tree != null) {
-            FunkinFolder.keep(context, tree)
-            install(tree)
+            FunkinFolder.keep(context, tree, picking)
+            install(tree, picking)
         }
     }
     return {
         report(null)
-        if (!FunkinApp.installed(context)) {
-            report(openFunkin(context))
-        } else {
-            val saved = FunkinFolder.saved(context)
-            if (saved != null) {
-                install(saved)
+        val game = model.testGame
+        if (game != null) {
+            if (!FunkinApp.installed(context, game)) {
+                report(openGame(context, game))
             } else {
-                android.widget.Toast.makeText(context, "Pick the FNF folder (or its mods folder) and tap \"Use this folder\".", android.widget.Toast.LENGTH_LONG).show()
-                runCatching { picker.launch(FunkinFolder.initialUri()) }.onFailure { report("No app can pick a folder on this device.") }
+                val saved = FunkinFolder.saved(context, game)
+                if (saved != null) {
+                    install(saved, game)
+                } else {
+                    picking = game
+                    android.widget.Toast.makeText(context, "Pick the ${game.title} folder (or its mods folder) and tap \"Use this folder\".", android.widget.Toast.LENGTH_LONG).show()
+                    runCatching { picker.launch(FunkinFolder.initialUri(context, game)) }.onFailure { report("No app can pick a folder on this device.") }
+                }
             }
         }
     }
@@ -208,13 +213,14 @@ fun rememberFunkinInstaller(viewModel: BaseConverterViewModel, onProblem: (Strin
 fun FunkinTestPanel(viewModel: BaseConverterViewModel) {
     var problem by remember { mutableStateOf<String?>(null) }
     val test = rememberFunkinInstaller(viewModel) { problem = it }
+    val game = viewModel.testGame ?: com.vconvertercrew.vconverter.launcher.LaunchGame.FUNKIN
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            "Installs the mod into Friday Night Funkin's mods folder and switches to the game. The first time, pick the FNF folder and tap \"Use this folder\".",
+            "Installs the mod into ${game.title}'s mods folder and switches to the game. The first time, pick the ${game.title} folder and tap \"Use this folder\".",
             style = MaterialTheme.typography.bodySmall,
             color = Funkin.Muted
         )
-        OutlineButton("Test In Friday Night Funkin'", Funkin.Down, test, icon = R.drawable.ic_arrow_forward, enabled = !viewModel.busy)
+        OutlineButton(game.testLabel, Funkin.Down, test, icon = R.drawable.ic_arrow_forward, enabled = !viewModel.busy)
         problem?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Funkin.Right) }
     }
 }

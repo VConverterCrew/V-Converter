@@ -4,8 +4,10 @@
 #include <cctype>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <system_error>
+#include <vector>
 
 #if defined(_WIN32)
     #ifndef NOMINMAX
@@ -24,13 +26,29 @@ namespace fs = std::filesystem;
 
 namespace {
 
+struct Names {
+    const char* const* items;
+    size_t count;
+};
+
 #if defined(_WIN32)
-const char* const kExecutables[] = {"Funkin.exe"};
+const char* const kFunkin[] = {"Funkin.exe"};
+const char* const kPsych[] = {"PsychEngine.exe", "Psych Engine.exe"};
 #elif defined(__APPLE__)
-const char* const kExecutables[] = {"Funkin.app", "Friday Night Funkin'.app", "Funkin"};
+const char* const kFunkin[] = {"Funkin.app", "Friday Night Funkin'.app", "Funkin"};
+const char* const kPsych[] = {"PsychEngine.app", "Psych Engine.app", "PsychEngine"};
 #else
-const char* const kExecutables[] = {"Funkin"};
+const char* const kFunkin[] = {"Funkin"};
+const char* const kPsych[] = {"PsychEngine", "Psych Engine"};
 #endif
+
+bool namesFor(int32_t game, Names& names) {
+    switch (game) {
+        case VLAUNCHER_GAME_FUNKIN: names = {kFunkin, sizeof kFunkin / sizeof kFunkin[0]}; return true;
+        case VLAUNCHER_GAME_PSYCH: names = {kPsych, sizeof kPsych / sizeof kPsych[0]}; return true;
+        default: return false;
+    }
+}
 
 fs::path toPath(const char* text) {
 #if defined(_WIN32)
@@ -104,9 +122,9 @@ bool isLaunchable(const fs::path& path) {
     return isRunnable(path);
 }
 
-bool findIn(const fs::path& folder, fs::path& found) {
-    for (const char* name : kExecutables) {
-        fs::path candidate = folder / toPath(name);
+bool findIn(const fs::path& folder, const Names& names, fs::path& found) {
+    for (size_t n = 0; n < names.count; n++) {
+        fs::path candidate = folder / toPath(names.items[n]);
         if (isLaunchable(candidate)) {
             found = candidate;
             return true;
@@ -117,8 +135,8 @@ bool findIn(const fs::path& folder, fs::path& found) {
     if (error) return false;
     for (const fs::directory_entry& entry : it) {
         std::string name = toUtf8(entry.path().filename());
-        for (const char* wanted : kExecutables) {
-            if (equalsIgnoreCase(name, wanted) && isLaunchable(entry.path())) {
+        for (size_t n = 0; n < names.count; n++) {
+            if (equalsIgnoreCase(name, names.items[n]) && isLaunchable(entry.path())) {
                 found = entry.path();
                 return true;
             }
@@ -127,7 +145,15 @@ bool findIn(const fs::path& folder, fs::path& found) {
     return false;
 }
 
-bool resolvePath(const fs::path& path, fs::path& found) {
+bool named(const fs::path& path, const Names& names) {
+    std::string name = toUtf8(path.filename());
+    for (size_t n = 0; n < names.count; n++) {
+        if (equalsIgnoreCase(name, names.items[n])) return true;
+    }
+    return false;
+}
+
+bool resolvePath(const fs::path& path, const Names& names, bool strict, fs::path& found) {
     if (path.empty()) return false;
 #if defined(__APPLE__)
     if (isBundle(path)) {
@@ -141,19 +167,19 @@ bool resolvePath(const fs::path& path, fs::path& found) {
         }
     }
 #endif
-    if (isRunnable(path)) {
+    if (isRunnable(path) && (!strict || named(path, names))) {
         found = path;
         return true;
     }
     if (!isDirectory(path)) return false;
-    if (findIn(path, found)) return true;
+    if (findIn(path, names, found)) return true;
     std::error_code error;
     fs::directory_iterator it(path, fs::directory_options::skip_permission_denied, error);
     if (error) return false;
     for (const fs::directory_entry& entry : it) {
         std::error_code kind;
         if (!entry.is_directory(kind) || isBundle(entry.path())) continue;
-        if (findIn(entry.path(), found)) return true;
+        if (findIn(entry.path(), names, found)) return true;
     }
     return false;
 }
@@ -248,23 +274,65 @@ const char* vlauncher_version(void) {
     return VLAUNCHER_VERSION_STRING;
 }
 
-int32_t vlauncher_resolve(const char* path, char* executable, int32_t capacity) {
+int32_t vlauncher_resolve_game(int32_t game, const char* path, char* executable, int32_t capacity) {
     if (path == nullptr || executable == nullptr) return VLAUNCHER_INVALID;
+    Names names;
+    if (!namesFor(game, names)) return VLAUNCHER_INVALID;
     fs::path found;
-    if (!resolvePath(toPath(path), found)) return VLAUNCHER_NOT_FOUND;
+    if (!resolvePath(toPath(path), names, false, found)) return VLAUNCHER_NOT_FOUND;
     std::error_code error;
     fs::path absolute = fs::absolute(found, error);
     return copyOut(error ? found : absolute, executable, capacity);
 }
 
-int32_t vlauncher_search(const char* const* roots, int32_t count, char* executable, int32_t capacity) {
+int32_t vlauncher_search_game(int32_t game, const char* const* roots, int32_t count, char* executable, int32_t capacity) {
     if (roots == nullptr || executable == nullptr || count < 0) return VLAUNCHER_INVALID;
     for (int32_t i = 0; i < count; i++) {
         if (roots[i] == nullptr || roots[i][0] == '\0') continue;
-        int32_t result = vlauncher_resolve(roots[i], executable, capacity);
+        int32_t result = vlauncher_resolve_game(game, roots[i], executable, capacity);
         if (result != VLAUNCHER_NOT_FOUND) return result;
     }
     return VLAUNCHER_NOT_FOUND;
+}
+
+int32_t vlauncher_resolve(const char* path, char* executable, int32_t capacity) {
+    return vlauncher_resolve_game(VLAUNCHER_GAME_FUNKIN, path, executable, capacity);
+}
+
+int32_t vlauncher_search(const char* const* roots, int32_t count, char* executable, int32_t capacity) {
+    return vlauncher_search_game(VLAUNCHER_GAME_FUNKIN, roots, count, executable, capacity);
+}
+
+int32_t vlauncher_enable_psych_mod(const char* mods, const char* name) {
+    if (mods == nullptr || name == nullptr) return VLAUNCHER_INVALID;
+    std::string folder = cleanName(name);
+    if (folder.empty()) return VLAUNCHER_INVALID;
+    fs::path list = toPath(mods).parent_path() / "modsList.txt";
+    std::vector<std::string> lines;
+    bool found = false;
+    {
+        std::ifstream in(list, std::ios::binary);
+        std::string line;
+        while (std::getline(in, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line.empty()) continue;
+            std::string key = line.substr(0, line.find('|'));
+            if (key == folder) {
+                if (found) continue;
+                line = folder + "|1";
+                found = true;
+            }
+            lines.push_back(line);
+        }
+    }
+    if (!found) lines.insert(lines.begin(), folder + "|1");
+    std::ofstream out(list, std::ios::binary | std::ios::trunc);
+    if (!out) return VLAUNCHER_FAILED;
+    for (size_t i = 0; i < lines.size(); i++) {
+        if (i) out << '\n';
+        out << lines[i];
+    }
+    return out ? VLAUNCHER_OK : VLAUNCHER_FAILED;
 }
 
 int32_t vlauncher_mods_folder(const char* executable, char* folder, int32_t capacity) {

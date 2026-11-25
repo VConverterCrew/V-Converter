@@ -104,6 +104,7 @@ class ModMenuSpec(
     val onPlayTest: (() -> Unit)? = null,
     val onTestGame: (() -> Unit)? = null,
     val testGameLabel: String = "Test In Friday Night Funkin'",
+    val testGameNote: String = "Puts the mod in Friday Night Funkin's mods folder and switches to the game.",
     val onBack: () -> Unit
 )
 
@@ -190,7 +191,7 @@ fun FunkinModMenu(spec: ModMenuSpec, art: ConverterArt, modifier: Modifier = Mod
             ))
         }
         spec.onPlayTest?.let { add(ModItem("PlayTest", "Plays the converted mod with botplay and reports what's broken.", "bf", !spec.busy, run = it)) }
-        spec.onTestGame?.let { add(ModItem(spec.testGameLabel, "Puts the mod in Friday Night Funkin's mods folder and switches to the game.", "bf", !spec.busy, run = it)) }
+        spec.onTestGame?.let { add(ModItem(spec.testGameLabel, spec.testGameNote, "bf", !spec.busy, run = it)) }
         if (loaded) add(ModItem("Clear", "Closes this mod.", "face", !spec.busy, run = spec.onClear))
         add(ModItem("Back", "Goes back to the converter menu.", null, true, run = { leaving = true }))
     }

@@ -13,7 +13,7 @@ extern "C" {
     #define VLAUNCHER_API
 #endif
 
-#define VLAUNCHER_VERSION_STRING "1.0.0"
+#define VLAUNCHER_VERSION_STRING "1.1.0"
 
 #define VLAUNCHER_OK 0
 #define VLAUNCHER_NOT_FOUND 1
@@ -22,11 +22,20 @@ extern "C" {
 #define VLAUNCHER_UNSUPPORTED 4
 #define VLAUNCHER_TOO_SMALL 5
 
+#define VLAUNCHER_GAME_FUNKIN 0
+#define VLAUNCHER_GAME_PSYCH 1
+
 VLAUNCHER_API const char* vlauncher_version(void);
 
 VLAUNCHER_API int32_t vlauncher_resolve(const char* path, char* executable, int32_t capacity);
 
 VLAUNCHER_API int32_t vlauncher_search(const char* const* roots, int32_t count, char* executable, int32_t capacity);
+
+VLAUNCHER_API int32_t vlauncher_resolve_game(int32_t game, const char* path, char* executable, int32_t capacity);
+
+VLAUNCHER_API int32_t vlauncher_search_game(int32_t game, const char* const* roots, int32_t count, char* executable, int32_t capacity);
+
+VLAUNCHER_API int32_t vlauncher_enable_psych_mod(const char* mods, const char* name);
 
 VLAUNCHER_API int32_t vlauncher_mods_folder(const char* executable, char* folder, int32_t capacity);
 

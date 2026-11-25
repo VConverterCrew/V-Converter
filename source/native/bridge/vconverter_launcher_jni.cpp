@@ -134,6 +134,35 @@ JNIEXPORT jstring JNICALL VCL_FUNCTION(search)(JNIEnv* env, jclass, jobjectArray
     return pathOrNull(env, vlauncher_search(pointers.data(), static_cast<int32_t>(pointers.size()), out.data(), kPathCapacity), out.data());
 }
 
+JNIEXPORT jstring JNICALL VCL_FUNCTION(resolveGame)(JNIEnv* env, jclass, jint game, jstring path) {
+    std::string input = text(env, path);
+    std::vector<char> out(kPathCapacity);
+    return pathOrNull(env, vlauncher_resolve_game(game, input.c_str(), out.data(), kPathCapacity), out.data());
+}
+
+JNIEXPORT jstring JNICALL VCL_FUNCTION(searchGame)(JNIEnv* env, jclass, jint game, jobjectArray roots) {
+    if (roots == nullptr) return nullptr;
+    jsize count = env->GetArrayLength(roots);
+    std::vector<std::string> values;
+    values.reserve(static_cast<size_t>(count));
+    for (jsize i = 0; i < count; i++) {
+        jstring root = static_cast<jstring>(env->GetObjectArrayElement(roots, i));
+        values.push_back(text(env, root));
+        if (root != nullptr) env->DeleteLocalRef(root);
+    }
+    std::vector<const char*> pointers;
+    pointers.reserve(values.size());
+    for (const std::string& value : values) pointers.push_back(value.c_str());
+    std::vector<char> out(kPathCapacity);
+    return pathOrNull(env, vlauncher_search_game(game, pointers.data(), static_cast<int32_t>(pointers.size()), out.data(), kPathCapacity), out.data());
+}
+
+JNIEXPORT jint JNICALL VCL_FUNCTION(enablePsychMod)(JNIEnv* env, jclass, jstring mods, jstring name) {
+    std::string folder = text(env, mods);
+    std::string mod = text(env, name);
+    return vlauncher_enable_psych_mod(folder.c_str(), mod.c_str());
+}
+
 JNIEXPORT jstring JNICALL VCL_FUNCTION(modsFolder)(JNIEnv* env, jclass, jstring executable) {
     std::string input = text(env, executable);
     std::vector<char> out(kPathCapacity);
