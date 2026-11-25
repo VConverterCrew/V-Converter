@@ -1,9 +1,9 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.reverse.HxcToPsych
-import com.vconvertercrew.vconverter.script.ScriptConverter
-import com.vconvertercrew.vconverter.script.ScriptDoctor
-import com.vconvertercrew.vconverter.script.ScriptSource
+import com.vconvertercrew.vconverter.convert.reverse.HxcToPsych
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ScriptDoctor
+import com.vconvertercrew.vconverter.convert.script.ScriptSource
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

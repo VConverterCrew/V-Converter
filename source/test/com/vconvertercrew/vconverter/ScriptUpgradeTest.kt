@@ -1,10 +1,10 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.reverse.HxcToPsych
-import com.vconvertercrew.vconverter.script.LuaToHScript
-import com.vconvertercrew.vconverter.script.ScriptConverter
-import com.vconvertercrew.vconverter.script.ScriptScope
-import com.vconvertercrew.vconverter.script.ScriptTarget
+import com.vconvertercrew.vconverter.convert.reverse.HxcToPsych
+import com.vconvertercrew.vconverter.convert.script.LuaToHScript
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ScriptScope
+import com.vconvertercrew.vconverter.convert.script.ScriptTarget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

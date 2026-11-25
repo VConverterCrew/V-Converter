@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.online.GameBanana
-import com.vconvertercrew.vconverter.online.VBananaNative
+import com.vconvertercrew.vconverter.tools.online.GameBanana
+import com.vconvertercrew.vconverter.tools.online.VBananaNative
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

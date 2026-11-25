@@ -1,11 +1,11 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.StageDocument
-import com.vconvertercrew.vconverter.editor.StageExport
-import com.vconvertercrew.vconverter.editor.StageLoader
-import com.vconvertercrew.vconverter.editor.StageProp
-import com.vconvertercrew.vconverter.editor.StageSlot
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.StageDocument
+import com.vconvertercrew.vconverter.tools.editor.StageExport
+import com.vconvertercrew.vconverter.tools.editor.StageLoader
+import com.vconvertercrew.vconverter.tools.editor.StageProp
+import com.vconvertercrew.vconverter.tools.editor.StageSlot
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

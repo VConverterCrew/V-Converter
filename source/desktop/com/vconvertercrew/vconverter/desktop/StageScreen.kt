@@ -2,10 +2,10 @@ package com.vconvertercrew.vconverter.desktop
 
 import com.vconvertercrew.vconverterui.VButton as Primary
 import com.vconvertercrew.vconverterui.VOutlineButton as Secondary
-import com.vconvertercrew.vconverter.overlay.ReportView
+import com.vconvertercrew.vconverter.views.overlay.ReportView
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.*
-import com.vconvertercrew.vconverter.editorview.*
+import com.vconvertercrew.vconverter.views.editor.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,23 +31,23 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.convert.ConvertedOutput
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SpriteAtlas
-import com.vconvertercrew.vconverter.editor.StageAsset
-import com.vconvertercrew.vconverter.editor.StageDocument
-import com.vconvertercrew.vconverter.editor.StageExport
-import com.vconvertercrew.vconverter.editor.StageLoader
-import com.vconvertercrew.vconverter.editor.StageProp
-import com.vconvertercrew.vconverter.editorview.EditorChip
-import com.vconvertercrew.vconverter.editorview.EditorTyping
-import com.vconvertercrew.vconverter.editorview.StageEditorState
-import com.vconvertercrew.vconverter.editorview.StageImage
-import com.vconvertercrew.vconverter.editorview.StageInfoPanel
-import com.vconvertercrew.vconverter.editorview.StageLayersPanel
-import com.vconvertercrew.vconverter.editorview.StagePreview
-import com.vconvertercrew.vconverter.editorview.StageSelectionPanel
-import com.vconvertercrew.vconverter.editorview.StageToolbar
-import com.vconvertercrew.vconverter.generator.Ids
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SpriteAtlas
+import com.vconvertercrew.vconverter.tools.editor.StageAsset
+import com.vconvertercrew.vconverter.tools.editor.StageDocument
+import com.vconvertercrew.vconverter.tools.editor.StageExport
+import com.vconvertercrew.vconverter.tools.editor.StageLoader
+import com.vconvertercrew.vconverter.tools.editor.StageProp
+import com.vconvertercrew.vconverter.views.editor.EditorChip
+import com.vconvertercrew.vconverter.views.editor.EditorTyping
+import com.vconvertercrew.vconverter.views.editor.StageEditorState
+import com.vconvertercrew.vconverter.views.editor.StageImage
+import com.vconvertercrew.vconverter.views.editor.StageInfoPanel
+import com.vconvertercrew.vconverter.views.editor.StageLayersPanel
+import com.vconvertercrew.vconverter.views.editor.StagePreview
+import com.vconvertercrew.vconverter.views.editor.StageSelectionPanel
+import com.vconvertercrew.vconverter.views.editor.StageToolbar
+import com.vconvertercrew.vconverter.tools.generator.Ids
 import com.vconvertercrew.vconverter.io.Archives
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +57,7 @@ import java.io.File
 
 class DesktopStageEditor(private val scope: CoroutineScope) {
     val editor = StageEditorState(StageDocument("new-stage", "New Stage"))
-    val live = com.vconvertercrew.vconverter.editorview.LiveSession(com.vconvertercrew.vconverter.editorview.StageLiveAdapter(editor) { asset -> decode(asset) }) { block -> javax.swing.SwingUtilities.invokeLater(block) }
+    val live = com.vconvertercrew.vconverter.views.editor.LiveSession(com.vconvertercrew.vconverter.views.editor.StageLiveAdapter(editor) { asset -> decode(asset) }) { block -> javax.swing.SwingUtilities.invokeLater(block) }
     var target by mutableStateOf(ExportTarget.VSLICE)
     var source by mutableStateOf("New stage")
         private set
@@ -257,7 +257,7 @@ fun StageEditorScreen(state: AppState) {
         EditorWindow("layers", "Props") { StageLayersPanel(editor, onAddImage = { Dialogs.openFiles("Pick the images (.png, with .xml for animated ones)").let { model.addImages(it) } }) },
         EditorWindow("selection", "Selection") { StageSelectionPanel(editor) },
         EditorWindow("properties", "Stage Data") { StageInfoPanel(editor) },
-        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.editorview.LiveSessionPanel(model.live) },
+        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.views.editor.LiveSessionPanel(model.live) },
         EditorWindow("export", "Export", 420.dp) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ExportTarget.entries.forEach { t -> EditorChip(t.label, t == model.target) { if (t != model.target) { model.target = t; model.changed(-2) } } }
@@ -278,7 +278,7 @@ fun StageEditorScreen(state: AppState) {
     )
     FunkinEditorShell(
         "Stage Editor", accent, menus, windows, panels, Modifier.fillMaxSize(),
-        exportMenu = com.vconvertercrew.vconverter.editorview.ExportMenuSpec(
+        exportMenu = com.vconvertercrew.vconverter.views.editor.ExportMenuSpec(
             title = "Stage",
             target = model.target,
             onTarget = { t -> if (t != model.target) { model.target = t; model.changed(-2) } },

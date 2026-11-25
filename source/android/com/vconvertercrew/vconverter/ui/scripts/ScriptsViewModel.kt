@@ -7,10 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.OutputFile
-import com.vconvertercrew.vconverter.script.ScriptConverter
-import com.vconvertercrew.vconverter.script.ScriptScope
-import com.vconvertercrew.vconverter.script.ScriptSource
-import com.vconvertercrew.vconverter.script.ScriptTarget
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ScriptScope
+import com.vconvertercrew.vconverter.convert.script.ScriptSource
+import com.vconvertercrew.vconverter.convert.script.ScriptTarget
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.ConvertedOutput
 import com.vconvertercrew.vconverter.ui.StatusMessage

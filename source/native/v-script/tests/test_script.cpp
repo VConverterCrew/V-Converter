@@ -11,6 +11,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 
 static int failures = 0;
@@ -923,6 +924,71 @@ static void testImage() {
     vscript_free_bytes(pixels);
 }
 
+
+static void testOptimizePng() {
+    std::string error;
+    auto check = [&](const vscript::Image& image, int expectType) {
+        std::vector<uint8_t> png = vscript::encodePng(image, 1);
+        std::vector<uint8_t> out;
+        CHECK(vscript::optimizePng(png.data(), png.size(), 9, out));
+        CHECK(out.size() < png.size());
+        CHECK(out[25] == expectType);
+        vscript::Image back;
+        CHECK(vscript::decodePng(out.data(), out.size(), back, error));
+        CHECK(back.width == image.width && back.height == image.height && back.rgba == image.rgba);
+    };
+    vscript::Image pixel;
+    pixel.width = 96;
+    pixel.height = 64;
+    pixel.rgba.resize(size_t(pixel.width) * pixel.height * 4);
+    const uint8_t colors[5][4] = {{0, 0, 0, 0}, {255, 0, 0, 255}, {0, 128, 255, 255}, {20, 20, 20, 128}, {250, 250, 10, 255}};
+    for (int y = 0; y < pixel.height; y++) for (int x = 0; x < pixel.width; x++) std::memcpy(&pixel.rgba[(size_t(y) * pixel.width + x) * 4], colors[((x / 4) + (y / 4)) % 5], 4);
+    check(pixel, 3);
+    vscript::Image gray;
+    gray.width = 300;
+    gray.height = 200;
+    gray.rgba.resize(size_t(gray.width) * gray.height * 4);
+    for (int y = 0; y < gray.height; y++) for (int x = 0; x < gray.width; x++) {
+        uint8_t* p = &gray.rgba[(size_t(y) * gray.width + x) * 4];
+        p[0] = p[1] = p[2] = uint8_t((x * 3 + y * 5) & 0xFF);
+        p[3] = 255;
+    }
+    check(gray, 0);
+    vscript::Image color;
+    color.width = 200;
+    color.height = 150;
+    color.rgba.resize(size_t(color.width) * color.height * 4);
+    for (int y = 0; y < color.height; y++) for (int x = 0; x < color.width; x++) {
+        uint8_t* p = &color.rgba[(size_t(y) * color.width + x) * 4];
+        p[0] = uint8_t(x);
+        p[1] = uint8_t(y);
+        p[2] = uint8_t(x + y);
+        p[3] = uint8_t(x < 20 ? 0 : 255);
+    }
+    std::vector<uint8_t> png = vscript::encodePng(color, 1);
+    std::vector<uint8_t> out;
+    if (vscript::optimizePng(png.data(), png.size(), 9, out)) {
+        vscript::Image back;
+        CHECK(vscript::decodePng(out.data(), out.size(), back, error) && back.rgba == color.rgba);
+    }
+    std::vector<uint8_t> small = vscript::encodePng(pixel, 9);
+    std::vector<uint8_t> apng = small;
+    const uint8_t actl[20] = {0, 0, 0, 8, 'a', 'c', 'T', 'L', 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+    apng.insert(apng.begin() + 33, actl, actl + 20);
+    CHECK(!vscript::optimizePng(apng.data(), apng.size(), 9, out));
+    std::vector<uint8_t> deep = small;
+    deep[24] = 16;
+    CHECK(!vscript::optimizePng(deep.data(), deep.size(), 9, out));
+    CHECK(!vscript::optimizePng(small.data(), 10, 9, out));
+    size_t size = 0;
+    unsigned char* raw = vscript_png_optimize(png.data(), png.size(), 9, &size);
+    if (raw) {
+        CHECK(size > 0 && size < png.size());
+        vscript_free_bytes(raw);
+    }
+    CHECK(vscript_png_optimize(nullptr, 0, 9, &size) == nullptr);
+}
+
 static void testReverseFiles() {
     const char* names[] = {"metadata:", "chart:"};
     const char* texts[] = {
@@ -970,6 +1036,7 @@ int main() {
     testEventOverrides();
     testShader();
     testImage();
+    testOptimizePng();
     testReverseFiles();
     if (failures == 0) std::printf("v-script: all tests passed\n");
     return failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;

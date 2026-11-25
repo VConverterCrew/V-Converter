@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter.ui.editor
 
 import androidx.compose.foundation.layout.fillMaxSize
-import com.vconvertercrew.vconverter.editorview.*
+import com.vconvertercrew.vconverter.views.editor.*
 import android.app.Application
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -24,21 +24,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SpriteAtlas
-import com.vconvertercrew.vconverter.editor.StageAsset
-import com.vconvertercrew.vconverter.editor.StageDocument
-import com.vconvertercrew.vconverter.editor.StageExport
-import com.vconvertercrew.vconverter.editor.StageLoader
-import com.vconvertercrew.vconverter.editor.StageProp
-import com.vconvertercrew.vconverter.editorview.StageEditorState
-import com.vconvertercrew.vconverter.editorview.StageImage
-import com.vconvertercrew.vconverter.editorview.StageInfoPanel
-import com.vconvertercrew.vconverter.editorview.StageLayersPanel
-import com.vconvertercrew.vconverter.editorview.StagePreview
-import com.vconvertercrew.vconverter.editorview.StageSelectionPanel
-import com.vconvertercrew.vconverter.editorview.StageToolbar
-import com.vconvertercrew.vconverter.generator.Ids
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SpriteAtlas
+import com.vconvertercrew.vconverter.tools.editor.StageAsset
+import com.vconvertercrew.vconverter.tools.editor.StageDocument
+import com.vconvertercrew.vconverter.tools.editor.StageExport
+import com.vconvertercrew.vconverter.tools.editor.StageLoader
+import com.vconvertercrew.vconverter.tools.editor.StageProp
+import com.vconvertercrew.vconverter.views.editor.StageEditorState
+import com.vconvertercrew.vconverter.views.editor.StageImage
+import com.vconvertercrew.vconverter.views.editor.StageInfoPanel
+import com.vconvertercrew.vconverter.views.editor.StageLayersPanel
+import com.vconvertercrew.vconverter.views.editor.StagePreview
+import com.vconvertercrew.vconverter.views.editor.StageSelectionPanel
+import com.vconvertercrew.vconverter.views.editor.StageToolbar
+import com.vconvertercrew.vconverter.tools.generator.Ids
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.ConvertSection
 import com.vconvertercrew.vconverter.ui.StatusMessage
@@ -53,7 +53,7 @@ import kotlinx.coroutines.withContext
 
 class StageEditorViewModel(application: Application) : BaseConverterViewModel(application) {
     val editor = StageEditorState(StageDocument("new-stage", "New Stage"))
-    val live = com.vconvertercrew.vconverter.editorview.LiveSession(com.vconvertercrew.vconverter.editorview.StageLiveAdapter(editor) { asset -> decode(asset) }) { block -> android.os.Handler(android.os.Looper.getMainLooper()).post(block) }
+    val live = com.vconvertercrew.vconverter.views.editor.LiveSession(com.vconvertercrew.vconverter.views.editor.StageLiveAdapter(editor) { asset -> decode(asset) }) { block -> android.os.Handler(android.os.Looper.getMainLooper()).post(block) }
     var target by mutableStateOf(ExportTarget.VSLICE)
         private set
     override val vsliceOutput: Boolean get() = target == ExportTarget.VSLICE
@@ -215,7 +215,7 @@ fun StageEditorScreen(viewModel: StageEditorViewModel, modFolderName: String?, o
         EditorWindow("layers", "Props") { StageLayersPanel(editor, onAddImage = { imagePicker.launch(arrayOf("image/png", "text/xml", "application/xml", "*/*")) }) },
         EditorWindow("selection", "Selection") { StageSelectionPanel(editor) },
         EditorWindow("properties", "Stage Data") { StageInfoPanel(editor) },
-        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.editorview.LiveSessionPanel(viewModel.live) },
+        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.views.editor.LiveSessionPanel(viewModel.live) },
         EditorWindow("export", "Export", 420.dp) {
             SectionTitle("Export format", accent, 1)
             ChoiceChips(
@@ -250,7 +250,7 @@ fun StageEditorScreen(viewModel: StageEditorViewModel, modFolderName: String?, o
         EditorWindow("help", "Controls") { EditorHelpText("Tap a prop or a character to select it and drag it to move it; dragging elsewhere moves the view. Use the menus at the top: File opens, creates and exports, Edit undoes and changes the selection, View changes what you see, and Window shows or hides these boxes. Drag a box by its title to move it.") }
     )
     val exportZip = com.vconvertercrew.vconverter.ui.components.rememberDownloader(viewModel)
-    val exportSpec = com.vconvertercrew.vconverter.editorview.ExportMenuSpec(
+    val exportSpec = com.vconvertercrew.vconverter.views.editor.ExportMenuSpec(
         title = "Stage",
         target = viewModel.target,
         onTarget = viewModel::selectTarget,

@@ -10,11 +10,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.generator.Generated
-import com.vconvertercrew.vconverter.generator.ModGenerator
-import com.vconvertercrew.vconverter.generator.ModSpec
-import com.vconvertercrew.vconverter.generator.PickedAsset
-import com.vconvertercrew.vconverter.mod.ZipModWriter
+import com.vconvertercrew.vconverter.tools.generator.Generated
+import com.vconvertercrew.vconverter.tools.generator.ModGenerator
+import com.vconvertercrew.vconverter.tools.generator.ModSpec
+import com.vconvertercrew.vconverter.tools.generator.PickedAsset
+import com.vconvertercrew.vconverter.convert.mod.ZipModWriter
 import com.vconvertercrew.vconverter.ui.ConvertSection
 import com.vconvertercrew.vconverter.ui.components.AssetPicker
 import com.vconvertercrew.vconverter.ui.components.FunkinCard

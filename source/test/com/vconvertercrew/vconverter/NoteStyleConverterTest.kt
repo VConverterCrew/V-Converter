@@ -1,13 +1,13 @@
 package com.vconvertercrew.vconverter
 
 import com.vconvertercrew.vconverter.core.RgbaImage
-import com.vconvertercrew.vconverter.editor.SpriteAtlas
-import com.vconvertercrew.vconverter.fpsplus.FpsIcon
+import com.vconvertercrew.vconverter.tools.editor.SpriteAtlas
+import com.vconvertercrew.vconverter.engines.fpsplus.FpsIcon
 import com.vconvertercrew.vconverter.io.OutputFile
 import com.vconvertercrew.vconverter.json.JSONObject
-import com.vconvertercrew.vconverter.notestyle.Base64Text
-import com.vconvertercrew.vconverter.notestyle.NoteStyleConverter
-import com.vconvertercrew.vconverter.notestyle.NoteStyleInput
+import com.vconvertercrew.vconverter.convert.notestyle.Base64Text
+import com.vconvertercrew.vconverter.convert.notestyle.NoteStyleConverter
+import com.vconvertercrew.vconverter.convert.notestyle.NoteStyleInput
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull

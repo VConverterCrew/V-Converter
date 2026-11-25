@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter.ui.editor
 
 import androidx.compose.foundation.layout.fillMaxSize
-import com.vconvertercrew.vconverter.editorview.*
+import com.vconvertercrew.vconverter.views.editor.*
 import android.app.Application
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -24,19 +24,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.editor.CharacterDocument
-import com.vconvertercrew.vconverter.editor.CharacterExport
-import com.vconvertercrew.vconverter.editor.CharacterLoader
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SpriteAtlas
-import com.vconvertercrew.vconverter.editorview.AnimationListPanel
-import com.vconvertercrew.vconverter.editorview.AnimationPanel
-import com.vconvertercrew.vconverter.editorview.CharacterEditorState
-import com.vconvertercrew.vconverter.editorview.CharacterInfoPanel
-import com.vconvertercrew.vconverter.editorview.CharacterPreview
-import com.vconvertercrew.vconverter.editorview.CharacterSprite
-import com.vconvertercrew.vconverter.editorview.CharacterToolbar
-import com.vconvertercrew.vconverter.editorview.DragModeBar
+import com.vconvertercrew.vconverter.tools.editor.CharacterDocument
+import com.vconvertercrew.vconverter.tools.editor.CharacterExport
+import com.vconvertercrew.vconverter.tools.editor.CharacterLoader
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SpriteAtlas
+import com.vconvertercrew.vconverter.views.editor.AnimationListPanel
+import com.vconvertercrew.vconverter.views.editor.AnimationPanel
+import com.vconvertercrew.vconverter.views.editor.CharacterEditorState
+import com.vconvertercrew.vconverter.views.editor.CharacterInfoPanel
+import com.vconvertercrew.vconverter.views.editor.CharacterPreview
+import com.vconvertercrew.vconverter.views.editor.CharacterSprite
+import com.vconvertercrew.vconverter.views.editor.CharacterToolbar
+import com.vconvertercrew.vconverter.views.editor.DragModeBar
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.ConvertSection
 import com.vconvertercrew.vconverter.ui.StatusMessage
@@ -49,12 +49,12 @@ import com.vconvertercrew.vconverter.ui.theme.Funkin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private const val STAGE_BACKGROUND = "images/ui/character/stage.png"
+private const val STAGE_BACKGROUND = "ui/character/stage.png"
 
 class CharacterEditorViewModel(application: Application) : BaseConverterViewModel(application) {
     val editor = CharacterEditorState(CharacterDocument("new-character", "New Character"))
-    val live = com.vconvertercrew.vconverter.editorview.LiveSession(
-        com.vconvertercrew.vconverter.editorview.CharacterLiveAdapter(editor, { image to xml }, { png, text -> receiveSheet(png, text) })
+    val live = com.vconvertercrew.vconverter.views.editor.LiveSession(
+        com.vconvertercrew.vconverter.views.editor.CharacterLiveAdapter(editor, { image to xml }, { png, text -> receiveSheet(png, text) })
     ) { block -> android.os.Handler(android.os.Looper.getMainLooper()).post(block) }
 
     private fun receiveSheet(png: ByteArray?, text: String?) {
@@ -246,7 +246,7 @@ fun CharacterEditorScreen(viewModel: CharacterEditorViewModel, modFolderName: St
         EditorWindow("animations", "Animations") { AnimationListPanel(editor) },
         EditorWindow("animation", "Animation Data") { AnimationPanel(editor) },
         EditorWindow("properties", "Character Data") { CharacterInfoPanel(editor) },
-        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.editorview.LiveSessionPanel(viewModel.live) },
+        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.views.editor.LiveSessionPanel(viewModel.live) },
         EditorWindow("export", "Export", 420.dp) {
             SectionTitle("Export format", accent, 1)
             ChoiceChips(
@@ -281,7 +281,7 @@ fun CharacterEditorScreen(viewModel: CharacterEditorViewModel, modFolderName: St
         EditorWindow("help", "Controls") { EditorHelpText("Drag the character to move the offset of the animation shown. Use the menus at the top: File opens, creates and exports, Edit undoes and changes the selection, View changes what you see, and Window shows or hides these boxes. Drag a box by its title to move it.") }
     )
     val exportZip = com.vconvertercrew.vconverter.ui.components.rememberDownloader(viewModel)
-    val exportSpec = com.vconvertercrew.vconverter.editorview.ExportMenuSpec(
+    val exportSpec = com.vconvertercrew.vconverter.views.editor.ExportMenuSpec(
         title = "Character",
         target = viewModel.target,
         onTarget = viewModel::selectTarget,

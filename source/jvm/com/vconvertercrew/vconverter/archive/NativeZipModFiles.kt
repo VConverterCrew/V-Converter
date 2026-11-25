@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter.archive
 
-import com.vconvertercrew.vconverter.mod.ModFiles
-import com.vconvertercrew.vconverter.mod.SafePaths
+import com.vconvertercrew.vconverter.convert.mod.ModFiles
+import com.vconvertercrew.vconverter.convert.mod.SafePaths
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException

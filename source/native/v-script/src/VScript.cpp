@@ -360,6 +360,14 @@ unsigned char* vscript_png_encode(const unsigned char* rgba, int width, int heig
     return copyBytes(png);
 }
 
+unsigned char* vscript_png_optimize(const unsigned char* data, size_t size, int level, size_t* out_size) {
+    if (!data || !out_size) return nullptr;
+    std::vector<uint8_t> png;
+    if (!vscript::optimizePng(data, size, level, png)) return nullptr;
+    *out_size = png.size();
+    return copyBytes(png);
+}
+
 unsigned char* vscript_image_resize(const unsigned char* rgba, int width, int height, int new_width, int new_height, int smooth) {
     if (!rgba || width <= 0 || height <= 0 || new_width <= 0 || new_height <= 0) return nullptr;
     return copyBytes(vscript::resizeImage(wrap(rgba, width, height), new_width, new_height, smooth != 0).rgba);

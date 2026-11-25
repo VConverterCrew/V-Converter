@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter.ui.editor
 
 import androidx.compose.foundation.layout.fillMaxSize
-import com.vconvertercrew.vconverter.editorview.*
+import com.vconvertercrew.vconverter.views.editor.*
 import android.app.Application
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -31,16 +31,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.editor.AudioRole
-import com.vconvertercrew.vconverter.editor.ChartBundle
-import com.vconvertercrew.vconverter.editor.ChartDocument
-import com.vconvertercrew.vconverter.editor.EditorAudio
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SongLoader
-import com.vconvertercrew.vconverter.editorview.ChartEditorState
-import com.vconvertercrew.vconverter.editorview.ChartEditorWorkspace
-import com.vconvertercrew.vconverter.editorview.NoteSkin
-import com.vconvertercrew.vconverter.generator.Ids
+import com.vconvertercrew.vconverter.tools.editor.AudioRole
+import com.vconvertercrew.vconverter.tools.editor.ChartBundle
+import com.vconvertercrew.vconverter.tools.editor.ChartDocument
+import com.vconvertercrew.vconverter.tools.editor.EditorAudio
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SongLoader
+import com.vconvertercrew.vconverter.views.editor.ChartEditorState
+import com.vconvertercrew.vconverter.views.editor.ChartEditorWorkspace
+import com.vconvertercrew.vconverter.views.editor.NoteSkin
+import com.vconvertercrew.vconverter.tools.generator.Ids
 import com.vconvertercrew.vconverter.io.DocumentIO
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.ConvertSection
@@ -63,8 +63,8 @@ import kotlinx.coroutines.withContext
 class ChartEditorViewModel(application: Application) : BaseConverterViewModel(application) {
     val editor = ChartEditorState(ChartDocument.blank("new-song", "New Song", 120.0, listOf("easy", "normal", "hard")))
     private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    val live = com.vconvertercrew.vconverter.editorview.LiveSession(
-        com.vconvertercrew.vconverter.editorview.ChartLiveAdapter(editor, { audio }, { track -> useAudio(audio.filterNot { it.name.equals(track.name, true) } + track) })
+    val live = com.vconvertercrew.vconverter.views.editor.LiveSession(
+        com.vconvertercrew.vconverter.views.editor.ChartLiveAdapter(editor, { audio }, { track -> useAudio(audio.filterNot { it.name.equals(track.name, true) } + track) })
     ) { block -> mainHandler.post(block) }
     var audio by mutableStateOf<List<EditorAudio>>(emptyList())
         private set
@@ -325,7 +325,7 @@ fun ChartEditorScreen(viewModel: ChartEditorViewModel, modFolderName: String?, o
         EditorWindow("difficulty", "Difficulties") { DifficultyPanel(editor) },
         EditorWindow("timing", "Timing") { TimingPanel(editor) },
         EditorWindow("selection", "Note & Event Data") { SelectionPanel(editor) },
-        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.editorview.LiveSessionPanel(viewModel.live, cursor = editor.position to editor.difficulty) },
+        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.views.editor.LiveSessionPanel(viewModel.live, cursor = editor.position to editor.difficulty) },
         EditorWindow("export", "Export", 420.dp) {
             SectionTitle("Export format", accent, 1)
             ChoiceChips(
@@ -360,7 +360,7 @@ fun ChartEditorScreen(viewModel: ChartEditorViewModel, modFolderName: String?, o
         EditorWindow("help", "Controls") { EditorHelpText("Tap the lanes to place notes and tap a note to select it. Use the menus at the top: File opens, creates and exports, Edit undoes and changes the selection, View changes what you see, and Window shows or hides these boxes. Drag a box by its title to move it.") }
     )
     val exportZip = com.vconvertercrew.vconverter.ui.components.rememberDownloader(viewModel)
-    val exportSpec = com.vconvertercrew.vconverter.editorview.ExportMenuSpec(
+    val exportSpec = com.vconvertercrew.vconverter.views.editor.ExportMenuSpec(
         title = "Chart",
         target = viewModel.target,
         onTarget = viewModel::selectTarget,
@@ -378,7 +378,7 @@ fun ChartEditorScreen(viewModel: ChartEditorViewModel, modFolderName: String?, o
     )
     FunkinEditorShell(title = "Chart Editor", accent = accent, menus = menus, windows = windows, panels = panels, modifier = Modifier.fillMaxSize(), exportMenu = exportSpec, showMenuBar = false) {
         val iconContext = LocalContext.current
-        val healthIcons = remember { com.vconvertercrew.vconverter.overlay.HealthIcons { path -> iconContext.assets.open(path).use { BitmapFactory.decodeStream(it) }?.asImageBitmap() } }
+        val healthIcons = remember { com.vconvertercrew.vconverter.views.overlay.HealthIcons { path -> iconContext.assets.open(path).use { BitmapFactory.decodeStream(it) }?.asImageBitmap() } }
         FnfChartEditor(
             editor, skin, eventIcon,
             onSave = { windows.show("export") },

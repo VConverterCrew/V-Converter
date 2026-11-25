@@ -5,10 +5,10 @@ import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.vconvertercrew.vconverter.character.CharacterSource
-import com.vconvertercrew.vconverter.character.PsychCharacter
-import com.vconvertercrew.vconverter.character.PsychCharacterParser
-import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
+import com.vconvertercrew.vconverter.convert.character.CharacterSource
+import com.vconvertercrew.vconverter.convert.character.PsychCharacter
+import com.vconvertercrew.vconverter.convert.character.PsychCharacterParser
+import com.vconvertercrew.vconverter.convert.character.PsychToVSliceCharacter
 import com.vconvertercrew.vconverter.core.AnimateAtlas
 import com.vconvertercrew.vconverter.core.AnimateAtlases
 import com.vconvertercrew.vconverter.core.CharacterSlot

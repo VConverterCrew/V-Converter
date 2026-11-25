@@ -1,13 +1,13 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.character.CharacterSource
-import com.vconvertercrew.vconverter.character.PsychCharacterParser
-import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
-import com.vconvertercrew.vconverter.codename.PsychToCodenameCharacter
+import com.vconvertercrew.vconverter.convert.character.CharacterSource
+import com.vconvertercrew.vconverter.convert.character.PsychCharacterParser
+import com.vconvertercrew.vconverter.convert.character.PsychToVSliceCharacter
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameCharacter
 import com.vconvertercrew.vconverter.core.AnimateAtlas
 import com.vconvertercrew.vconverter.core.CharacterSlot
-import com.vconvertercrew.vconverter.reverse.VSliceParser
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychCharacter
+import com.vconvertercrew.vconverter.convert.reverse.VSliceParser
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychCharacter
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

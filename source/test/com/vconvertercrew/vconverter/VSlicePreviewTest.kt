@@ -1,10 +1,10 @@
 package com.vconvertercrew.vconverter
 
 import com.vconvertercrew.vconverter.json.JSONObject
-import com.vconvertercrew.vconverter.mod.ModFiles
-import com.vconvertercrew.vconverter.mod.readText
-import com.vconvertercrew.vconverter.playtest.MemoryModWriter
-import com.vconvertercrew.vconverter.vslice.VSlicePreview
+import com.vconvertercrew.vconverter.convert.mod.ModFiles
+import com.vconvertercrew.vconverter.convert.mod.readText
+import com.vconvertercrew.vconverter.tools.playtest.MemoryModWriter
+import com.vconvertercrew.vconverter.engines.vslice.VSlicePreview
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -20,7 +20,7 @@ class VSlicePreviewTest {
         override fun size(path: String): Long = files.getValue(path).size.toLong()
     }
 
-    private fun stableMod(writer: com.vconvertercrew.vconverter.mod.ModWriter) {
+    private fun stableMod(writer: com.vconvertercrew.vconverter.convert.mod.ModWriter) {
         writer.writeText("_polymod_meta.json", """{"title":"Test","api_version":"0.7.4"}""")
         writer.writeText("data/songs/tune/tune-metadata.json", """{"songName":"Tune","playData":{"stage":"club","album":"tunealbum"}}""")
         writer.writeText("data/songs/tune/tune-chart.json", """{"notes":{}}""")

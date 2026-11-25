@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.online.Online
-import com.vconvertercrew.vconverter.online.ServerDirectory
+import com.vconvertercrew.vconverter.tools.online.Online
+import com.vconvertercrew.vconverter.tools.online.ServerDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

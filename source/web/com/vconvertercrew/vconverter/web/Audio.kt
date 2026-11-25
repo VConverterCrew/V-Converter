@@ -5,10 +5,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
-import com.vconvertercrew.vconverter.editor.EditorAudio
-import com.vconvertercrew.vconverter.editor.Hitsound
-import com.vconvertercrew.vconverter.editorview.SongPlayer
-import com.vconvertercrew.vconverter.overlay.UiSound
+import com.vconvertercrew.vconverter.tools.editor.EditorAudio
+import com.vconvertercrew.vconverter.tools.editor.Hitsound
+import com.vconvertercrew.vconverter.views.editor.SongPlayer
+import com.vconvertercrew.vconverter.views.overlay.UiSound
 import com.vconvertercrew.vconverter.platform.Browser
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine

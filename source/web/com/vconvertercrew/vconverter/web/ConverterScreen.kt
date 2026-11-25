@@ -8,19 +8,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.platform.File
-import com.vconvertercrew.vconverter.chart.preview.ChartWorkbench
-import com.vconvertercrew.vconverter.converterview.ConverterArt
-import com.vconvertercrew.vconverter.converterview.ConverterMenuSpec
-import com.vconvertercrew.vconverter.converterview.ConverterMenus
-import com.vconvertercrew.vconverter.converterview.ConverterRow
-import com.vconvertercrew.vconverter.converterview.FunkinConverterMenu
-import com.vconvertercrew.vconverter.converterview.FunkinModMenu
-import com.vconvertercrew.vconverter.converterview.GeneratorActions
-import com.vconvertercrew.vconverter.converterview.GeneratorMenus
-import com.vconvertercrew.vconverter.converterview.ModMenuInfo
-import com.vconvertercrew.vconverter.converterview.ModMenuSpec
-import com.vconvertercrew.vconverter.converterview.ModMenus
-import com.vconvertercrew.vconverter.overlay.DiscordBadge
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartWorkbench
+import com.vconvertercrew.vconverter.views.converter.ConverterArt
+import com.vconvertercrew.vconverter.views.converter.ConverterMenuSpec
+import com.vconvertercrew.vconverter.views.converter.ConverterMenus
+import com.vconvertercrew.vconverter.views.converter.ConverterRow
+import com.vconvertercrew.vconverter.views.converter.FunkinConverterMenu
+import com.vconvertercrew.vconverter.views.converter.FunkinModMenu
+import com.vconvertercrew.vconverter.views.converter.GeneratorActions
+import com.vconvertercrew.vconverter.views.converter.GeneratorMenus
+import com.vconvertercrew.vconverter.views.converter.ModMenuInfo
+import com.vconvertercrew.vconverter.views.converter.ModMenuSpec
+import com.vconvertercrew.vconverter.views.converter.ModMenus
+import com.vconvertercrew.vconverter.views.overlay.DiscordBadge
 
 fun usesFunkinConverter(state: AppState): Boolean = state.tool == null || state.tool == EditorTool.MOD_GEN || state.tool == EditorTool.SCRIPT_GEN
 
@@ -105,12 +105,12 @@ fun FunkinModScreen(state: AppState) {
     val art = remember { ConverterArt.load({ Resources.image(it) }, { Resources.bytes(it)?.decodeToString() }) }
     val bananaScope = androidx.compose.runtime.rememberCoroutineScope()
     val banana = remember(state) {
-        com.vconvertercrew.vconverter.converterview.GameBananaState(
+        com.vconvertercrew.vconverter.views.converter.GameBananaState(
             bananaScope,
             { bytes -> runCatching { org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap() }.getOrNull() }
         ) { _, file, progress ->
-        val bytes = com.vconvertercrew.vconverter.online.GameBanana.download(file) { done, total -> if (total > 0) progress(done.toFloat() / total) }
-        val target = File("/gamebanana/" + com.vconvertercrew.vconverter.online.GameBanana.safeFileName(file))
+        val bytes = com.vconvertercrew.vconverter.tools.online.GameBanana.download(file) { done, total -> if (total > 0) progress(done.toFloat() / total) }
+        val target = File("/gamebanana/" + com.vconvertercrew.vconverter.tools.online.GameBanana.safeFileName(file))
         target.writeBytes(bytes)
         state.openMod(target)
     }

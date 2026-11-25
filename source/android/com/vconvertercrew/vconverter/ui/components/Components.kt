@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter.ui.components
 
-import com.vconvertercrew.vconverter.overlay.UiSound
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.UiSound
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -334,7 +334,7 @@ fun StatusBanner(status: StatusMessage?, onDismiss: () -> Unit) {
 
 @Composable
 fun ReportView(report: Report, accent: Color) {
-    com.vconvertercrew.vconverter.overlay.ReportView(report, accent)
+    com.vconvertercrew.vconverter.views.overlay.ReportView(report, accent)
 }
 
 @Composable

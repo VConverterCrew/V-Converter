@@ -1,13 +1,13 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.script.ScriptConverter
-import com.vconvertercrew.vconverter.script.ScriptScope
-import com.vconvertercrew.vconverter.script.ScriptSource
-import com.vconvertercrew.vconverter.script.ScriptTarget
-import com.vconvertercrew.vconverter.stage.LuaStageExtractor
-import com.vconvertercrew.vconverter.stage.PsychStageParser
-import com.vconvertercrew.vconverter.stage.PsychToVSliceStage
-import com.vconvertercrew.vconverter.stage.StageSource
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ScriptScope
+import com.vconvertercrew.vconverter.convert.script.ScriptSource
+import com.vconvertercrew.vconverter.convert.script.ScriptTarget
+import com.vconvertercrew.vconverter.convert.stage.LuaStageExtractor
+import com.vconvertercrew.vconverter.convert.stage.PsychStageParser
+import com.vconvertercrew.vconverter.convert.stage.PsychToVSliceStage
+import com.vconvertercrew.vconverter.convert.stage.StageSource
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,7 +47,7 @@ class LuaStageTest {
         val code = bundle.files.single().content
         assertFalse(code.contains("makeSprite(\"bar\""))
         assertFalse(code.contains("makeAnimatedSprite(\"sniper\""))
-        if (com.vconvertercrew.vconverter.script.NativeScripts.available) {
+        if (com.vconvertercrew.vconverter.convert.script.NativeScripts.available) {
             assertTrue(code.contains("getNamedProp(\"sniper\")?.playAnimation(\"sip\", true)"))
         } else {
             assertTrue(code.contains("playAnim(\"sniper\", \"sip\", true)"))

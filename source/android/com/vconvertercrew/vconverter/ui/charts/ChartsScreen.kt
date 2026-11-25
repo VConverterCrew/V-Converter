@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.ui.charts
 
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -39,13 +39,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.chart.preview.ChartEngine
-import com.vconvertercrew.vconverter.chart.preview.ChartField
-import com.vconvertercrew.vconverter.chart.preview.ChartPreview
-import com.vconvertercrew.vconverter.chartview.ChartStrip
-import com.vconvertercrew.vconverter.chartview.ChartStripColors
-import com.vconvertercrew.vconverter.chartview.formatBpm
-import com.vconvertercrew.vconverter.chartview.formatDuration
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartEngine
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartField
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartPreview
+import com.vconvertercrew.vconverter.views.chart.ChartStrip
+import com.vconvertercrew.vconverter.views.chart.ChartStripColors
+import com.vconvertercrew.vconverter.views.chart.formatBpm
+import com.vconvertercrew.vconverter.views.chart.formatDuration
 import com.vconvertercrew.vconverter.ui.ConvertSection
 import com.vconvertercrew.vconverter.ui.components.Chip
 import com.vconvertercrew.vconverter.ui.components.DropZone

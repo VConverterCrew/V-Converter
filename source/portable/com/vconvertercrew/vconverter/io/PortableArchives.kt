@@ -1,8 +1,8 @@
 package com.vconvertercrew.vconverter.io
 
-import com.vconvertercrew.vconverter.mod.ArchiveKind
-import com.vconvertercrew.vconverter.mod.DirectoryModFiles
-import com.vconvertercrew.vconverter.mod.ZipExtractor
+import com.vconvertercrew.vconverter.convert.mod.ArchiveKind
+import com.vconvertercrew.vconverter.convert.mod.DirectoryModFiles
+import com.vconvertercrew.vconverter.convert.mod.ZipExtractor
 import com.vconvertercrew.vconverter.platform.File
 import com.vconvertercrew.vconverter.platform.IOException
 import com.vconvertercrew.vconverter.platform.Platform

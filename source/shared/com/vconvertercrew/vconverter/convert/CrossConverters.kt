@@ -1,42 +1,42 @@
 package com.vconvertercrew.vconverter.convert
 
-import com.vconvertercrew.vconverter.script.ShaderConverter
-import com.vconvertercrew.vconverter.character.PsychCharacterParser
-import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
-import com.vconvertercrew.vconverter.chart.ChartSource
-import com.vconvertercrew.vconverter.chart.psych.PsychChartParser
-import com.vconvertercrew.vconverter.chart.psych.PsychEvent
-import com.vconvertercrew.vconverter.codename.CodenameCharacterParser
-import com.vconvertercrew.vconverter.codename.CodenameChartParser
-import com.vconvertercrew.vconverter.codename.CodenameEvents
-import com.vconvertercrew.vconverter.codename.CodenameMeta
-import com.vconvertercrew.vconverter.codename.CodenamePsychCharacter
-import com.vconvertercrew.vconverter.codename.CodenamePsychHelpers
-import com.vconvertercrew.vconverter.codename.CodenamePsychOptions
-import com.vconvertercrew.vconverter.codename.CodenamePsychScriptContext
-import com.vconvertercrew.vconverter.codename.CodenameScope
-import com.vconvertercrew.vconverter.codename.CodenameScriptTarget
-import com.vconvertercrew.vconverter.codename.CodenameSong
-import com.vconvertercrew.vconverter.codename.CodenameStageParser
-import com.vconvertercrew.vconverter.codename.CodenameToPsychCharacter
-import com.vconvertercrew.vconverter.codename.CodenameToPsychChart
-import com.vconvertercrew.vconverter.codename.CodenameToPsychEvents
-import com.vconvertercrew.vconverter.codename.CodenameToPsychLua
-import com.vconvertercrew.vconverter.script.ScriptDoctor
-import com.vconvertercrew.vconverter.codename.CodenameToPsychScript
-import com.vconvertercrew.vconverter.codename.CodenameToPsychStage
-import com.vconvertercrew.vconverter.codename.CodenameToPsychWeek
-import com.vconvertercrew.vconverter.codename.CodenameWeekParser
-import com.vconvertercrew.vconverter.codename.EventDefinition
-import com.vconvertercrew.vconverter.codename.LuaToCodename
-import com.vconvertercrew.vconverter.codename.PsychCodenameChartOptions
-import com.vconvertercrew.vconverter.codename.PsychHxToCodename
-import com.vconvertercrew.vconverter.codename.PsychSongInfo
-import com.vconvertercrew.vconverter.codename.PsychToCodenameCharacter
-import com.vconvertercrew.vconverter.codename.PsychToCodenameChart
-import com.vconvertercrew.vconverter.codename.PsychToCodenameEvents
-import com.vconvertercrew.vconverter.codename.PsychToCodenameStage
-import com.vconvertercrew.vconverter.codename.PsychToCodenameWeek
+import com.vconvertercrew.vconverter.convert.script.ShaderConverter
+import com.vconvertercrew.vconverter.convert.character.PsychCharacterParser
+import com.vconvertercrew.vconverter.convert.character.PsychToVSliceCharacter
+import com.vconvertercrew.vconverter.convert.chart.ChartSource
+import com.vconvertercrew.vconverter.convert.chart.psych.PsychChartParser
+import com.vconvertercrew.vconverter.convert.chart.psych.PsychEvent
+import com.vconvertercrew.vconverter.engines.codename.CodenameCharacterParser
+import com.vconvertercrew.vconverter.engines.codename.CodenameChartParser
+import com.vconvertercrew.vconverter.engines.codename.CodenameEvents
+import com.vconvertercrew.vconverter.engines.codename.CodenameMeta
+import com.vconvertercrew.vconverter.engines.codename.CodenamePsychCharacter
+import com.vconvertercrew.vconverter.engines.codename.CodenamePsychHelpers
+import com.vconvertercrew.vconverter.engines.codename.CodenamePsychOptions
+import com.vconvertercrew.vconverter.engines.codename.CodenamePsychScriptContext
+import com.vconvertercrew.vconverter.engines.codename.CodenameScope
+import com.vconvertercrew.vconverter.engines.codename.CodenameScriptTarget
+import com.vconvertercrew.vconverter.engines.codename.CodenameSong
+import com.vconvertercrew.vconverter.engines.codename.CodenameStageParser
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychCharacter
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychChart
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychEvents
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychLua
+import com.vconvertercrew.vconverter.convert.script.ScriptDoctor
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychScript
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychStage
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychWeek
+import com.vconvertercrew.vconverter.engines.codename.CodenameWeekParser
+import com.vconvertercrew.vconverter.engines.codename.EventDefinition
+import com.vconvertercrew.vconverter.engines.codename.LuaToCodename
+import com.vconvertercrew.vconverter.engines.codename.PsychCodenameChartOptions
+import com.vconvertercrew.vconverter.engines.codename.PsychHxToCodename
+import com.vconvertercrew.vconverter.engines.codename.PsychSongInfo
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameCharacter
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameChart
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameEvents
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameStage
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameWeek
 import com.vconvertercrew.vconverter.core.AnimateAtlases
 import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.ReportBuilder
@@ -44,10 +44,10 @@ import com.vconvertercrew.vconverter.core.SongPath
 import com.vconvertercrew.vconverter.core.SparrowAtlas
 import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.OutputFile
-import com.vconvertercrew.vconverter.script.ScriptIssue
-import com.vconvertercrew.vconverter.stage.LuaStageExtractor
-import com.vconvertercrew.vconverter.stage.PsychStageParser
-import com.vconvertercrew.vconverter.week.PsychWeekParser
+import com.vconvertercrew.vconverter.convert.script.ScriptIssue
+import com.vconvertercrew.vconverter.convert.stage.LuaStageExtractor
+import com.vconvertercrew.vconverter.convert.stage.PsychStageParser
+import com.vconvertercrew.vconverter.convert.week.PsychWeekParser
 import com.vconvertercrew.vconverter.core.sortedMutableMap
 import com.vconvertercrew.vconverter.core.sortedMutableSet
 import com.vconvertercrew.vconverter.core.CaseInsensitiveOrder
@@ -345,7 +345,7 @@ class CodenameToPsychScriptsConverter : CodenameToPsychConverter() {
             var target = target(item.path, stem)
             if (target.scope == CodenameScope.GLOBAL && stages.containsKey(stem)) target = CodenameScriptTarget(CodenameScope.STAGE, stem)
             val stage = stages[target.key]
-            val hooks = if (target.scope == CodenameScope.STAGE && stage != null) CodenameToPsychStage.convert(stage).hooks else com.vconvertercrew.vconverter.codename.PsychHooks()
+            val hooks = if (target.scope == CodenameScope.STAGE && stage != null) CodenameToPsychStage.convert(stage).hooks else com.vconvertercrew.vconverter.engines.codename.PsychHooks()
             val context = CodenamePsychScriptContext(
                 stageSprites = if (target.scope == CodenameScope.STAGE) stage?.spriteNames?.toSet() ?: emptySet() else emptySet(),
                 eventParamCounts = events,

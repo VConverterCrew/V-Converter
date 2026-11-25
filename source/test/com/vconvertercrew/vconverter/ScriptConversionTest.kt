@@ -1,22 +1,22 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.chart.ChartSource
-import com.vconvertercrew.vconverter.chart.ConversionOptions
-import com.vconvertercrew.vconverter.chart.PsychToVSliceChart
-import com.vconvertercrew.vconverter.chart.psych.PsychChartParser
-import com.vconvertercrew.vconverter.script.HxImports
-import com.vconvertercrew.vconverter.script.LuaPattern
-import com.vconvertercrew.vconverter.script.LuaToHScript
-import com.vconvertercrew.vconverter.script.NativeScripts
-import com.vconvertercrew.vconverter.script.PsychHScriptWrapper
-import com.vconvertercrew.vconverter.script.ReflectCalls
-import com.vconvertercrew.vconverter.script.ScriptConverter
-import com.vconvertercrew.vconverter.script.ScriptScope
-import com.vconvertercrew.vconverter.script.ScriptSource
-import com.vconvertercrew.vconverter.script.ScriptTarget
-import com.vconvertercrew.vconverter.script.lua.LuaParser
-import com.vconvertercrew.vconverter.script.lua.LuaSyntaxException
-import com.vconvertercrew.vconverter.script.lua.Stat
+import com.vconvertercrew.vconverter.convert.chart.ChartSource
+import com.vconvertercrew.vconverter.convert.chart.ConversionOptions
+import com.vconvertercrew.vconverter.convert.chart.PsychToVSliceChart
+import com.vconvertercrew.vconverter.convert.chart.psych.PsychChartParser
+import com.vconvertercrew.vconverter.convert.script.HxImports
+import com.vconvertercrew.vconverter.convert.script.LuaPattern
+import com.vconvertercrew.vconverter.convert.script.LuaToHScript
+import com.vconvertercrew.vconverter.convert.script.NativeScripts
+import com.vconvertercrew.vconverter.convert.script.PsychHScriptWrapper
+import com.vconvertercrew.vconverter.convert.script.ReflectCalls
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ScriptScope
+import com.vconvertercrew.vconverter.convert.script.ScriptSource
+import com.vconvertercrew.vconverter.convert.script.ScriptTarget
+import com.vconvertercrew.vconverter.convert.script.lua.LuaParser
+import com.vconvertercrew.vconverter.convert.script.lua.LuaSyntaxException
+import com.vconvertercrew.vconverter.convert.script.lua.Stat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -264,9 +264,9 @@ class ScriptConversionTest {
 
     @Test
     fun eventIdsAvoidVSliceBuiltIns() {
-        assertEquals("FlashCamera", com.vconvertercrew.vconverter.chart.PsychEventIds.idFor("Flash Camera"))
-        assertEquals("PsychFocusCamera", com.vconvertercrew.vconverter.chart.PsychEventIds.idFor("Focus Camera"))
-        assertEquals("Hey", com.vconvertercrew.vconverter.chart.PsychEventIds.idFor("Hey!"))
+        assertEquals("FlashCamera", com.vconvertercrew.vconverter.convert.chart.PsychEventIds.idFor("Flash Camera"))
+        assertEquals("PsychFocusCamera", com.vconvertercrew.vconverter.convert.chart.PsychEventIds.idFor("Focus Camera"))
+        assertEquals("Hey", com.vconvertercrew.vconverter.convert.chart.PsychEventIds.idFor("Hey!"))
     }
 
     @Test

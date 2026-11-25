@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.mod.ZipModWriter
+import com.vconvertercrew.vconverter.convert.mod.ZipModWriter
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.ByteArrayInputStream

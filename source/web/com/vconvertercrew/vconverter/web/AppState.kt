@@ -4,9 +4,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.vconvertercrew.vconverter.mod.ModCancel
-import com.vconvertercrew.vconverter.mod.ModCancelledException
-import com.vconvertercrew.vconverter.mod.ModConversionResult
+import com.vconvertercrew.vconverter.convert.mod.ModCancel
+import com.vconvertercrew.vconverter.convert.mod.ModCancelledException
+import com.vconvertercrew.vconverter.convert.mod.ModConversionResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -61,12 +61,12 @@ class AppState(private val scope: CoroutineScope) {
     val characterEditor = IosCharacterEditor(scope)
     val stageEditor = IosStageEditor(scope)
     val weekEditor = IosWeekEditor(scope)
-    val modGen = com.vconvertercrew.vconverter.converterview.ModGenForm()
-    val scriptGen = com.vconvertercrew.vconverter.converterview.ScriptGenForm()
-    val modGenRun = com.vconvertercrew.vconverter.converterview.GeneratorRun()
-    val scriptGenRun = com.vconvertercrew.vconverter.converterview.GeneratorRun()
-    val xmlEditor = com.vconvertercrew.vconverter.editorview.XmlEditorState(scope) { bytes -> org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap() }
-    val online = com.vconvertercrew.vconverter.onlineview.OnlineState(scope)
+    val modGen = com.vconvertercrew.vconverter.views.converter.ModGenForm()
+    val scriptGen = com.vconvertercrew.vconverter.views.converter.ScriptGenForm()
+    val modGenRun = com.vconvertercrew.vconverter.views.converter.GeneratorRun()
+    val scriptGenRun = com.vconvertercrew.vconverter.views.converter.GeneratorRun()
+    val xmlEditor = com.vconvertercrew.vconverter.views.editor.XmlEditorState(scope) { bytes -> org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap() }
+    val online = com.vconvertercrew.vconverter.views.online.OnlineState(scope)
     val playtest = IosPlayTest(scope)
 
     fun playTestFiles(files: List<Pair<String, ByteArray>>, label: String) {
@@ -74,7 +74,7 @@ class AppState(private val scope: CoroutineScope) {
         tool = EditorTool.PLAYTEST
     }
 
-    fun playTestChart(document: com.vconvertercrew.vconverter.editor.ChartDocument, audio: List<com.vconvertercrew.vconverter.editor.EditorAudio>) {
+    fun playTestChart(document: com.vconvertercrew.vconverter.tools.editor.ChartDocument, audio: List<com.vconvertercrew.vconverter.tools.editor.EditorAudio>) {
         if (editor.editor.playing) editor.editor.togglePlay()
         playtest.state.useChart(document, audio, "Chart Editor · ${document.meta.songName.ifBlank { document.id }}")
         tool = EditorTool.PLAYTEST
@@ -109,7 +109,7 @@ class AppState(private val scope: CoroutineScope) {
             EditorTool.ONLINE -> Unit
             EditorTool.XML -> xmlEditor.addFrames(list.filter { it.isFile }.map { it.name to it.readBytes() })
             EditorTool.PLAYTEST -> playtest.open(list)
-            EditorTool.MOD_GEN -> list.firstOrNull { it.name.endsWith(".png", ignoreCase = true) }?.let { file -> modGen.update { it.copy(icon = com.vconvertercrew.vconverter.converterview.GeneratorMenus.pickedIcon(file.name, file.readBytes())) } }
+            EditorTool.MOD_GEN -> list.firstOrNull { it.name.endsWith(".png", ignoreCase = true) }?.let { file -> modGen.update { it.copy(icon = com.vconvertercrew.vconverter.views.converter.GeneratorMenus.pickedIcon(file.name, file.readBytes())) } }
             EditorTool.SCRIPT_GEN -> Unit
             null -> if (tab == Tab.MOD) openMod(list.first()) else addFiles(list)
         }
@@ -231,7 +231,7 @@ if (zip) Dialogs.export(target)
         }
     }
 
-    fun saveGenerated(run: com.vconvertercrew.vconverter.converterview.GeneratorRun, output: com.vconvertercrew.vconverter.convert.ConvertedOutput, zip: Boolean, name: String, prefix: String) {
+    fun saveGenerated(run: com.vconvertercrew.vconverter.views.converter.GeneratorRun, output: com.vconvertercrew.vconverter.convert.ConvertedOutput, zip: Boolean, name: String, prefix: String) {
         if (run.busy) return
         Dialogs.pickTarget(zip, "Save the generated files", name, "Choose the folder to write the files into") { target ->
             run.busy = true

@@ -5,12 +5,12 @@ import com.vconvertercrew.vconverterui.VOutlineButton as Secondary
 import com.vconvertercrew.vconverterui.VCard as Card
 import com.vconvertercrew.vconverterui.VSectionTitle as SectionTitle
 import com.vconvertercrew.vconverterui.VBadge as Chip
-import com.vconvertercrew.vconverter.overlay.ReportView
-import com.vconvertercrew.vconverter.overlay.Field
+import com.vconvertercrew.vconverter.views.overlay.ReportView
+import com.vconvertercrew.vconverter.views.overlay.Field
 import com.vconvertercrew.vconverterui.VStatusBanner
 import com.vconvertercrew.vconverterui.VStatusKind
-import com.vconvertercrew.vconverter.overlay.UiSound
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.UiSound
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.VerticalScrollbar
@@ -66,18 +66,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vconvertercrew.vconverter.convert.PickedText
-import com.vconvertercrew.vconverter.editorview.typingField
-import com.vconvertercrew.vconverter.overlay.CodePreviewText
-import com.vconvertercrew.vconverter.overlay.FpsCounter
-import com.vconvertercrew.vconverter.overlay.PreviewText
+import com.vconvertercrew.vconverter.views.editor.typingField
+import com.vconvertercrew.vconverter.views.overlay.CodePreviewText
+import com.vconvertercrew.vconverter.views.overlay.FpsCounter
+import com.vconvertercrew.vconverter.views.overlay.PreviewText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.Report
-import com.vconvertercrew.vconverter.overlay.ModScannerPanel
-import com.vconvertercrew.vconverter.overlay.ScannerColors
+import com.vconvertercrew.vconverter.views.overlay.ModScannerPanel
+import com.vconvertercrew.vconverter.views.overlay.ScannerColors
 
-private val logo = Resources.image("icons/icon.png")
+private val logo = Resources.image("ui/app/icon.png")
 
 @Composable
 fun App(state: AppState) {
@@ -284,7 +284,7 @@ private fun Hero(state: AppState) {
 @Composable
 internal fun StatusBanner(status: Status?) {
     androidx.compose.runtime.LaunchedEffect(status) {
-        if (status is Status.Error) com.vconvertercrew.vconverter.online.ErrorReports.send("conversion", status.text)
+        if (status is Status.Error) com.vconvertercrew.vconverter.tools.online.ErrorReports.send("conversion", status.text)
     }
     status ?: return
     VStatusBanner(

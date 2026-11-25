@@ -17,6 +17,8 @@ bool decodePng(const uint8_t* data, size_t size, Image& out, std::string& error)
 
 std::vector<uint8_t> encodePng(const Image& image, int level);
 
+bool optimizePng(const uint8_t* data, size_t size, int level, std::vector<uint8_t>& out);
+
 Image resizeImage(const Image& image, int width, int height, bool smooth);
 
 void bakeColors(Image& image, uint32_t r, uint32_t g, uint32_t b);

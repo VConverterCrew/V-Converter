@@ -4,7 +4,7 @@ import com.vconvertercrew.vconverter.convert.PsychChartsConverter
 import com.vconvertercrew.vconverter.convert.PsychToCodenameChartsConverter
 import com.vconvertercrew.vconverter.io.Archives
 import com.vconvertercrew.vconverter.io.ImportedFile
-import com.vconvertercrew.vconverter.mod.ArchiveKind
+import com.vconvertercrew.vconverter.convert.mod.ArchiveKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

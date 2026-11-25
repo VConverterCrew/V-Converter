@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter.ui.editor
 
 import androidx.compose.foundation.layout.fillMaxSize
-import com.vconvertercrew.vconverter.editorview.*
+import com.vconvertercrew.vconverter.views.editor.*
 import android.app.Application
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -25,22 +25,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SpriteAtlas
-import com.vconvertercrew.vconverter.editor.StageAsset
-import com.vconvertercrew.vconverter.editor.WeekDocument
-import com.vconvertercrew.vconverter.editor.WeekExport
-import com.vconvertercrew.vconverter.editor.WeekLoader
-import com.vconvertercrew.vconverter.editor.WeekProp
-import com.vconvertercrew.vconverter.editor.WeekSlot
-import com.vconvertercrew.vconverter.editorview.StageImage
-import com.vconvertercrew.vconverter.editorview.WeekEditorState
-import com.vconvertercrew.vconverter.editorview.WeekInfoPanel
-import com.vconvertercrew.vconverter.editorview.WeekPreview
-import com.vconvertercrew.vconverter.editorview.WeekPropsPanel
-import com.vconvertercrew.vconverter.editorview.WeekSongsPanel
-import com.vconvertercrew.vconverter.editorview.WeekToolbar
-import com.vconvertercrew.vconverter.editorview.weekSummary
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SpriteAtlas
+import com.vconvertercrew.vconverter.tools.editor.StageAsset
+import com.vconvertercrew.vconverter.tools.editor.WeekDocument
+import com.vconvertercrew.vconverter.tools.editor.WeekExport
+import com.vconvertercrew.vconverter.tools.editor.WeekLoader
+import com.vconvertercrew.vconverter.tools.editor.WeekProp
+import com.vconvertercrew.vconverter.tools.editor.WeekSlot
+import com.vconvertercrew.vconverter.views.editor.StageImage
+import com.vconvertercrew.vconverter.views.editor.WeekEditorState
+import com.vconvertercrew.vconverter.views.editor.WeekInfoPanel
+import com.vconvertercrew.vconverter.views.editor.WeekPreview
+import com.vconvertercrew.vconverter.views.editor.WeekPropsPanel
+import com.vconvertercrew.vconverter.views.editor.WeekSongsPanel
+import com.vconvertercrew.vconverter.views.editor.WeekToolbar
+import com.vconvertercrew.vconverter.views.editor.weekSummary
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.ConvertSection
 import com.vconvertercrew.vconverter.ui.StatusMessage
@@ -57,7 +57,7 @@ enum class WeekImageRole { PROP, TITLE, BACKGROUND }
 
 class WeekEditorViewModel(application: Application) : BaseConverterViewModel(application) {
     val editor = WeekEditorState(WeekDocument("new-week", "New Week"))
-    val live = com.vconvertercrew.vconverter.editorview.LiveSession(com.vconvertercrew.vconverter.editorview.WeekLiveAdapter(editor) { asset -> decode(asset) }) { block -> android.os.Handler(android.os.Looper.getMainLooper()).post(block) }
+    val live = com.vconvertercrew.vconverter.views.editor.LiveSession(com.vconvertercrew.vconverter.views.editor.WeekLiveAdapter(editor) { asset -> decode(asset) }) { block -> android.os.Handler(android.os.Looper.getMainLooper()).post(block) }
     var target by mutableStateOf(ExportTarget.VSLICE)
         private set
     override val vsliceOutput: Boolean get() = target == ExportTarget.VSLICE
@@ -236,7 +236,7 @@ fun WeekEditorScreen(viewModel: WeekEditorViewModel, modFolderName: String?, onS
             OutlineButton("Background image (.png)", accent, onClick = { pick(WeekImageRole.BACKGROUND) }, enabled = !busy)
         },
         EditorWindow("props", "Menu Characters", 400.dp) { WeekPropsPanel(editor, onLoadImage = { slot -> pick(WeekImageRole.PROP, slot) }) },
-        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.editorview.LiveSessionPanel(viewModel.live) },
+        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.views.editor.LiveSessionPanel(viewModel.live) },
         EditorWindow("export", "Export", 420.dp) {
             SectionTitle("Export format", accent, 1)
             ChoiceChips(
@@ -271,7 +271,7 @@ fun WeekEditorScreen(viewModel: WeekEditorViewModel, modFolderName: String?, onS
         EditorWindow("help", "Controls") { EditorHelpText("Tap a menu character in the preview and drag it to move it. Use the menus at the top: File opens, creates and exports, Edit undoes and changes the selection, View changes what you see, and Window shows or hides these boxes. Drag a box by its title to move it.") }
     )
     val exportZip = com.vconvertercrew.vconverter.ui.components.rememberDownloader(viewModel)
-    val exportSpec = com.vconvertercrew.vconverter.editorview.ExportMenuSpec(
+    val exportSpec = com.vconvertercrew.vconverter.views.editor.ExportMenuSpec(
         title = "Week",
         target = viewModel.target,
         onTarget = viewModel::selectTarget,

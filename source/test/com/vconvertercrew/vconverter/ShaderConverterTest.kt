@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.character.BaseCharacterScripts
-import com.vconvertercrew.vconverter.script.ShaderConverter
+import com.vconvertercrew.vconverter.convert.character.BaseCharacterScripts
+import com.vconvertercrew.vconverter.convert.script.ShaderConverter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

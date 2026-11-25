@@ -80,7 +80,7 @@ kotlin {
     sourceSets.named("main") {
         kotlin.setSrcDirs(listOf(File(source, "v-converterui"), File(source, "v-touch"), File(source, "shared"), File(source, "jvm"), File(source, "desktop")))
         resources.setSrcDirs(listOf(rootProject.file("assets"), nativeResources))
-        resources.exclude("icons/desktop/**", "**/README.txt")
+        resources.exclude("ui/app/desktop/**", "**/README.txt")
     }
 }
 
@@ -108,7 +108,7 @@ compose.desktop {
             vendor = "VConverterCrew"
             modules("java.naming", "jdk.unsupported", "jdk.crypto.ec")
             windows {
-                iconFile.set(rootProject.file("assets/icons/desktop/icon.ico"))
+                iconFile.set(rootProject.file("assets/ui/app/desktop/icon.ico"))
                 menuGroup = "V-Converter"
                 shortcut = true
                 menu = true
@@ -117,7 +117,7 @@ compose.desktop {
                 upgradeUuid = "6f3e2d9a-4b1c-4e8a-9d5f-2a7b8c1e0f43"
             }
             macOS {
-                iconFile.set(rootProject.file("assets/icons/desktop/icon.icns"))
+                iconFile.set(rootProject.file("assets/ui/app/desktop/icon.icns"))
                 bundleID = "com.vconvertercrew.vconverter"
                 packageName = "V-Converter"
                 dockName = "V-Converter"
@@ -126,7 +126,7 @@ compose.desktop {
                 appCategory = "public.app-category.developer-tools"
             }
             linux {
-                iconFile.set(rootProject.file("assets/icons/desktop/icon.png"))
+                iconFile.set(rootProject.file("assets/ui/app/desktop/icon.png"))
                 packageName = "v-converter"
                 debMaintainer = "brenoamonteiro7@gmail.com"
                 menuGroup = "Development"

@@ -8,10 +8,10 @@ import androidx.compose.runtime.produceState
 import com.vconvertercrew.vconverter.audio.AudioMixer
 import com.vconvertercrew.vconverter.audio.IosMixers
 import com.vconvertercrew.vconverter.audio.PcmAudio
-import com.vconvertercrew.vconverter.editor.EditorAudio
-import com.vconvertercrew.vconverter.editor.Hitsound
-import com.vconvertercrew.vconverter.editorview.SongPlayer
-import com.vconvertercrew.vconverter.overlay.UiSound
+import com.vconvertercrew.vconverter.tools.editor.EditorAudio
+import com.vconvertercrew.vconverter.tools.editor.Hitsound
+import com.vconvertercrew.vconverter.views.editor.SongPlayer
+import com.vconvertercrew.vconverter.views.overlay.UiSound
 import com.vconvertercrew.vconverter.platform.File
 import com.vconvertercrew.vconverter.platform.toNSData
 import kotlinx.cinterop.CPointerVar

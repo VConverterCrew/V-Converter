@@ -1,9 +1,9 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.reverse.VSliceParser
-import com.vconvertercrew.vconverter.reverse.VSliceSongSource
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychChart
-import com.vconvertercrew.vconverter.script.VScriptNative
+import com.vconvertercrew.vconverter.convert.reverse.VSliceParser
+import com.vconvertercrew.vconverter.convert.reverse.VSliceSongSource
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychChart
+import com.vconvertercrew.vconverter.convert.script.VScriptNative
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test

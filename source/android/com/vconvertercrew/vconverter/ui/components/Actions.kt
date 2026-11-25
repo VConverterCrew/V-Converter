@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.ui.components
 
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes

@@ -1,12 +1,12 @@
 package com.vconvertercrew.vconverter
 
 import com.vconvertercrew.vconverter.core.SparrowAtlas
-import com.vconvertercrew.vconverter.reverse.VSliceParser
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychStage
-import com.vconvertercrew.vconverter.stage.LuaStageExtractor
-import com.vconvertercrew.vconverter.stage.PsychStageParser
-import com.vconvertercrew.vconverter.stage.PsychToVSliceStage
-import com.vconvertercrew.vconverter.stage.StageSource
+import com.vconvertercrew.vconverter.convert.reverse.VSliceParser
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychStage
+import com.vconvertercrew.vconverter.convert.stage.LuaStageExtractor
+import com.vconvertercrew.vconverter.convert.stage.PsychStageParser
+import com.vconvertercrew.vconverter.convert.stage.PsychToVSliceStage
+import com.vconvertercrew.vconverter.convert.stage.StageSource
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

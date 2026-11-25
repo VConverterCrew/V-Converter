@@ -1,12 +1,12 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.WeekDocument
-import com.vconvertercrew.vconverter.editor.WeekExport
-import com.vconvertercrew.vconverter.editor.WeekLoader
-import com.vconvertercrew.vconverter.editor.WeekProp
-import com.vconvertercrew.vconverter.editor.WeekSlot
-import com.vconvertercrew.vconverter.editor.WeekSong
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.WeekDocument
+import com.vconvertercrew.vconverter.tools.editor.WeekExport
+import com.vconvertercrew.vconverter.tools.editor.WeekLoader
+import com.vconvertercrew.vconverter.tools.editor.WeekProp
+import com.vconvertercrew.vconverter.tools.editor.WeekSlot
+import com.vconvertercrew.vconverter.tools.editor.WeekSong
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

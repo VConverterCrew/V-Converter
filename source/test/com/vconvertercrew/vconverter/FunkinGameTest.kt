@@ -3,7 +3,7 @@ package com.vconvertercrew.vconverter
 import com.vconvertercrew.vconverter.launcher.FunkinGame
 import com.vconvertercrew.vconverter.launcher.FunkinModWriter
 import com.vconvertercrew.vconverter.launcher.LaunchGame
-import com.vconvertercrew.vconverter.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
 import com.vconvertercrew.vconverter.launcher.NativeLauncher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -169,7 +169,7 @@ class FunkinGameTest {
         assertEquals(listOf("mods/My \"Mod\"/data/songs/a/a-chart.json", "mods/My \"Mod\"/images/a.png", "mods/My \"Mod\"/_polymod_meta.json"), recorder.files.keys.toList())
         val meta = com.vconvertercrew.vconverter.json.JSONObject(recorder.files.getValue("mods/My \"Mod\"/_polymod_meta.json"))
         assertEquals("My \"Mod\"", meta.getString("title"))
-        assertEquals(com.vconvertercrew.vconverter.mod.ModConverter.API_VERSION, meta.getString("api_version"))
+        assertEquals(com.vconvertercrew.vconverter.convert.mod.ModConverter.API_VERSION, meta.getString("api_version"))
 
         val inside = Recorder()
         val second = FunkinModWriter(inside, FunkinModWriter.prefix("X", true))

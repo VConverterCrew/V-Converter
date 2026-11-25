@@ -11,11 +11,11 @@ import com.vconvertercrew.vconverter.io.OutputFile
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.ConvertedOutput
 import com.vconvertercrew.vconverter.ui.StatusMessage
-import com.vconvertercrew.vconverter.week.PsychMenuCharacter
-import com.vconvertercrew.vconverter.week.PsychToVSliceLevel
-import com.vconvertercrew.vconverter.week.PsychWeek
-import com.vconvertercrew.vconverter.week.PsychWeekParser
-import com.vconvertercrew.vconverter.week.WeekSource
+import com.vconvertercrew.vconverter.convert.week.PsychMenuCharacter
+import com.vconvertercrew.vconverter.convert.week.PsychToVSliceLevel
+import com.vconvertercrew.vconverter.convert.week.PsychWeek
+import com.vconvertercrew.vconverter.convert.week.PsychWeekParser
+import com.vconvertercrew.vconverter.convert.week.WeekSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

@@ -13,9 +13,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.vconvertercrew.vconverter.editorview.FnfXmlEditor
-import com.vconvertercrew.vconverter.editorview.XmlEditorState
-import com.vconvertercrew.vconverter.editorview.XmlExport
+import com.vconvertercrew.vconverter.views.editor.FnfXmlEditor
+import com.vconvertercrew.vconverter.views.editor.XmlEditorState
+import com.vconvertercrew.vconverter.views.editor.XmlExport
 import com.vconvertercrew.vconverter.io.DocumentIO
 import com.vconvertercrew.vconverter.io.OutputFile
 import kotlinx.coroutines.Dispatchers

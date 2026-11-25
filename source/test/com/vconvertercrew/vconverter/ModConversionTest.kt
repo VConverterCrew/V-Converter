@@ -1,16 +1,16 @@
 package com.vconvertercrew.vconverter
 
 import com.vconvertercrew.vconverter.core.SongPath
-import com.vconvertercrew.vconverter.mod.ArchiveKind
-import com.vconvertercrew.vconverter.mod.DirectoryModFiles
-import com.vconvertercrew.vconverter.mod.DirectoryModWriter
-import com.vconvertercrew.vconverter.mod.ModConverter
-import com.vconvertercrew.vconverter.mod.ModInfo
-import com.vconvertercrew.vconverter.mod.ModScanner
-import com.vconvertercrew.vconverter.mod.ZipExtractor
-import com.vconvertercrew.vconverter.week.PsychToVSliceLevel
-import com.vconvertercrew.vconverter.week.PsychWeekParser
-import com.vconvertercrew.vconverter.week.WeekSource
+import com.vconvertercrew.vconverter.convert.mod.ArchiveKind
+import com.vconvertercrew.vconverter.convert.mod.DirectoryModFiles
+import com.vconvertercrew.vconverter.convert.mod.DirectoryModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModConverter
+import com.vconvertercrew.vconverter.convert.mod.ModInfo
+import com.vconvertercrew.vconverter.convert.mod.ModScanner
+import com.vconvertercrew.vconverter.convert.mod.ZipExtractor
+import com.vconvertercrew.vconverter.convert.week.PsychToVSliceLevel
+import com.vconvertercrew.vconverter.convert.week.PsychWeekParser
+import com.vconvertercrew.vconverter.convert.week.WeekSource
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

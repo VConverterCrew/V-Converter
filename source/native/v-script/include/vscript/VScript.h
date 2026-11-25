@@ -43,6 +43,8 @@ VSCRIPT_API unsigned char* vscript_png_decode(const unsigned char* data, size_t 
 
 VSCRIPT_API unsigned char* vscript_png_encode(const unsigned char* rgba, int width, int height, int level, size_t* size);
 
+VSCRIPT_API unsigned char* vscript_png_optimize(const unsigned char* data, size_t size, int level, size_t* out_size);
+
 VSCRIPT_API unsigned char* vscript_image_resize(const unsigned char* rgba, int width, int height, int new_width, int new_height, int smooth);
 
 VSCRIPT_API void vscript_image_bake(unsigned char* rgba, int width, int height, unsigned int r, unsigned int g, unsigned int b);

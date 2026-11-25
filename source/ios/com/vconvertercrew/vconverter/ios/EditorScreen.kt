@@ -2,10 +2,10 @@ package com.vconvertercrew.vconverter.ios
 
 import com.vconvertercrew.vconverterui.VButton as Primary
 import com.vconvertercrew.vconverterui.VOutlineButton as Secondary
-import com.vconvertercrew.vconverter.overlay.ReportView
-import com.vconvertercrew.vconverter.overlay.Field
+import com.vconvertercrew.vconverter.views.overlay.ReportView
+import com.vconvertercrew.vconverter.views.overlay.Field
 import androidx.compose.foundation.layout.*
-import com.vconvertercrew.vconverter.editorview.*
+import com.vconvertercrew.vconverter.views.editor.*
 import com.vconvertercrew.vconverter.platform.File
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -36,18 +36,18 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.convert.ConvertedOutput
-import com.vconvertercrew.vconverter.editor.AudioRole
-import com.vconvertercrew.vconverter.editor.ChartBundle
-import com.vconvertercrew.vconverter.editor.ChartDocument
-import com.vconvertercrew.vconverter.editor.EditorAudio
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SongLoader
-import com.vconvertercrew.vconverter.editorview.ChartEditorState
-import com.vconvertercrew.vconverter.editorview.EditorChip
-import com.vconvertercrew.vconverter.editorview.ChartEditorWorkspace
-import com.vconvertercrew.vconverter.editorview.NoteSkin
-import com.vconvertercrew.vconverter.editorview.EditorTyping
-import com.vconvertercrew.vconverter.generator.Ids
+import com.vconvertercrew.vconverter.tools.editor.AudioRole
+import com.vconvertercrew.vconverter.tools.editor.ChartBundle
+import com.vconvertercrew.vconverter.tools.editor.ChartDocument
+import com.vconvertercrew.vconverter.tools.editor.EditorAudio
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SongLoader
+import com.vconvertercrew.vconverter.views.editor.ChartEditorState
+import com.vconvertercrew.vconverter.views.editor.EditorChip
+import com.vconvertercrew.vconverter.views.editor.ChartEditorWorkspace
+import com.vconvertercrew.vconverter.views.editor.NoteSkin
+import com.vconvertercrew.vconverter.views.editor.EditorTyping
+import com.vconvertercrew.vconverter.tools.generator.Ids
 import com.vconvertercrew.vconverter.io.Archives
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,8 +57,8 @@ import kotlinx.coroutines.withContext
 
 class IosEditor(private val scope: CoroutineScope) {
     val editor = ChartEditorState(ChartDocument.blank("new-song", "New Song", 120.0, listOf("easy", "normal", "hard")))
-    val live = com.vconvertercrew.vconverter.editorview.LiveSession(
-        com.vconvertercrew.vconverter.editorview.ChartLiveAdapter(editor, { audio }, { track -> useAudio(audio.filterNot { it.name.equals(track.name, true) } + track) })
+    val live = com.vconvertercrew.vconverter.views.editor.LiveSession(
+        com.vconvertercrew.vconverter.views.editor.ChartLiveAdapter(editor, { audio }, { track -> useAudio(audio.filterNot { it.name.equals(track.name, true) } + track) })
     ) { block -> runOnMain(block) }
     var audio by mutableStateOf<List<EditorAudio>>(emptyList())
         private set
@@ -344,7 +344,7 @@ fun EditorScreen(state: AppState) {
         EditorWindow("difficulty", "Difficulties") { DifficultyPanel(editor) },
         EditorWindow("timing", "Timing") { TimingPanel(editor) },
         EditorWindow("selection", "Note & Event Data") { SelectionPanel(editor) },
-        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.editorview.LiveSessionPanel(model.live, cursor = editor.position to editor.difficulty) },
+        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.views.editor.LiveSessionPanel(model.live, cursor = editor.position to editor.difficulty) },
         EditorWindow("export", "Export", 420.dp) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ExportTarget.entries.forEach { t -> EditorChip(t.label, t == model.target) { if (t != model.target) { model.target = t; model.changed(-2) } } }
@@ -365,7 +365,7 @@ fun EditorScreen(state: AppState) {
     )
     FunkinEditorShell(
         "Chart Editor", accent, menus, windows, panels, Modifier.fillMaxSize(), showMenuBar = false,
-        exportMenu = com.vconvertercrew.vconverter.editorview.ExportMenuSpec(
+        exportMenu = com.vconvertercrew.vconverter.views.editor.ExportMenuSpec(
             title = "Chart",
             target = model.target,
             onTarget = { t -> if (t != model.target) { model.target = t; model.changed(-2) } },
@@ -385,13 +385,13 @@ fun EditorScreen(state: AppState) {
             if (status != null) Box(Modifier.align(Alignment.BottomStart).padding(10.dp).widthIn(max = 560.dp)) { StatusBanner(status) }
         }
     ) {
-        val healthIcons = androidx.compose.runtime.remember { com.vconvertercrew.vconverter.overlay.HealthIcons { Resources.image(it) } }
+        val healthIcons = androidx.compose.runtime.remember { com.vconvertercrew.vconverter.views.overlay.HealthIcons { Resources.image(it) } }
         FnfChartEditor(
             editor, skin, eventIcon,
             onSave = { windows.show("export") },
             onReloadAudio = { windows.show("audio") },
             onPlayTest = { state.playTestChart(editor.document, model.audio) },
-            onExit = { com.vconvertercrew.vconverter.overlay.FunkinTransition.go { MainMenu.open = true } },
+            onExit = { com.vconvertercrew.vconverter.views.overlay.FunkinTransition.go { MainMenu.open = true } },
             icon = { healthIcons[it] },
             onReloadJson = { Dialogs.openFiles("Open the chart files, song folder or archive") { model.open(it) } }
         )

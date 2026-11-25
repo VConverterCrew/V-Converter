@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.ui.scripts
 
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -19,7 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.script.ScriptScope
+import com.vconvertercrew.vconverter.convert.script.ScriptScope
 import com.vconvertercrew.vconverter.ui.ConvertSection
 import com.vconvertercrew.vconverter.ui.components.DropZone
 import com.vconvertercrew.vconverter.ui.components.FileItem

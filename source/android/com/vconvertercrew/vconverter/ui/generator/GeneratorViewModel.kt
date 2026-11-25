@@ -3,8 +3,8 @@ package com.vconvertercrew.vconverter.ui.generator
 import android.app.Application
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
-import com.vconvertercrew.vconverter.generator.Generated
-import com.vconvertercrew.vconverter.generator.PickedAsset
+import com.vconvertercrew.vconverter.tools.generator.Generated
+import com.vconvertercrew.vconverter.tools.generator.PickedAsset
 import com.vconvertercrew.vconverter.io.DocumentIO
 import com.vconvertercrew.vconverter.io.OutputFile
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel

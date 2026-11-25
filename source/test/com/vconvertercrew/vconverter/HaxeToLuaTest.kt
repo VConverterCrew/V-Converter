@@ -1,11 +1,11 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.codename.CodenamePsychScriptContext
-import com.vconvertercrew.vconverter.codename.CodenameScope
-import com.vconvertercrew.vconverter.codename.CodenameScriptTarget
-import com.vconvertercrew.vconverter.codename.CodenameToPsychLua
-import com.vconvertercrew.vconverter.reverse.HxcToPsych
-import com.vconvertercrew.vconverter.script.HaxeToLua
+import com.vconvertercrew.vconverter.engines.codename.CodenamePsychScriptContext
+import com.vconvertercrew.vconverter.engines.codename.CodenameScope
+import com.vconvertercrew.vconverter.engines.codename.CodenameScriptTarget
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychLua
+import com.vconvertercrew.vconverter.convert.reverse.HxcToPsych
+import com.vconvertercrew.vconverter.convert.script.HaxeToLua
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

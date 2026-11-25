@@ -2,10 +2,10 @@ package com.vconvertercrew.vconverter.ios
 
 import com.vconvertercrew.vconverterui.VButton as Primary
 import com.vconvertercrew.vconverterui.VOutlineButton as Secondary
-import com.vconvertercrew.vconverter.overlay.ReportView
+import com.vconvertercrew.vconverter.views.overlay.ReportView
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.*
-import com.vconvertercrew.vconverter.editorview.*
+import com.vconvertercrew.vconverter.views.editor.*
 import com.vconvertercrew.vconverter.platform.File
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -32,21 +32,21 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.convert.ConvertedOutput
-import com.vconvertercrew.vconverter.editor.CharacterDocument
-import com.vconvertercrew.vconverter.editor.CharacterExport
-import com.vconvertercrew.vconverter.editor.CharacterLoader
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SpriteAtlas
-import com.vconvertercrew.vconverter.editorview.AnimationListPanel
-import com.vconvertercrew.vconverter.editorview.AnimationPanel
-import com.vconvertercrew.vconverter.editorview.CharacterEditorState
-import com.vconvertercrew.vconverter.editorview.CharacterInfoPanel
-import com.vconvertercrew.vconverter.editorview.CharacterPreview
-import com.vconvertercrew.vconverter.editorview.CharacterSprite
-import com.vconvertercrew.vconverter.editorview.CharacterToolbar
-import com.vconvertercrew.vconverter.editorview.DragModeBar
-import com.vconvertercrew.vconverter.editorview.EditorChip
-import com.vconvertercrew.vconverter.editorview.EditorTyping
+import com.vconvertercrew.vconverter.tools.editor.CharacterDocument
+import com.vconvertercrew.vconverter.tools.editor.CharacterExport
+import com.vconvertercrew.vconverter.tools.editor.CharacterLoader
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SpriteAtlas
+import com.vconvertercrew.vconverter.views.editor.AnimationListPanel
+import com.vconvertercrew.vconverter.views.editor.AnimationPanel
+import com.vconvertercrew.vconverter.views.editor.CharacterEditorState
+import com.vconvertercrew.vconverter.views.editor.CharacterInfoPanel
+import com.vconvertercrew.vconverter.views.editor.CharacterPreview
+import com.vconvertercrew.vconverter.views.editor.CharacterSprite
+import com.vconvertercrew.vconverter.views.editor.CharacterToolbar
+import com.vconvertercrew.vconverter.views.editor.DragModeBar
+import com.vconvertercrew.vconverter.views.editor.EditorChip
+import com.vconvertercrew.vconverter.views.editor.EditorTyping
 import com.vconvertercrew.vconverter.io.Archives
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,8 +56,8 @@ import kotlinx.coroutines.withContext
 
 class IosCharacterEditor(private val scope: CoroutineScope) {
     val editor = CharacterEditorState(CharacterDocument("new-character", "New Character"))
-    val live = com.vconvertercrew.vconverter.editorview.LiveSession(
-        com.vconvertercrew.vconverter.editorview.CharacterLiveAdapter(editor, { image to xml }, { png, text -> receiveSheet(png, text) })
+    val live = com.vconvertercrew.vconverter.views.editor.LiveSession(
+        com.vconvertercrew.vconverter.views.editor.CharacterLiveAdapter(editor, { image to xml }, { png, text -> receiveSheet(png, text) })
     ) { block -> runOnMain(block) }
 
     private fun receiveSheet(png: ByteArray?, text: String?) {
@@ -236,7 +236,7 @@ fun CharacterEditorScreen(state: AppState) {
     val editor = model.editor
     val accent = Palette.Left
 
-    val stage = androidx.compose.runtime.remember { Resources.image("images/ui/character/stage.png") }
+    val stage = androidx.compose.runtime.remember { Resources.image("ui/character/stage.png") }
 
     LaunchedEffect(editor.revision) { model.changed(editor.revision) }
 
@@ -280,7 +280,7 @@ fun CharacterEditorScreen(state: AppState) {
         EditorWindow("animations", "Animations") { AnimationListPanel(editor) },
         EditorWindow("animation", "Animation Data") { AnimationPanel(editor) },
         EditorWindow("properties", "Character Data") { CharacterInfoPanel(editor) },
-        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.editorview.LiveSessionPanel(model.live) },
+        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.views.editor.LiveSessionPanel(model.live) },
         EditorWindow("export", "Export", 420.dp) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ExportTarget.entries.forEach { t -> EditorChip(t.label, t == model.target) { if (t != model.target) { model.target = t; model.changed(-2) } } }
@@ -301,7 +301,7 @@ fun CharacterEditorScreen(state: AppState) {
     )
     FunkinEditorShell(
         "Character Editor", accent, menus, windows, panels, Modifier.fillMaxSize(),
-        exportMenu = com.vconvertercrew.vconverter.editorview.ExportMenuSpec(
+        exportMenu = com.vconvertercrew.vconverter.views.editor.ExportMenuSpec(
             title = "Character",
             target = model.target,
             onTarget = { t -> if (t != model.target) { model.target = t; model.changed(-2) } },

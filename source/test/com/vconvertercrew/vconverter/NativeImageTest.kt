@@ -2,10 +2,10 @@ package com.vconvertercrew.vconverter
 
 import com.vconvertercrew.vconverter.core.PngWriter
 import com.vconvertercrew.vconverter.core.RgbaImage
-import com.vconvertercrew.vconverter.fpsplus.FpsIcon
-import com.vconvertercrew.vconverter.notestyle.NoteImages
-import com.vconvertercrew.vconverter.notestyle.Rgb
-import com.vconvertercrew.vconverter.script.VScriptNative
+import com.vconvertercrew.vconverter.engines.fpsplus.FpsIcon
+import com.vconvertercrew.vconverter.convert.notestyle.NoteImages
+import com.vconvertercrew.vconverter.convert.notestyle.Rgb
+import com.vconvertercrew.vconverter.convert.script.VScriptNative
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.ui.components
 
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vconvertercrew.vconverter.R
 import com.vconvertercrew.vconverter.ui.theme.Funkin
-import com.vconvertercrew.vconverter.overlay.CodePreviewText
+import com.vconvertercrew.vconverter.views.overlay.CodePreviewText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext

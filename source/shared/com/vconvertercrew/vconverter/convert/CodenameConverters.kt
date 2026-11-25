@@ -1,35 +1,35 @@
 package com.vconvertercrew.vconverter.convert
 
-import com.vconvertercrew.vconverter.script.ShaderConverter
-import com.vconvertercrew.vconverter.character.BaseCharacterScripts
-import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
-import com.vconvertercrew.vconverter.chart.vslice.VSliceWriter
-import com.vconvertercrew.vconverter.codename.CodenameCharacterParser
-import com.vconvertercrew.vconverter.codename.CodenameChartParser
-import com.vconvertercrew.vconverter.codename.CodenameEvents
-import com.vconvertercrew.vconverter.codename.CodenameMeta
-import com.vconvertercrew.vconverter.codename.CodenameScope
-import com.vconvertercrew.vconverter.codename.CodenameScriptContext
-import com.vconvertercrew.vconverter.codename.CodenameScriptConverter
-import com.vconvertercrew.vconverter.codename.CodenameScriptPlanner
-import com.vconvertercrew.vconverter.codename.CodenameScriptTarget
-import com.vconvertercrew.vconverter.codename.CodenameSong
-import com.vconvertercrew.vconverter.codename.CodenameStageParser
-import com.vconvertercrew.vconverter.codename.CodenameToVSliceCharacter
-import com.vconvertercrew.vconverter.codename.CodenameToVSliceChart
-import com.vconvertercrew.vconverter.codename.CodenameToVSliceLevel
-import com.vconvertercrew.vconverter.codename.CodenameToVSliceStage
-import com.vconvertercrew.vconverter.codename.CodenameWeekParser
-import com.vconvertercrew.vconverter.codename.EventDefinition
-import com.vconvertercrew.vconverter.codename.ImageInfo
-import com.vconvertercrew.vconverter.codename.ImageProbe
+import com.vconvertercrew.vconverter.convert.script.ShaderConverter
+import com.vconvertercrew.vconverter.convert.character.BaseCharacterScripts
+import com.vconvertercrew.vconverter.convert.character.PsychToVSliceCharacter
+import com.vconvertercrew.vconverter.convert.chart.vslice.VSliceWriter
+import com.vconvertercrew.vconverter.engines.codename.CodenameCharacterParser
+import com.vconvertercrew.vconverter.engines.codename.CodenameChartParser
+import com.vconvertercrew.vconverter.engines.codename.CodenameEvents
+import com.vconvertercrew.vconverter.engines.codename.CodenameMeta
+import com.vconvertercrew.vconverter.engines.codename.CodenameScope
+import com.vconvertercrew.vconverter.engines.codename.CodenameScriptContext
+import com.vconvertercrew.vconverter.engines.codename.CodenameScriptConverter
+import com.vconvertercrew.vconverter.engines.codename.CodenameScriptPlanner
+import com.vconvertercrew.vconverter.engines.codename.CodenameScriptTarget
+import com.vconvertercrew.vconverter.engines.codename.CodenameSong
+import com.vconvertercrew.vconverter.engines.codename.CodenameStageParser
+import com.vconvertercrew.vconverter.engines.codename.CodenameToVSliceCharacter
+import com.vconvertercrew.vconverter.engines.codename.CodenameToVSliceChart
+import com.vconvertercrew.vconverter.engines.codename.CodenameToVSliceLevel
+import com.vconvertercrew.vconverter.engines.codename.CodenameToVSliceStage
+import com.vconvertercrew.vconverter.engines.codename.CodenameWeekParser
+import com.vconvertercrew.vconverter.engines.codename.EventDefinition
+import com.vconvertercrew.vconverter.engines.codename.ImageInfo
+import com.vconvertercrew.vconverter.engines.codename.ImageProbe
 import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.ReportBuilder
 import com.vconvertercrew.vconverter.core.SongPath
 import com.vconvertercrew.vconverter.core.SparrowAtlas
 import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.OutputFile
-import com.vconvertercrew.vconverter.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
 import com.vconvertercrew.vconverter.core.sortedMutableSet
 
 private fun segments(path: String) = path.replace('\\', '/').split('/').filter { it.isNotEmpty() }
@@ -99,7 +99,7 @@ class CodenameChartsConverter : CodenameEngineConverter() {
                     ?.let { CodenameChartParser.parseEvents(it.text) } ?: emptyList()
                 val result = CodenameToVSliceChart.convert(
                     CodenameSong(id, meta, charts, events, variant),
-                    com.vconvertercrew.vconverter.codename.CodenameChartOptions(instrumental = variant, songVariations = if (variant.isEmpty()) variants.filter { it.isNotEmpty() } else emptyList())
+                    com.vconvertercrew.vconverter.engines.codename.CodenameChartOptions(instrumental = variant, songVariations = if (variant.isEmpty()) variants.filter { it.isNotEmpty() } else emptyList())
                 )
                 val suffix = if (variant.isEmpty()) "" else "-$variant"
                 outputs += out("data/songs/$id/$id-metadata$suffix.json", VSliceWriter.metadataJson(result.metadata))

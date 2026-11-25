@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <mutex>
+#include <unordered_map>
 #include <thread>
 
 namespace vscript {
@@ -394,6 +395,227 @@ std::vector<uint8_t> encodePng(const Image& image, int level) {
     chunk("IDAT", zlib.data(), zlib.size());
     chunk("IEND", nullptr, 0);
     return out;
+}
+
+namespace {
+
+struct Packed {
+    int colorType = 6;
+    int depth = 8;
+    int channels = 4;
+    std::vector<uint8_t> palette;
+    std::vector<uint8_t> trns;
+    std::vector<uint8_t> rows;
+    size_t stride = 0;
+    bool adaptive = true;
+};
+
+void filterPacked(const Packed& p, int from, int to, uint8_t* out) {
+    size_t stride = p.stride;
+    size_t bpp = std::max<size_t>(1, size_t(p.channels * p.depth / 8));
+    std::vector<uint8_t> zero(stride, 0), trial(stride), best(stride);
+    auto cost = [](uint8_t v) -> uint64_t { return v < 128 ? v : 256 - v; };
+    for (int y = from; y < to; y++) {
+        const uint8_t* cur = p.rows.data() + size_t(y) * stride;
+        const uint8_t* up = y > 0 ? p.rows.data() + size_t(y - 1) * stride : zero.data();
+        uint8_t* row = out + size_t(y - from) * (stride + 1);
+        if (!p.adaptive) {
+            row[0] = 0;
+            std::memcpy(row + 1, cur, stride);
+            continue;
+        }
+        uint64_t bestScore = UINT64_MAX;
+        uint8_t bestFilter = 0;
+        for (uint8_t filter = 0; filter < 5; filter++) {
+            uint64_t score = 0;
+            for (size_t x = 0; x < stride; x++) {
+                int a = x >= bpp ? cur[x - bpp] : 0, b = up[x], c = x >= bpp ? up[x - bpp] : 0;
+                int predicted = filter == 0 ? 0 : filter == 1 ? a : filter == 2 ? b : filter == 3 ? (a + b) / 2 : paeth(a, b, c);
+                uint8_t v = uint8_t(cur[x] - predicted);
+                trial[x] = v;
+                score += cost(v);
+                if (score >= bestScore) break;
+            }
+            if (score < bestScore) {
+                bestScore = score;
+                bestFilter = filter;
+                best.swap(trial);
+            }
+        }
+        row[0] = bestFilter;
+        std::memcpy(row + 1, best.data(), stride);
+    }
+}
+
+std::vector<uint8_t> writePacked(const Packed& p, int width, int height, int level) {
+    static std::once_flag crcOnce;
+    std::call_once(crcOnce, buildCrc);
+    size_t line = p.stride + 1;
+    std::vector<uint8_t> filtered(line * size_t(height));
+    unsigned hardware = std::max(1u, std::thread::hardware_concurrency());
+    int parts = int(std::min<size_t>(std::min(8u, hardware), std::max<size_t>(1, filtered.size() / (4u * 1024 * 1024))));
+    parts = std::max(1, std::min(parts, height));
+    std::vector<int> bounds(parts + 1);
+    for (int i = 0; i <= parts; i++) bounds[i] = int(int64_t(height) * i / parts);
+    std::vector<std::vector<uint8_t>> packed(parts);
+    int probes = std::clamp(level, 1, 10);
+    auto work = [&](int i) {
+        uint8_t* start = filtered.data() + size_t(bounds[i]) * line;
+        filterPacked(p, bounds[i], bounds[i + 1], start);
+        deflatePart(start, size_t(bounds[i + 1] - bounds[i]) * line, probes, i == parts - 1, packed[i]);
+    };
+    if (parts == 1) {
+        work(0);
+    } else {
+        std::vector<std::thread> threads;
+        for (int i = 1; i < parts; i++) threads.emplace_back(work, i);
+        work(0);
+        for (auto& t : threads) t.join();
+    }
+    std::vector<uint8_t> zlib = {0x78, 0xDA};
+    for (auto& part : packed) zlib.insert(zlib.end(), part.begin(), part.end());
+    put32(zlib, uint32_t(mz_adler32(MZ_ADLER32_INIT, filtered.data(), filtered.size())));
+    std::vector<uint8_t> out = {137, 80, 78, 71, 13, 10, 26, 10};
+    auto chunk = [&](const char* kind, const uint8_t* body, size_t length) {
+        put32(out, uint32_t(length));
+        size_t start = out.size();
+        out.insert(out.end(), kind, kind + 4);
+        if (length) out.insert(out.end(), body, body + length);
+        put32(out, crc32(0, out.data() + start, length + 4));
+    };
+    std::vector<uint8_t> header;
+    put32(header, uint32_t(width));
+    put32(header, uint32_t(height));
+    header.insert(header.end(), {uint8_t(p.depth), uint8_t(p.colorType), 0, 0, 0});
+    chunk("IHDR", header.data(), header.size());
+    if (!p.palette.empty()) chunk("PLTE", p.palette.data(), p.palette.size());
+    if (!p.trns.empty()) chunk("tRNS", p.trns.data(), p.trns.size());
+    chunk("IDAT", zlib.data(), zlib.size());
+    chunk("IEND", nullptr, 0);
+    return out;
+}
+
+bool packPalette(const Image& image, Packed& p) {
+    std::unordered_map<uint32_t, int> seen;
+    std::vector<uint32_t> colors;
+    const uint8_t* px = image.rgba.data();
+    size_t count = size_t(image.width) * image.height;
+    uint32_t last = 0;
+    bool hasLast = false;
+    for (size_t i = 0; i < count; i++) {
+        uint32_t c = (uint32_t(px[i * 4]) << 24) | (uint32_t(px[i * 4 + 1]) << 16) | (uint32_t(px[i * 4 + 2]) << 8) | px[i * 4 + 3];
+        if (hasLast && c == last) continue;
+        last = c;
+        hasLast = true;
+        if (seen.emplace(c, 0).second) {
+            colors.push_back(c);
+            if (colors.size() > 256) return false;
+        }
+    }
+    std::stable_sort(colors.begin(), colors.end(), [](uint32_t a, uint32_t b) { return (a & 0xFF) < (b & 0xFF); });
+    size_t translucent = 0;
+    for (size_t i = 0; i < colors.size(); i++) {
+        seen[colors[i]] = int(i);
+        if ((colors[i] & 0xFF) != 0xFF) translucent = i + 1;
+    }
+    p.colorType = 3;
+    p.channels = 1;
+    p.depth = colors.size() <= 2 ? 1 : colors.size() <= 4 ? 2 : colors.size() <= 16 ? 4 : 8;
+    p.adaptive = p.depth == 8 && image.width * image.height > 65536;
+    for (uint32_t c : colors) {
+        p.palette.push_back(uint8_t(c >> 24));
+        p.palette.push_back(uint8_t(c >> 16));
+        p.palette.push_back(uint8_t(c >> 8));
+    }
+    for (size_t i = 0; i < translucent; i++) p.trns.push_back(uint8_t(colors[i] & 0xFF));
+    p.stride = (size_t(image.width) * p.depth + 7) / 8;
+    p.rows.assign(p.stride * image.height, 0);
+    int perByte = 8 / p.depth;
+    for (int y = 0; y < image.height; y++) {
+        uint8_t* row = p.rows.data() + size_t(y) * p.stride;
+        for (int x = 0; x < image.width; x++) {
+            const uint8_t* q = px + (size_t(y) * image.width + x) * 4;
+            uint32_t c = (uint32_t(q[0]) << 24) | (uint32_t(q[1]) << 16) | (uint32_t(q[2]) << 8) | q[3];
+            int index = seen[c];
+            if (p.depth == 8) {
+                row[x] = uint8_t(index);
+            } else {
+                int shift = 8 - p.depth * (x % perByte + 1);
+                row[x / perByte] |= uint8_t(index << shift);
+            }
+        }
+    }
+    return true;
+}
+
+void packDirect(const Image& image, Packed& p) {
+    const uint8_t* px = image.rgba.data();
+    size_t count = size_t(image.width) * image.height;
+    bool opaque = true, gray = true;
+    for (size_t i = 0; i < count && (opaque || gray); i++) {
+        const uint8_t* q = px + i * 4;
+        if (q[3] != 255) opaque = false;
+        if (q[0] != q[1] || q[1] != q[2]) gray = false;
+    }
+    p.channels = (gray ? 1 : 3) + (opaque ? 0 : 1);
+    p.colorType = gray ? (opaque ? 0 : 4) : (opaque ? 2 : 6);
+    p.depth = 8;
+    p.stride = size_t(image.width) * p.channels;
+    p.rows.resize(p.stride * image.height);
+    uint8_t* o = p.rows.data();
+    for (size_t i = 0; i < count; i++) {
+        const uint8_t* q = px + i * 4;
+        if (gray) {
+            *o++ = q[0];
+        } else {
+            *o++ = q[0];
+            *o++ = q[1];
+            *o++ = q[2];
+        }
+        if (!opaque) *o++ = q[3];
+    }
+}
+
+bool safeToRewrite(const uint8_t* data, size_t size) {
+    static const uint8_t signature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+    if (size < 33 || std::memcmp(data, signature, 8) != 0) return false;
+    size_t i = 8;
+    while (i + 12 <= size) {
+        uint32_t length = be32(data + i);
+        if (length > size - i - 12) return false;
+        const uint8_t* kind = data + i + 4;
+        if (std::memcmp(kind, "IHDR", 4) == 0 && length >= 13 && data[i + 8 + 8] > 8) return false;
+        if (std::memcmp(kind, "acTL", 4) == 0 || std::memcmp(kind, "fcTL", 4) == 0) return false;
+        if (!(kind[0] & 0x20) && std::memcmp(kind, "IHDR", 4) != 0 && std::memcmp(kind, "PLTE", 4) != 0 &&
+            std::memcmp(kind, "IDAT", 4) != 0 && std::memcmp(kind, "IEND", 4) != 0) return false;
+        if (std::memcmp(kind, "IEND", 4) == 0) return true;
+        i += 12 + length;
+    }
+    return false;
+}
+
+}
+
+bool optimizePng(const uint8_t* data, size_t size, int level, std::vector<uint8_t>& out) {
+    if (!safeToRewrite(data, size)) return false;
+    Image image;
+    std::string error;
+    if (!decodePng(data, size, image, error) || image.width <= 0 || image.height <= 0) return false;
+    std::vector<uint8_t> best;
+    Packed palette;
+    bool hasPalette = packPalette(image, palette);
+    if (hasPalette) best = writePacked(palette, image.width, image.height, level);
+    if (!hasPalette || size_t(image.width) * image.height <= 4u * 1024 * 1024) {
+        Packed direct;
+        packDirect(image, direct);
+        std::vector<uint8_t> candidate = writePacked(direct, image.width, image.height, level);
+        if (best.empty() || candidate.size() < best.size()) best.swap(candidate);
+    }
+    if (best.empty() || best.size() >= size) return false;
+    Image check;
+    if (!decodePng(best.data(), best.size(), check, error) || check.width != image.width || check.height != image.height || check.rgba != image.rgba) return false;
+    out.swap(best);
+    return true;
 }
 
 Image resizeImage(const Image& image, int width, int height, bool smooth) {

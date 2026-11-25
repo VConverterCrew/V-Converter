@@ -44,7 +44,7 @@ object DocumentIO {
         }
         val tree = TreeModWriter(context, treeUri)
         val written = ArrayList<String>()
-        val recorder = object : com.vconvertercrew.vconverter.mod.ModWriter {
+        val recorder = object : com.vconvertercrew.vconverter.convert.mod.ModWriter {
             override fun writeText(path: String, text: String) {
                 tree.writeText(path, text)
                 written += path
@@ -55,7 +55,7 @@ object DocumentIO {
                 written += path
             }
         }
-        com.vconvertercrew.vconverter.vslice.VSlicePreview.write(recorder, vslice) { writer -> files.forEach { it.writeTo(writer) } }
+        com.vconvertercrew.vconverter.engines.vslice.VSlicePreview.write(recorder, vslice) { writer -> files.forEach { it.writeTo(writer) } }
         return written
     }
 }

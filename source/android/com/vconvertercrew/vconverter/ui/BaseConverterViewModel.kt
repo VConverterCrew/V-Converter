@@ -17,15 +17,15 @@ import com.vconvertercrew.vconverter.io.ExtractedArchive
 import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.Importer
 import com.vconvertercrew.vconverter.io.OutputFile
-import com.vconvertercrew.vconverter.mod.ModCancel
-import com.vconvertercrew.vconverter.mod.ModCancelledException
-import com.vconvertercrew.vconverter.mod.ModConversionResult
-import com.vconvertercrew.vconverter.mod.ModProgress
-import com.vconvertercrew.vconverter.mod.ModRun
-import com.vconvertercrew.vconverter.mod.ModWriter
-import com.vconvertercrew.vconverter.mod.ParallelModWriter
-import com.vconvertercrew.vconverter.vslice.VSlicePreview
-import com.vconvertercrew.vconverter.mod.ZipModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModCancel
+import com.vconvertercrew.vconverter.convert.mod.ModCancelledException
+import com.vconvertercrew.vconverter.convert.mod.ModConversionResult
+import com.vconvertercrew.vconverter.convert.mod.ModProgress
+import com.vconvertercrew.vconverter.convert.mod.ModRun
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.ParallelModWriter
+import com.vconvertercrew.vconverter.engines.vslice.VSlicePreview
+import com.vconvertercrew.vconverter.convert.mod.ZipModWriter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,7 +48,7 @@ abstract class BaseConverterViewModel(application: Application) : AndroidViewMod
         get() = statusState
         protected set(value) {
             statusState = value
-            if (value is StatusMessage.Error) com.vconvertercrew.vconverter.online.ErrorReports.send("conversion", value.text, context = mapOf("screen" to javaClass.simpleName))
+            if (value is StatusMessage.Error) com.vconvertercrew.vconverter.tools.online.ErrorReports.send("conversion", value.text, context = mapOf("screen" to javaClass.simpleName))
         }
     var output by mutableStateOf<ConvertedOutput?>(null)
         protected set

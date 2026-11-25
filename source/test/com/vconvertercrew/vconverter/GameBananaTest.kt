@@ -1,8 +1,8 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.online.GameBanana
-import com.vconvertercrew.vconverter.online.GameBananaException
-import com.vconvertercrew.vconverter.online.GameBananaFeed
+import com.vconvertercrew.vconverter.tools.online.GameBanana
+import com.vconvertercrew.vconverter.tools.online.GameBananaException
+import com.vconvertercrew.vconverter.tools.online.GameBananaFeed
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

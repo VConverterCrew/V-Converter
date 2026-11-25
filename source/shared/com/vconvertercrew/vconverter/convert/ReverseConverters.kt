@@ -1,21 +1,21 @@
 package com.vconvertercrew.vconverter.convert
 
-import com.vconvertercrew.vconverter.script.ShaderConverter
+import com.vconvertercrew.vconverter.convert.script.ShaderConverter
 import com.vconvertercrew.vconverter.core.AnimateAtlases
 import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.ReportBuilder
 import com.vconvertercrew.vconverter.core.SparrowAtlas
 import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.OutputFile
-import com.vconvertercrew.vconverter.reverse.HxcResult
-import com.vconvertercrew.vconverter.reverse.HxcToPsych
-import com.vconvertercrew.vconverter.reverse.LevelSongInfo
-import com.vconvertercrew.vconverter.reverse.VSliceParser
-import com.vconvertercrew.vconverter.reverse.VSliceSongSource
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychCharacter
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychChart
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychLevel
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychStage
+import com.vconvertercrew.vconverter.convert.reverse.HxcResult
+import com.vconvertercrew.vconverter.convert.reverse.HxcToPsych
+import com.vconvertercrew.vconverter.convert.reverse.LevelSongInfo
+import com.vconvertercrew.vconverter.convert.reverse.VSliceParser
+import com.vconvertercrew.vconverter.convert.reverse.VSliceSongSource
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychCharacter
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychChart
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychLevel
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychStage
 
 class ReverseChartsConverter : FileConverter() {
     override val noun = "song"
@@ -28,7 +28,7 @@ class ReverseChartsConverter : FileConverter() {
         val base = file.name.substringBeforeLast('.')
         val meta = Regex("^(.+)-metadata(?:-(.+))?$").find(base)
         val chart = Regex("^(.+)-chart(?:-(.+))?$").find(base)
-        val keys = com.vconvertercrew.vconverter.script.NativeData.jsonKeys(text)
+        val keys = com.vconvertercrew.vconverter.convert.script.NativeData.jsonKeys(text)
         if (keys != null) return when {
             meta != null && keys["playData"] == "object" -> PickedText(file.path, file.name, file.path, text, "metadata", (meta.groupValues[2].ifEmpty { "default" }))
             chart != null && keys["scrollSpeed"] == "object" && keys.containsKey("notes") -> PickedText(file.path, file.name, file.path, text, "chart", (chart.groupValues[2].ifEmpty { "default" }))

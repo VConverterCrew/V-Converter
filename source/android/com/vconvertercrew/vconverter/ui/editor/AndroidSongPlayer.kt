@@ -15,9 +15,9 @@ import com.vconvertercrew.vconverter.audio.Mixers
 import com.vconvertercrew.vconverter.audio.PcmAudio
 import com.vconvertercrew.vconverter.audio.PcmOutput
 import com.vconvertercrew.vconverter.audio.StreamSongPlayer
-import com.vconvertercrew.vconverter.editor.EditorAudio
-import com.vconvertercrew.vconverter.editor.Hitsound
-import com.vconvertercrew.vconverter.editorview.SongPlayer
+import com.vconvertercrew.vconverter.tools.editor.EditorAudio
+import com.vconvertercrew.vconverter.tools.editor.Hitsound
+import com.vconvertercrew.vconverter.views.editor.SongPlayer
 import java.io.File
 import java.nio.ByteOrder
 

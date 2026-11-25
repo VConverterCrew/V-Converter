@@ -13,8 +13,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.overlay.ModScannerPanel
-import com.vconvertercrew.vconverter.overlay.ScannerColors
+import com.vconvertercrew.vconverter.views.overlay.ModScannerPanel
+import com.vconvertercrew.vconverter.views.overlay.ScannerColors
 import com.vconvertercrew.vconverter.core.Report
 import com.vconvertercrew.vconverter.core.ReportStat
 import com.vconvertercrew.vconverter.ui.components.SaveActions

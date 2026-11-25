@@ -1,9 +1,9 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.skin.IntroAction
-import com.vconvertercrew.vconverter.skin.SkinAnchor
-import com.vconvertercrew.vconverter.skin.SkinJson
-import com.vconvertercrew.vconverter.skin.TitleDefaults
+import com.vconvertercrew.vconverter.views.skin.IntroAction
+import com.vconvertercrew.vconverter.views.skin.SkinAnchor
+import com.vconvertercrew.vconverter.views.skin.SkinJson
+import com.vconvertercrew.vconverter.views.skin.TitleDefaults
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -26,7 +26,7 @@ class UiSkinTest {
         assertEquals(30, gf.animation("danceLeft")!!.indices!!.first())
         assertEquals("idle", skin.sprites[2].play)
         assertEquals("pressed", skin.sprites[2].pressed)
-        assertEquals("images/ui/title/logoBumpin.xml", skin.sprites[1].xmlPath)
+        assertEquals("ui/title/logoBumpin.xml", skin.sprites[1].xmlPath)
     }
 
     @Test
@@ -49,7 +49,7 @@ class UiSkinTest {
     fun mainMenuOverridesAndOrder() {
         val bundled = SkinJson.mainMenu(asset(SkinJson.MAIN_MENU))
         assertEquals(160f, bundled.spacing)
-        assertEquals("images/ui/menu/menuBGMagenta.png", bundled.flash!!.pngPath)
+        assertEquals("ui/menu/menuBGMagenta.png", bundled.flash!!.pngPath)
         assertEquals("online white", bundled.selectedFor("online", "online"))
         val custom = SkinJson.mainMenu(
             """{"flash":null,"order":["options","online"],"hidden":["converter"],
@@ -60,7 +60,7 @@ class UiSkinTest {
         assertNull(custom.flash)
         assertEquals(listOf("options", "online", "generator"), custom.arrange(listOf("converter", "generator", "online", "options")))
         assertEquals("images/custom/net", custom.itemPath("online"))
-        assertEquals("images/ui/menu/main/options", custom.itemPath("options"))
+        assertEquals("ui/menu/main/options", custom.itemPath("options"))
         assertEquals("online idle", custom.idleFor("online", "ONLINE"))
         assertEquals(1.5f, custom.style("online").scale)
         assertEquals(SkinAnchor.TOP_RIGHT, custom.version.anchor)

@@ -1,0 +1,1 @@
+Every image the app draws. NOTE_assets.png/.xml is the base game note skin used by the Chart Editor grid and PlayTest. app/ holds the app logo and the packaging icons, icons/ the health icons, cursor/ the mouse cursor, and the other folders the sprites of the title screen, the menus, the Chart Editor and the Character Editor.

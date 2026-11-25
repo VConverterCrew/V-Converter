@@ -2,7 +2,7 @@ package com.vconvertercrew.vconverter.io
 
 import android.content.Context
 import android.net.Uri
-import com.vconvertercrew.vconverter.mod.ArchiveKind
+import com.vconvertercrew.vconverter.convert.mod.ArchiveKind
 import java.io.File
 import java.io.IOException
 import java.util.UUID

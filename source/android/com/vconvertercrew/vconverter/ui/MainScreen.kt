@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.ui
 
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -61,7 +61,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.overlay.FpsCounter
+import com.vconvertercrew.vconverter.views.overlay.FpsCounter
 import com.vconvertercrew.vconverter.ui.characters.CharactersScreen
 import com.vconvertercrew.vconverter.ui.characters.CharactersViewModel
 import com.vconvertercrew.vconverter.ui.charts.ChartsScreen
@@ -127,13 +127,13 @@ import com.vconvertercrew.vconverter.ui.reverse.ReverseScreen
 import com.vconvertercrew.vconverter.ui.reverse.ReverseScriptsViewModel
 import com.vconvertercrew.vconverter.ui.reverse.ReverseStagesViewModel
 import com.vconvertercrew.vconverter.ui.reverse.ReverseWeeksViewModel
-import com.vconvertercrew.vconverter.overlay.MainMenuEntry
-import com.vconvertercrew.vconverter.overlay.MainMenuArt
-import com.vconvertercrew.vconverter.overlay.FunkinMainMenu
-import com.vconvertercrew.vconverter.overlay.FunkinOptionsMenu
-import com.vconvertercrew.vconverter.overlay.MenuArt
-import com.vconvertercrew.vconverter.overlay.MenuOption
-import com.vconvertercrew.vconverter.overlay.DiscordBadge
+import com.vconvertercrew.vconverter.views.overlay.MainMenuEntry
+import com.vconvertercrew.vconverter.views.overlay.MainMenuArt
+import com.vconvertercrew.vconverter.views.overlay.FunkinMainMenu
+import com.vconvertercrew.vconverter.views.overlay.FunkinOptionsMenu
+import com.vconvertercrew.vconverter.views.overlay.MenuArt
+import com.vconvertercrew.vconverter.views.overlay.MenuOption
+import com.vconvertercrew.vconverter.views.overlay.DiscordBadge
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.displayCutoutPadding
@@ -351,7 +351,7 @@ fun MainScreen() {
     val noteStyles = Direction.entries.associateWith { d ->
         viewModel<com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel>(
             key = "notestyle-${d.name}",
-            factory = viewModelFactory { initializer { com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel(noteStyleApp, com.vconvertercrew.vconverter.notestyle.NoteStyleConverter(d.from.key, d.to.key)) } }
+            factory = viewModelFactory { initializer { com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel(noteStyleApp, com.vconvertercrew.vconverter.convert.notestyle.NoteStyleConverter(d.from.key, d.to.key)) } }
         )
     }
     remember {
@@ -460,7 +460,7 @@ fun MainScreen() {
                 playTab = PlayTab.PLAY
             }
 
-            override fun chart(document: com.vconvertercrew.vconverter.editor.ChartDocument, audio: List<com.vconvertercrew.vconverter.editor.EditorAudio>) {
+            override fun chart(document: com.vconvertercrew.vconverter.tools.editor.ChartDocument, audio: List<com.vconvertercrew.vconverter.tools.editor.EditorAudio>) {
                 genSong.pause()
                 playtest.state.useChart(document, audio, "Chart Editor · ${document.meta.songName.ifBlank { document.id }}")
                 section = Section.PLAYTEST
@@ -469,7 +469,7 @@ fun MainScreen() {
         }
     }
 
-    val joinRoom: (com.vconvertercrew.vconverter.online.RoomInfo) -> Unit = { room ->
+    val joinRoom: (com.vconvertercrew.vconverter.tools.online.RoomInfo) -> Unit = { room ->
         section = Section.GENERATOR
         val live = when (room.kind) {
             "character" -> genCharacter.live.also { generatorTab = GenTab.CHARACTER }
@@ -508,11 +508,11 @@ fun MainScreen() {
         Section.GENERATOR -> MENU_GENERATOR
         else -> MENU_MAIN
     }
-    val converterOptions: (com.vconvertercrew.vconverter.overlay.EngineChoice, com.vconvertercrew.vconverter.overlay.EngineChoice) -> List<MenuOption> = { from, to ->
+    val converterOptions: (com.vconvertercrew.vconverter.views.overlay.EngineChoice, com.vconvertercrew.vconverter.views.overlay.EngineChoice) -> List<MenuOption> = { from, to ->
         val option = Direction.entries.first { it.from.key == from.key && it.to.key == to.key }
         Tab.entries.map { target ->
             MenuOption.Action(target.title, target.describe(option)) {
-                com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
+                com.vconvertercrew.vconverter.views.overlay.FunkinTransition.go {
                     direction = option
                     converterTab = target
                     section = Section.CONVERTER
@@ -523,7 +523,7 @@ fun MainScreen() {
     }
     val generatorOptions = GenTab.entries.map { target ->
         MenuOption.Action(target.title, target.description) {
-            com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
+            com.vconvertercrew.vconverter.views.overlay.FunkinTransition.go {
                 generatorTab = target
                 section = Section.GENERATOR
                 menuScreen = MENU_NONE
@@ -553,12 +553,12 @@ fun MainScreen() {
         if (menuScreen == MENU_TITLE) {
             val titleArt = remember {
                 val assets = menuContext.assets
-                com.vconvertercrew.vconverter.overlay.TitleArt.load(
+                com.vconvertercrew.vconverter.views.overlay.TitleArt.load(
                     image = { path -> runCatching { assets.open(path).use { android.graphics.BitmapFactory.decodeStream(it) }.asImageBitmap() }.getOrNull() },
                     text = { path -> runCatching { assets.open(path).use { it.readBytes().decodeToString() } }.getOrNull() }
                 )
             }
-            com.vconvertercrew.vconverter.overlay.FunkinTitle(titleArt, onFinish = { menuScreen = MENU_MAIN })
+            com.vconvertercrew.vconverter.views.overlay.FunkinTitle(titleArt, onFinish = { menuScreen = MENU_MAIN })
         } else if (menuScreen == MENU_MAIN) {
             FunkinMainMenu(
                 entries = menuEntries,
@@ -582,7 +582,7 @@ fun MainScreen() {
                 var listBack by remember { mutableStateOf(0) }
                 androidx.activity.compose.BackHandler(enabled = !optionsOpen) { listBack++ }
                 if (menuScreen == MENU_CONVERTER) {
-                    com.vconvertercrew.vconverter.overlay.FunkinEnginePicker(
+                    com.vconvertercrew.vconverter.views.overlay.FunkinEnginePicker(
                         title = "Converter",
                         art = listArt,
                         available = { from, to -> Direction.entries.any { it.from.key == from && it.to.key == to } },
@@ -684,7 +684,7 @@ fun MainScreen() {
                 else com.vconvertercrew.vconverter.ui.converter.FunkinScriptGenerator(genScript, folderName, save, { menuScreen = MENU_GENERATOR }, badge)
             }
         } else if (section == Section.GENERATOR && (generatorTab == GenTab.CHARACTER || generatorTab == GenTab.STAGE || generatorTab == GenTab.WEEK)) {
-            val exit: () -> Unit = { com.vconvertercrew.vconverter.overlay.FunkinTransition.go { menuScreen = MENU_GENERATOR } }
+            val exit: () -> Unit = { com.vconvertercrew.vconverter.views.overlay.FunkinTransition.go { menuScreen = MENU_GENERATOR } }
             Box(Modifier.fillMaxSize()) {
                 when (generatorTab) {
                     GenTab.CHARACTER -> CharacterEditorScreen(genCharacter, folderName, save, exit)
@@ -695,11 +695,11 @@ fun MainScreen() {
         } else if (section == Section.GENERATOR && generatorTab == GenTab.XML) {
             val xmlEditor: com.vconvertercrew.vconverter.ui.editor.XmlEditorViewModel = viewModel()
             Box(Modifier.fillMaxSize()) {
-                com.vconvertercrew.vconverter.ui.editor.XmlEditorScreen(xmlEditor) { com.vconvertercrew.vconverter.overlay.FunkinTransition.go { menuScreen = MENU_GENERATOR } }
+                com.vconvertercrew.vconverter.ui.editor.XmlEditorScreen(xmlEditor) { com.vconvertercrew.vconverter.views.overlay.FunkinTransition.go { menuScreen = MENU_GENERATOR } }
             }
         } else if (section == Section.GENERATOR && generatorTab == GenTab.SONG) {
             Box(Modifier.fillMaxSize()) {
-                ChartEditorScreen(genSong, folderName, save) { com.vconvertercrew.vconverter.overlay.FunkinTransition.go { menuScreen = MENU_GENERATOR } }
+                ChartEditorScreen(genSong, folderName, save) { com.vconvertercrew.vconverter.views.overlay.FunkinTransition.go { menuScreen = MENU_GENERATOR } }
             }
         } else Scaffold(
             modifier = Modifier.appCursor(cursor),
@@ -824,8 +824,8 @@ fun MainScreen() {
             }
             }
         }
-        com.vconvertercrew.vconverter.overlay.FunkinTransitionOverlay()
-        com.vconvertercrew.vconverter.overlay.FpsOverlay(Modifier.displayCutoutPadding())
+        com.vconvertercrew.vconverter.views.overlay.FunkinTransitionOverlay()
+        com.vconvertercrew.vconverter.views.overlay.FpsOverlay(Modifier.displayCutoutPadding())
         if (settings.touchCursor) TouchCursorOverlay(touchCursor, cursorImage, Modifier.fillMaxSize())
     }
     }

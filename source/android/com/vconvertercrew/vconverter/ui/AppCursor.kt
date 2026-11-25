@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-private const val CURSOR_ASSET = "images/cursor/cursor.png"
+private const val CURSOR_ASSET = "ui/cursor/cursor.png"
 
 @Composable
 fun rememberAppCursor(): PointerIcon? {

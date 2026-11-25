@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.ui.characters
 
-import com.vconvertercrew.vconverter.overlay.UiSound
+import com.vconvertercrew.vconverter.views.overlay.UiSound
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement

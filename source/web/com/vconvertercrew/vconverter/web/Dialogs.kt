@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.web
 
-import com.vconvertercrew.vconverter.mod.ZipModWriter
+import com.vconvertercrew.vconverter.convert.mod.ZipModWriter
 import com.vconvertercrew.vconverter.platform.Browser
 import com.vconvertercrew.vconverter.platform.ByteArrayOutputStream
 import com.vconvertercrew.vconverter.platform.File

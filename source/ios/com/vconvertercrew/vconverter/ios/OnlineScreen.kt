@@ -6,10 +6,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.vconvertercrew.vconverter.onlineview.FunkinOnlineMenu
-import com.vconvertercrew.vconverter.onlineview.OnlineActions
-import com.vconvertercrew.vconverter.onlineview.OnlineMenuArt
-import com.vconvertercrew.vconverter.overlay.DiscordBadge
+import com.vconvertercrew.vconverter.views.online.FunkinOnlineMenu
+import com.vconvertercrew.vconverter.views.online.OnlineActions
+import com.vconvertercrew.vconverter.views.online.OnlineMenuArt
+import com.vconvertercrew.vconverter.views.overlay.DiscordBadge
 import com.vconvertercrew.vconverter.platform.File
 
 @Composable

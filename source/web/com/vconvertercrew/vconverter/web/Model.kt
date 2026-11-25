@@ -5,16 +5,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import com.vconvertercrew.vconverter.chart.preview.ChartEngine
-import com.vconvertercrew.vconverter.chart.preview.ChartField
-import com.vconvertercrew.vconverter.chart.preview.ChartPreview
-import com.vconvertercrew.vconverter.chart.preview.ChartTweaker
-import com.vconvertercrew.vconverter.chart.preview.ChartTweaks
-import com.vconvertercrew.vconverter.chart.preview.ChartWorkbench
-import com.vconvertercrew.vconverter.codename.CodenameModConverter
-import com.vconvertercrew.vconverter.codename.CodenameModScanner
-import com.vconvertercrew.vconverter.codename.CodenameToPsychMod
-import com.vconvertercrew.vconverter.codename.PsychToCodenameMod
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartEngine
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartField
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartPreview
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartTweaker
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartTweaks
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartWorkbench
+import com.vconvertercrew.vconverter.engines.codename.CodenameModConverter
+import com.vconvertercrew.vconverter.engines.codename.CodenameModScanner
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychMod
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameMod
 import com.vconvertercrew.vconverter.convert.CodenameCharactersConverter
 import com.vconvertercrew.vconverter.convert.CodenameChartsConverter
 import com.vconvertercrew.vconverter.convert.CodenameScriptsConverter
@@ -28,11 +28,11 @@ import com.vconvertercrew.vconverter.convert.CodenameWeeksConverter
 import com.vconvertercrew.vconverter.convert.ConvertedOutput
 import com.vconvertercrew.vconverter.convert.NmvConverters
 import com.vconvertercrew.vconverter.convert.NmvTab
-import com.vconvertercrew.vconverter.nmv.NmvModScanner
-import com.vconvertercrew.vconverter.nmv.NmvTarget
-import com.vconvertercrew.vconverter.nmv.NmvToMod
-import com.vconvertercrew.vconverter.nmv.ToNmvMod
-import com.vconvertercrew.vconverter.fpsplus.ToFpsMod
+import com.vconvertercrew.vconverter.engines.nmv.NmvModScanner
+import com.vconvertercrew.vconverter.engines.nmv.NmvTarget
+import com.vconvertercrew.vconverter.engines.nmv.NmvToMod
+import com.vconvertercrew.vconverter.engines.nmv.ToNmvMod
+import com.vconvertercrew.vconverter.engines.fpsplus.ToFpsMod
 import com.vconvertercrew.vconverter.convert.FileConverter
 import com.vconvertercrew.vconverter.convert.PickedText
 import com.vconvertercrew.vconverter.convert.PsychCharactersConverter
@@ -56,21 +56,21 @@ import com.vconvertercrew.vconverter.io.Archives
 import com.vconvertercrew.vconverter.io.ExtractedArchive
 import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.OutputFile
-import com.vconvertercrew.vconverter.mod.DirectoryModFiles
-import com.vconvertercrew.vconverter.mod.DirectoryModWriter
-import com.vconvertercrew.vconverter.mod.ModCancel
-import com.vconvertercrew.vconverter.mod.ModConversionResult
-import com.vconvertercrew.vconverter.mod.ModRun
-import com.vconvertercrew.vconverter.mod.ModConverter
-import com.vconvertercrew.vconverter.mod.ModFiles
-import com.vconvertercrew.vconverter.mod.ModInfo
-import com.vconvertercrew.vconverter.mod.ModProgress
-import com.vconvertercrew.vconverter.mod.ModScanner
-import com.vconvertercrew.vconverter.mod.ModWriter
-import com.vconvertercrew.vconverter.mod.ZipModWriter
-import com.vconvertercrew.vconverter.reverse.VSliceModConverter
-import com.vconvertercrew.vconverter.reverse.VSliceModScanner
-import com.vconvertercrew.vconverter.vslice.VSlicePreview
+import com.vconvertercrew.vconverter.convert.mod.DirectoryModFiles
+import com.vconvertercrew.vconverter.convert.mod.DirectoryModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModCancel
+import com.vconvertercrew.vconverter.convert.mod.ModConversionResult
+import com.vconvertercrew.vconverter.convert.mod.ModRun
+import com.vconvertercrew.vconverter.convert.mod.ModConverter
+import com.vconvertercrew.vconverter.convert.mod.ModFiles
+import com.vconvertercrew.vconverter.convert.mod.ModInfo
+import com.vconvertercrew.vconverter.convert.mod.ModProgress
+import com.vconvertercrew.vconverter.convert.mod.ModScanner
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.ZipModWriter
+import com.vconvertercrew.vconverter.convert.reverse.VSliceModConverter
+import com.vconvertercrew.vconverter.convert.reverse.VSliceModScanner
+import com.vconvertercrew.vconverter.engines.vslice.VSlicePreview
 
 enum class Engine(val label: String, val title: String, val detail: String, val color: Color) {
     PSYCH("PSYCH", "Psych Engine", "Lua · HScript · JSON", Palette.Left),
@@ -141,7 +141,7 @@ sealed interface Status {
 object Workspace {
     val cache: File by lazy { File(File.temporaryDirectory, "v-converter").apply { mkdirs() } }
 
-    fun converter(direction: Direction, tab: Tab): FileConverter = if (tab == Tab.NOTESTYLES) com.vconvertercrew.vconverter.notestyle.NoteStyleConverter(direction.from.key, direction.to.key) else when (direction) {
+    fun converter(direction: Direction, tab: Tab): FileConverter = if (tab == Tab.NOTESTYLES) com.vconvertercrew.vconverter.convert.notestyle.NoteStyleConverter(direction.from.key, direction.to.key) else when (direction) {
         Direction.PSYCH_TO_VSLICE -> when (tab) {
             Tab.CHARTS -> PsychChartsConverter()
             Tab.CHARACTERS -> PsychCharactersConverter()

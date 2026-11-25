@@ -14,15 +14,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import com.vconvertercrew.vconverter.convert.ConvertedOutput
-import com.vconvertercrew.vconverter.converterview.ConverterArt
-import com.vconvertercrew.vconverter.converterview.ConverterMenuSpec
-import com.vconvertercrew.vconverter.converterview.ConverterMenus
-import com.vconvertercrew.vconverter.converterview.ConverterRow
-import com.vconvertercrew.vconverter.converterview.FunkinConverterMenu
-import com.vconvertercrew.vconverter.converterview.FunkinModMenu
-import com.vconvertercrew.vconverter.converterview.ModMenuInfo
-import com.vconvertercrew.vconverter.converterview.ModMenuSpec
-import com.vconvertercrew.vconverter.converterview.ModMenus
+import com.vconvertercrew.vconverter.views.converter.ConverterArt
+import com.vconvertercrew.vconverter.views.converter.ConverterMenuSpec
+import com.vconvertercrew.vconverter.views.converter.ConverterMenus
+import com.vconvertercrew.vconverter.views.converter.ConverterRow
+import com.vconvertercrew.vconverter.views.converter.FunkinConverterMenu
+import com.vconvertercrew.vconverter.views.converter.FunkinModMenu
+import com.vconvertercrew.vconverter.views.converter.ModMenuInfo
+import com.vconvertercrew.vconverter.views.converter.ModMenuSpec
+import com.vconvertercrew.vconverter.views.converter.ModMenus
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.StatusMessage
 import com.vconvertercrew.vconverter.ui.characters.CharactersViewModel
@@ -255,7 +255,7 @@ internal fun FunkinModConverterMenu(
     onDescription: (String) -> Unit,
     onAuthor: (String) -> Unit,
     report: com.vconvertercrew.vconverter.core.Report?,
-    progress: com.vconvertercrew.vconverter.mod.ModProgress?,
+    progress: com.vconvertercrew.vconverter.convert.mod.ModProgress?,
     openFolder: (android.net.Uri) -> Unit,
     openArchive: (android.net.Uri) -> Unit,
     clear: () -> Unit,
@@ -273,12 +273,12 @@ internal fun FunkinModConverterMenu(
     val context = LocalContext.current
     val bananaScope = androidx.compose.runtime.rememberCoroutineScope()
     val banana = remember(viewModel) {
-        com.vconvertercrew.vconverter.converterview.GameBananaState(
+        com.vconvertercrew.vconverter.views.converter.GameBananaState(
             bananaScope,
             { bytes -> android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }
         ) { _, file, progress ->
             val downloaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                com.vconvertercrew.vconverter.online.GameBananaDownloads.toFile(file, java.io.File(context.cacheDir, "gamebanana"), progress)
+                com.vconvertercrew.vconverter.tools.online.GameBananaDownloads.toFile(file, java.io.File(context.cacheDir, "gamebanana"), progress)
             }
             openArchive(android.net.Uri.fromFile(downloaded))
         }

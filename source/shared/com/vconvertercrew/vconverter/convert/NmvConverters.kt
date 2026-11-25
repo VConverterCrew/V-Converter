@@ -5,12 +5,12 @@ import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.OutputFile
 import com.vconvertercrew.vconverter.json.JSONArray
 import com.vconvertercrew.vconverter.json.JSONObject
-import com.vconvertercrew.vconverter.mod.ModWriter
-import com.vconvertercrew.vconverter.nmv.NmvFormats
-import com.vconvertercrew.vconverter.nmv.NmvKind
-import com.vconvertercrew.vconverter.nmv.NmvPaths
-import com.vconvertercrew.vconverter.nmv.NmvScripts
-import com.vconvertercrew.vconverter.nmv.PsychToNmvWriter
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
+import com.vconvertercrew.vconverter.engines.nmv.NmvFormats
+import com.vconvertercrew.vconverter.engines.nmv.NmvKind
+import com.vconvertercrew.vconverter.engines.nmv.NmvPaths
+import com.vconvertercrew.vconverter.engines.nmv.NmvScripts
+import com.vconvertercrew.vconverter.engines.nmv.PsychToNmvWriter
 import com.vconvertercrew.vconverter.platform.ByteArrayInputStream
 import com.vconvertercrew.vconverter.platform.InputStream
 
@@ -137,7 +137,7 @@ class FpsTargetConverter(private val inner: FileConverter) : FileConverter() {
     override fun build(items: List<PickedText>): ConvertedOutput {
         val out = inner.build(items)
         val collect = CollectWriter()
-        val fps = com.vconvertercrew.vconverter.fpsplus.PsychToFpsWriter(collect, wholeMod = false)
+        val fps = com.vconvertercrew.vconverter.engines.fpsplus.PsychToFpsWriter(collect, wholeMod = false)
         out.files.forEach { it.writeTo(fps) }
         val report = fps.finish()
         val preview = collect.files.firstOrNull { it.bytes == null && it.name.endsWith(".hxc") }?.content ?: collect.files.firstOrNull { it.bytes == null }?.content ?: out.preview

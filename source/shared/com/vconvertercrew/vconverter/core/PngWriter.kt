@@ -73,7 +73,7 @@ object PngWriter {
     }
 
     fun encode(image: RgbaImage): ByteArray {
-        com.vconvertercrew.vconverter.script.VScriptNative.pngEncode(image.pixels, image.width, image.height, 6)?.let { return it }
+        com.vconvertercrew.vconverter.convert.script.VScriptNative.pngEncode(image.pixels, image.width, image.height, 6)?.let { return it }
         return encodeKotlin(image)
     }
 

@@ -8,11 +8,11 @@ import androidx.compose.runtime.setValue
 import com.vconvertercrew.vconverter.core.ReportBuilder
 import com.vconvertercrew.vconverter.core.SparrowAtlas
 import com.vconvertercrew.vconverter.io.OutputFile
-import com.vconvertercrew.vconverter.stage.LuaStageExtractor
-import com.vconvertercrew.vconverter.stage.PsychStage
-import com.vconvertercrew.vconverter.stage.PsychStageParser
-import com.vconvertercrew.vconverter.stage.PsychToVSliceStage
-import com.vconvertercrew.vconverter.stage.StageSource
+import com.vconvertercrew.vconverter.convert.stage.LuaStageExtractor
+import com.vconvertercrew.vconverter.convert.stage.PsychStage
+import com.vconvertercrew.vconverter.convert.stage.PsychStageParser
+import com.vconvertercrew.vconverter.convert.stage.PsychToVSliceStage
+import com.vconvertercrew.vconverter.convert.stage.StageSource
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.ConvertedOutput
 import com.vconvertercrew.vconverter.ui.StatusMessage

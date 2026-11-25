@@ -1,30 +1,30 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.character.PsychCharacterParser
-import com.vconvertercrew.vconverter.chart.ChartSource
-import com.vconvertercrew.vconverter.chart.psych.PsychChartParser
-import com.vconvertercrew.vconverter.codename.CodenameChartParser
-import com.vconvertercrew.vconverter.codename.CodenameMeta
-import com.vconvertercrew.vconverter.codename.CodenameModConverter
-import com.vconvertercrew.vconverter.codename.CodenameModScanner
-import com.vconvertercrew.vconverter.codename.CodenameScope
-import com.vconvertercrew.vconverter.codename.CodenameScriptTarget
-import com.vconvertercrew.vconverter.codename.CodenameSong
-import com.vconvertercrew.vconverter.codename.CodenameToPsychChart
-import com.vconvertercrew.vconverter.codename.CodenameToPsychMod
-import com.vconvertercrew.vconverter.codename.CodenameToPsychScript
-import com.vconvertercrew.vconverter.codename.LuaToCodename
-import com.vconvertercrew.vconverter.codename.PsychHxToCodename
-import com.vconvertercrew.vconverter.codename.PsychToCodenameCharacter
-import com.vconvertercrew.vconverter.codename.PsychToCodenameChart
-import com.vconvertercrew.vconverter.codename.PsychToCodenameEvents
-import com.vconvertercrew.vconverter.codename.PsychToCodenameMod
-import com.vconvertercrew.vconverter.codename.XmlNode
+import com.vconvertercrew.vconverter.convert.character.PsychCharacterParser
+import com.vconvertercrew.vconverter.convert.chart.ChartSource
+import com.vconvertercrew.vconverter.convert.chart.psych.PsychChartParser
+import com.vconvertercrew.vconverter.engines.codename.CodenameChartParser
+import com.vconvertercrew.vconverter.engines.codename.CodenameMeta
+import com.vconvertercrew.vconverter.engines.codename.CodenameModConverter
+import com.vconvertercrew.vconverter.engines.codename.CodenameModScanner
+import com.vconvertercrew.vconverter.engines.codename.CodenameScope
+import com.vconvertercrew.vconverter.engines.codename.CodenameScriptTarget
+import com.vconvertercrew.vconverter.engines.codename.CodenameSong
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychChart
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychMod
+import com.vconvertercrew.vconverter.engines.codename.CodenameToPsychScript
+import com.vconvertercrew.vconverter.engines.codename.LuaToCodename
+import com.vconvertercrew.vconverter.engines.codename.PsychHxToCodename
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameCharacter
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameChart
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameEvents
+import com.vconvertercrew.vconverter.engines.codename.PsychToCodenameMod
+import com.vconvertercrew.vconverter.engines.codename.XmlNode
 import com.vconvertercrew.vconverter.core.CharacterSlot
-import com.vconvertercrew.vconverter.mod.DirectoryModFiles
-import com.vconvertercrew.vconverter.mod.DirectoryModWriter
-import com.vconvertercrew.vconverter.mod.ModInfo
-import com.vconvertercrew.vconverter.mod.ModScanner
+import com.vconvertercrew.vconverter.convert.mod.DirectoryModFiles
+import com.vconvertercrew.vconverter.convert.mod.DirectoryModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModInfo
+import com.vconvertercrew.vconverter.convert.mod.ModScanner
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -302,7 +302,7 @@ function onPlayerHit(event) {
         assertEquals("Cne Mod", info.title)
         val out = Files.createTempDirectory("c2pout").toFile()
         CodenameToPsychMod(files, scan, DirectoryModWriter(out)).convert(ModInfo(info.title, info.description, info.author))
-        val zoomScript = if (com.vconvertercrew.vconverter.script.HaxeToLua.available) "data/test/zoom.lua" else "data/test/zoom.hx"
+        val zoomScript = if (com.vconvertercrew.vconverter.convert.script.HaxeToLua.available) "data/test/zoom.lua" else "data/test/zoom.hx"
         listOf(
             "data/test/test-hard.json",
             "songs/test/Inst.ogg",

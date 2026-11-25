@@ -1,9 +1,9 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.reverse.HxcToPsych
-import com.vconvertercrew.vconverter.reverse.VSliceParser
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychStage
-import com.vconvertercrew.vconverter.script.PsychNativeLibrary
+import com.vconvertercrew.vconverter.convert.reverse.HxcToPsych
+import com.vconvertercrew.vconverter.convert.reverse.VSliceParser
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychStage
+import com.vconvertercrew.vconverter.convert.script.PsychNativeLibrary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

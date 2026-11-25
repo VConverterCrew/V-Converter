@@ -25,7 +25,7 @@ import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetAdapter
 import java.awt.dnd.DropTargetDropEvent
 import java.io.File
-import com.vconvertercrew.vconverter.editorview.EditorTyping
+import com.vconvertercrew.vconverter.views.editor.EditorTyping
 import javax.swing.UIManager
 
 fun main() {
@@ -33,7 +33,7 @@ fun main() {
     AppSettings.applyOnline()
     val previous = Thread.getDefaultUncaughtExceptionHandler()
     Thread.setDefaultUncaughtExceptionHandler { thread, error ->
-        val online = com.vconvertercrew.vconverter.online.Online
+        val online = com.vconvertercrew.vconverter.tools.online.Online
         if (online.reportsEnabled && online.isConfigured) {
             runCatching { online.api().report("crash", online.platform, online.appVersion, error.toString().take(300), error.stackTraceToString()) }
         }
@@ -42,7 +42,7 @@ fun main() {
     application {
         val scope = remember { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
         val state = remember { AppState(scope) }
-        val icon = remember { Resources.image("icons/icon.png")?.let { BitmapPainter(it) } }
+        val icon = remember { Resources.image("ui/app/icon.png")?.let { BitmapPainter(it) } }
         val windowState = rememberWindowState(size = DpSize(1240.dp, 820.dp))
         Window(
             onCloseRequest = {
@@ -90,8 +90,8 @@ fun main() {
                     App(state)
                     MainMenuOverlay(state)
                     OptionsOverlay()
-                    com.vconvertercrew.vconverter.overlay.FunkinTransitionOverlay()
-                    com.vconvertercrew.vconverter.overlay.FpsOverlay()
+                    com.vconvertercrew.vconverter.views.overlay.FunkinTransitionOverlay()
+                    com.vconvertercrew.vconverter.views.overlay.FpsOverlay()
                     DiscordStatus(state)
                     UiSounds()
                     MenuMusic(suppressed = windowState.isMinimized || state.editor.editor.playing)

@@ -5,8 +5,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
-import com.vconvertercrew.vconverter.editor.EditorAudio
-import com.vconvertercrew.vconverter.overlay.UiSound
+import com.vconvertercrew.vconverter.tools.editor.EditorAudio
+import com.vconvertercrew.vconverter.views.overlay.UiSound
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
 import javax.sound.sampled.AudioFormat

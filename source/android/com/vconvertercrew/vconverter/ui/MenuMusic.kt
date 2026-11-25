@@ -14,7 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.vconvertercrew.vconverter.overlay.UiSound
+import com.vconvertercrew.vconverter.views.overlay.UiSound
 
 private const val MENU_MUSIC = "music/freakyMenu.ogg"
 

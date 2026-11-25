@@ -4,12 +4,12 @@ import com.vconvertercrew.vconverter.core.PngWriter
 import com.vconvertercrew.vconverter.core.RgbaImage
 import com.vconvertercrew.vconverter.core.SparrowAtlas
 import com.vconvertercrew.vconverter.core.ZlibDeflate
-import com.vconvertercrew.vconverter.fpsplus.FpsIcon
-import com.vconvertercrew.vconverter.generator.PackOptions
-import com.vconvertercrew.vconverter.generator.PixelBox
-import com.vconvertercrew.vconverter.generator.SheetFrame
-import com.vconvertercrew.vconverter.generator.SheetSource
-import com.vconvertercrew.vconverter.generator.SpriteSheetGenerator
+import com.vconvertercrew.vconverter.engines.fpsplus.FpsIcon
+import com.vconvertercrew.vconverter.tools.generator.PackOptions
+import com.vconvertercrew.vconverter.tools.generator.PixelBox
+import com.vconvertercrew.vconverter.tools.generator.SheetFrame
+import com.vconvertercrew.vconverter.tools.generator.SheetSource
+import com.vconvertercrew.vconverter.tools.generator.SpriteSheetGenerator
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -118,7 +118,7 @@ class SpriteSheetGeneratorTest {
         val source = SheetSource(0, "sheet", sheet)
         val aligned = SpriteSheetGenerator.aligned(source, found)
         assertTrue(aligned.all { it.canvasWidth == 40 && it.canvasHeight == 45 })
-        val described = SpriteSheetGenerator.describe(listOf(com.vconvertercrew.vconverter.generator.SheetAnimation("run", aligned)), "sheet.png")
+        val described = SpriteSheetGenerator.describe(listOf(com.vconvertercrew.vconverter.tools.generator.SheetAnimation("run", aligned)), "sheet.png")
         assertEquals(5, described.frames[0].x)
         assertEquals(0, described.frames[0].frameX)
         assertEquals(-5, described.frames[1].frameX)

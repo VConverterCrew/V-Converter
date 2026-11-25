@@ -1,7 +1,7 @@
 package com.vconvertercrew.vconverter.launcher
 
-import com.vconvertercrew.vconverter.mod.ModConverter
-import com.vconvertercrew.vconverter.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModConverter
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
 import com.vconvertercrew.vconverter.platform.InputStream
 
 class FunkinModWriter(private val target: ModWriter, private val prefix: String, private val game: LaunchGame = LaunchGame.FUNKIN) : ModWriter {
@@ -52,7 +52,7 @@ class FunkinModWriter(private val target: ModWriter, private val prefix: String,
         fun metadata(title: String): String =
             "{\n  \"title\": ${quote(title)},\n  \"description\": \"Converted with V-Converter.\",\n  \"contributors\": [],\n  \"homepage\": \"\",\n  \"api_version\": \"${ModConverter.API_VERSION}\",\n  \"mod_version\": \"1.0.0\",\n  \"license\": \"\"\n}"
 
-        fun psychPack(title: String): String = com.vconvertercrew.vconverter.psych.PsychWriters.pack(title.ifBlank { "Converted Mod" }, "Converted with V-Converter.")
+        fun psychPack(title: String): String = com.vconvertercrew.vconverter.engines.psych.PsychWriters.pack(title.ifBlank { "Converted Mod" }, "Converted with V-Converter.")
 
         fun prefix(name: String, insideMods: Boolean): String = if (insideMods) "$name/" else "mods/$name/"
     }

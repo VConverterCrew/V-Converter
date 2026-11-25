@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.ios
 
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -33,15 +33,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.key
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.LocalUriHandler
-import com.vconvertercrew.vconverter.overlay.DiscordBadge
-import com.vconvertercrew.vconverter.overlay.discordOption
-import com.vconvertercrew.vconverter.overlay.FunkinMainMenu
-import com.vconvertercrew.vconverter.overlay.FunkinOptionsMenu
-import com.vconvertercrew.vconverter.overlay.MainMenuArt
-import com.vconvertercrew.vconverter.overlay.MainMenuEntry
-import com.vconvertercrew.vconverter.overlay.MenuArt
-import com.vconvertercrew.vconverter.overlay.MenuOption
-import com.vconvertercrew.vconverter.overlay.OverlayIcons
+import com.vconvertercrew.vconverter.views.overlay.DiscordBadge
+import com.vconvertercrew.vconverter.views.overlay.discordOption
+import com.vconvertercrew.vconverter.views.overlay.FunkinMainMenu
+import com.vconvertercrew.vconverter.views.overlay.FunkinOptionsMenu
+import com.vconvertercrew.vconverter.views.overlay.MainMenuArt
+import com.vconvertercrew.vconverter.views.overlay.MainMenuEntry
+import com.vconvertercrew.vconverter.views.overlay.MenuArt
+import com.vconvertercrew.vconverter.views.overlay.MenuOption
+import com.vconvertercrew.vconverter.views.overlay.OverlayIcons
 import kotlin.math.roundToInt
 
 object AppSettings {
@@ -76,7 +76,7 @@ object AppSettings {
 
     fun updateServerUrl(value: String) {
         serverUrl = value.trim()
-        com.vconvertercrew.vconverter.online.Online.serverUrl = serverUrl
+        com.vconvertercrew.vconverter.tools.online.Online.serverUrl = serverUrl
         runCatching { prefs?.put("serverUrl", serverUrl) }
     }
 
@@ -85,7 +85,7 @@ object AppSettings {
 
     fun updateErrorReports(value: Boolean) {
         errorReports = value
-        com.vconvertercrew.vconverter.online.Online.reportsEnabled = value
+        com.vconvertercrew.vconverter.tools.online.Online.reportsEnabled = value
         runCatching { prefs?.putBoolean("errorReports", value) }
     }
 
@@ -94,8 +94,17 @@ object AppSettings {
 
     fun updateVSlicePreview(value: Boolean) {
         vslicePreview = value
-        com.vconvertercrew.vconverter.vslice.VSlicePreview.enabled = value
+        com.vconvertercrew.vconverter.engines.vslice.VSlicePreview.enabled = value
         runCatching { prefs?.putBoolean("vslicePreview", value) }
+    }
+
+    var optimizeSprites by mutableStateOf(prefs?.getBoolean("optimizeSprites", false) ?: false)
+        private set
+
+    fun updateOptimizeSprites(value: Boolean) {
+        optimizeSprites = value
+        com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.enabled = value
+        runCatching { prefs?.putBoolean("optimizeSprites", value) }
     }
 
     fun saveString(key: String, value: String) {
@@ -103,14 +112,15 @@ object AppSettings {
     }
 
     fun applyOnline() {
-        com.vconvertercrew.vconverter.vslice.VSlicePreview.enabled = vslicePreview
-        com.vconvertercrew.vconverter.online.Online.platform = "ios"
-        com.vconvertercrew.vconverter.online.Online.appVersion = APP_VERSION
-        com.vconvertercrew.vconverter.online.Online.serverUrl = serverUrl
-        com.vconvertercrew.vconverter.online.Online.reportsEnabled = errorReports
-        com.vconvertercrew.vconverter.overlay.TouchOptions.load(com.vconvertercrew.vtouch.VTouchMode.HITBOX) { key -> prefs?.get(key, "")?.takeIf { it.isNotEmpty() } }
-        com.vconvertercrew.vconverter.overlay.FpsDisplay.load(fpsCounter) { key -> prefs?.get(key, "")?.takeIf { it.isNotEmpty() } }
-        com.vconvertercrew.vconverter.overlay.DiscordAccount.setup(
+        com.vconvertercrew.vconverter.engines.vslice.VSlicePreview.enabled = vslicePreview
+        com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.enabled = optimizeSprites
+        com.vconvertercrew.vconverter.tools.online.Online.platform = "ios"
+        com.vconvertercrew.vconverter.tools.online.Online.appVersion = APP_VERSION
+        com.vconvertercrew.vconverter.tools.online.Online.serverUrl = serverUrl
+        com.vconvertercrew.vconverter.tools.online.Online.reportsEnabled = errorReports
+        com.vconvertercrew.vconverter.views.overlay.TouchOptions.load(com.vconvertercrew.vtouch.VTouchMode.HITBOX) { key -> prefs?.get(key, "")?.takeIf { it.isNotEmpty() } }
+        com.vconvertercrew.vconverter.views.overlay.FpsDisplay.load(fpsCounter) { key -> prefs?.get(key, "")?.takeIf { it.isNotEmpty() } }
+        com.vconvertercrew.vconverter.views.overlay.DiscordAccount.setup(
             prefs?.get("discordProfile", "") ?: "",
             store = { value -> runCatching { prefs?.put("discordProfile", value) } },
             decode = { bytes -> org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap() }
@@ -154,8 +164,8 @@ private val mainMenuEntries = listOf(
 fun MainMenuOverlay(state: AppState) {
     if (!MainMenu.open) return
     if (MainMenu.title) {
-        val titleArt = remember { com.vconvertercrew.vconverter.overlay.TitleArt.load({ Resources.image(it) }, { Resources.bytes(it)?.decodeToString() }) }
-        com.vconvertercrew.vconverter.overlay.FunkinTitle(titleArt, onFinish = { MainMenu.title = false })
+        val titleArt = remember { com.vconvertercrew.vconverter.views.overlay.TitleArt.load({ Resources.image(it) }, { Resources.bytes(it)?.decodeToString() }) }
+        com.vconvertercrew.vconverter.views.overlay.FunkinTitle(titleArt, onFinish = { MainMenu.title = false })
         return
     }
     val art = remember { MainMenuArt.load(mainMenuEntries.map { it.id }, { Resources.image(it) }, { Resources.bytes(it)?.decodeToString() }) }
@@ -181,7 +191,7 @@ fun MainMenuOverlay(state: AppState) {
         return
     }
     if (list == "converter") {
-        com.vconvertercrew.vconverter.overlay.FunkinEnginePicker(
+        com.vconvertercrew.vconverter.views.overlay.FunkinEnginePicker(
             title = "Converter",
             art = listArt,
             available = { from, to -> Direction.entries.any { it.from.key == from && it.to.key == to } },
@@ -189,7 +199,7 @@ fun MainMenuOverlay(state: AppState) {
                 val direction = Direction.entries.first { it.from.key == from.key && it.to.key == to.key }
                 Tab.entries.map { tab ->
                     MenuOption.Action(tab.title, "Convert ${tab.title.lowercase()} from ${direction.from.title} to ${direction.to.title}.") {
-                        com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
+                        com.vconvertercrew.vconverter.views.overlay.FunkinTransition.go {
                             state.direction = direction
                             state.tab = tab
                             state.tool = null
@@ -205,7 +215,7 @@ fun MainMenuOverlay(state: AppState) {
     }
     val options = generatorTools.map { tool ->
         MenuOption.Action(tool.title, tool.hint) {
-            com.vconvertercrew.vconverter.overlay.FunkinTransition.go {
+            com.vconvertercrew.vconverter.views.overlay.FunkinTransition.go {
                 state.tool = tool
                 MainMenu.close()
             }
@@ -243,7 +253,7 @@ fun OptionsOverlay() {
     val art = remember { MenuArt.load({ Resources.image(it) }, { Resources.bytes(it)?.decodeToString() }) }
     val links = LocalUriHandler.current
     val preferences = listOf(
-        com.vconvertercrew.vconverter.overlay.FpsDisplay.submenu(AppSettings::saveString) { AppSettings.updateFpsCounter(it) },
+        com.vconvertercrew.vconverter.views.overlay.FpsDisplay.submenu(AppSettings::saveString) { AppSettings.updateFpsCounter(it) },
         MenuOption.Toggle("UI Sounds", "Plays scrollMenu when you click tabs and buttons.", { AppSettings.uiSounds }, AppSettings::updateUiSounds),
         MenuOption.Toggle("Menu Music", "Plays freakyMenu while you work. It pauses while an editor plays a song.", { AppSettings.menuMusic }, AppSettings::updateMenuMusic),
         MenuOption.Stepper("Music Volume", "Left and right (or Enter) change the menu music volume.", { "${(AppSettings.musicVolume * 100).roundToInt()}%" }) { step ->
@@ -251,12 +261,13 @@ fun OptionsOverlay() {
             AppSettings.updateMusicVolume(next / 10f)
         },
         MenuOption.Toggle("V-Slice Preview", "V-Slice output uses the Public PlayTest layout (gameplay/songs, gameplay/characters, gameplay/stages, ui/story-mode). Off keeps the 0.7 layout.", { AppSettings.vslicePreview }, AppSettings::updateVSlicePreview),
+        MenuOption.Toggle(com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.LABEL, com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.DESCRIPTION, { AppSettings.optimizeSprites }, AppSettings::updateOptimizeSprites),
         MenuOption.TextEntry("Online Server", "Leave it empty to connect to a V-Converter server automatically, or type the address of your own server. Press Enter on it to edit.", { AppSettings.serverUrl }, AppSettings::updateServerUrl, "Automatic"),
         MenuOption.Toggle("Error Reports", "Sends conversion errors and crashes (message, app version and platform) to the online server.", { AppSettings.errorReports }, AppSettings::updateErrorReports)
     )
     val options = listOf(
         MenuOption.Submenu("Preferences", "FPS counter, sounds, music, the V-Slice layout, the online server and error reports.") { preferences },
-        com.vconvertercrew.vconverter.overlay.TouchOptions.submenu(AppSettings::saveString),
+        com.vconvertercrew.vconverter.views.overlay.TouchOptions.submenu(AppSettings::saveString),
         discordOption { links.openUri(it) }
     )
     FunkinOptionsMenu(

@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.online.DiscordProfile
+import com.vconvertercrew.vconverter.tools.online.DiscordProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

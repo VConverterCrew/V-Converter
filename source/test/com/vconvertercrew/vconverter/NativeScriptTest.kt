@@ -1,12 +1,12 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.generator.Callback
-import com.vconvertercrew.vconverter.generator.ScriptGenerator
-import com.vconvertercrew.vconverter.generator.ScriptKind
-import com.vconvertercrew.vconverter.generator.ScriptSpec
-import com.vconvertercrew.vconverter.script.NativeScripts
-import com.vconvertercrew.vconverter.script.ScriptConverter
-import com.vconvertercrew.vconverter.script.ScriptSource
+import com.vconvertercrew.vconverter.tools.generator.Callback
+import com.vconvertercrew.vconverter.tools.generator.ScriptGenerator
+import com.vconvertercrew.vconverter.tools.generator.ScriptKind
+import com.vconvertercrew.vconverter.tools.generator.ScriptSpec
+import com.vconvertercrew.vconverter.convert.script.NativeScripts
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ScriptSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

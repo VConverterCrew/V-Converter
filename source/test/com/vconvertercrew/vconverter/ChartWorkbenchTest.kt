@@ -1,10 +1,10 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.chart.preview.ChartEngine
-import com.vconvertercrew.vconverter.chart.preview.ChartPreviews
-import com.vconvertercrew.vconverter.chart.preview.ChartSide
-import com.vconvertercrew.vconverter.chart.preview.ChartTweaks
-import com.vconvertercrew.vconverter.chart.preview.ChartWorkbench
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartEngine
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartPreviews
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartSide
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartTweaks
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartWorkbench
 import com.vconvertercrew.vconverter.convert.CodenameToPsychChartsConverter
 import com.vconvertercrew.vconverter.convert.PickedText
 import com.vconvertercrew.vconverter.convert.PsychChartsConverter

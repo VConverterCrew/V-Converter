@@ -1,15 +1,15 @@
 package com.vconvertercrew.vconverter.convert
 
-import com.vconvertercrew.vconverter.character.BaseCharacterScripts
-import com.vconvertercrew.vconverter.character.CharacterSource
-import com.vconvertercrew.vconverter.character.PsychCharacterParser
-import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
-import com.vconvertercrew.vconverter.chart.ChartSource
-import com.vconvertercrew.vconverter.chart.ConversionOptions
-import com.vconvertercrew.vconverter.chart.PsychNoteStyles
-import com.vconvertercrew.vconverter.chart.PsychToVSliceChart
-import com.vconvertercrew.vconverter.chart.psych.PsychChartParser
-import com.vconvertercrew.vconverter.chart.vslice.VSliceWriter
+import com.vconvertercrew.vconverter.convert.character.BaseCharacterScripts
+import com.vconvertercrew.vconverter.convert.character.CharacterSource
+import com.vconvertercrew.vconverter.convert.character.PsychCharacterParser
+import com.vconvertercrew.vconverter.convert.character.PsychToVSliceCharacter
+import com.vconvertercrew.vconverter.convert.chart.ChartSource
+import com.vconvertercrew.vconverter.convert.chart.ConversionOptions
+import com.vconvertercrew.vconverter.convert.chart.PsychNoteStyles
+import com.vconvertercrew.vconverter.convert.chart.PsychToVSliceChart
+import com.vconvertercrew.vconverter.convert.chart.psych.PsychChartParser
+import com.vconvertercrew.vconverter.convert.chart.vslice.VSliceWriter
 import com.vconvertercrew.vconverter.core.AnimateAtlases
 import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.ReportBuilder
@@ -17,16 +17,16 @@ import com.vconvertercrew.vconverter.core.SongPath
 import com.vconvertercrew.vconverter.core.SparrowAtlas
 import com.vconvertercrew.vconverter.io.ImportedFile
 import com.vconvertercrew.vconverter.io.OutputFile
-import com.vconvertercrew.vconverter.script.ScriptConverter
-import com.vconvertercrew.vconverter.script.ShaderConverter
-import com.vconvertercrew.vconverter.script.ScriptSource
-import com.vconvertercrew.vconverter.stage.LuaStageExtractor
-import com.vconvertercrew.vconverter.stage.PsychStageParser
-import com.vconvertercrew.vconverter.stage.PsychToVSliceStage
-import com.vconvertercrew.vconverter.stage.StageSource
-import com.vconvertercrew.vconverter.week.PsychToVSliceLevel
-import com.vconvertercrew.vconverter.week.PsychWeekParser
-import com.vconvertercrew.vconverter.week.WeekSource
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ShaderConverter
+import com.vconvertercrew.vconverter.convert.script.ScriptSource
+import com.vconvertercrew.vconverter.convert.stage.LuaStageExtractor
+import com.vconvertercrew.vconverter.convert.stage.PsychStageParser
+import com.vconvertercrew.vconverter.convert.stage.PsychToVSliceStage
+import com.vconvertercrew.vconverter.convert.stage.StageSource
+import com.vconvertercrew.vconverter.convert.week.PsychToVSliceLevel
+import com.vconvertercrew.vconverter.convert.week.PsychWeekParser
+import com.vconvertercrew.vconverter.convert.week.WeekSource
 
 private fun psychParts(path: String) = path.replace('\\', '/').split('/').filter { it.isNotEmpty() }
 
@@ -259,7 +259,7 @@ class PsychScriptsConverter : PsychToVSliceConverter() {
 
     private fun buildScripts(items: List<PickedText>): ConvertedOutput {
         val sources = items.map { ScriptSource(it.path, it.text, ScriptConverter.detectTarget(it.path)) }
-        val noteTypes = sources.mapNotNull { it.target }.filter { it.scope == com.vconvertercrew.vconverter.script.ScriptScope.NOTE_TYPE }.map { it.key }
+        val noteTypes = sources.mapNotNull { it.target }.filter { it.scope == com.vconvertercrew.vconverter.convert.script.ScriptScope.NOTE_TYPE }.map { it.key }
         val bundle = ScriptConverter.convert("VConverter", sources, ScriptConverter.noteTypeMap(noteTypes))
         require(bundle.converted > 0) { bundle.report.warnings.firstOrNull() ?: "No script could be converted." }
         val outputs = bundle.files.map { out(it.path, it.content) }

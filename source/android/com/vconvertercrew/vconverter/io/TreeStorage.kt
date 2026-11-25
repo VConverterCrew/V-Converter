@@ -5,8 +5,8 @@ import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
-import com.vconvertercrew.vconverter.mod.ModFiles
-import com.vconvertercrew.vconverter.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModFiles
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
 import java.io.IOException
 import java.io.InputStream
 

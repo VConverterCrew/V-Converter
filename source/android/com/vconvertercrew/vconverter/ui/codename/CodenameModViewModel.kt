@@ -11,15 +11,15 @@ import com.vconvertercrew.vconverter.io.ExtractedArchive
 import com.vconvertercrew.vconverter.io.Importer
 import com.vconvertercrew.vconverter.io.TreeModFiles
 import com.vconvertercrew.vconverter.io.TreeModWriter
-import com.vconvertercrew.vconverter.mod.ModFiles
-import com.vconvertercrew.vconverter.mod.ModInfo
-import com.vconvertercrew.vconverter.mod.ModConversionResult
-import com.vconvertercrew.vconverter.mod.ModProgress
-import com.vconvertercrew.vconverter.codename.CodenameModConverter
-import com.vconvertercrew.vconverter.codename.CodenameModScan
-import com.vconvertercrew.vconverter.codename.CodenameModScanner
-import com.vconvertercrew.vconverter.mod.ModWriter
-import com.vconvertercrew.vconverter.mod.ZipModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModFiles
+import com.vconvertercrew.vconverter.convert.mod.ModInfo
+import com.vconvertercrew.vconverter.convert.mod.ModConversionResult
+import com.vconvertercrew.vconverter.convert.mod.ModProgress
+import com.vconvertercrew.vconverter.engines.codename.CodenameModConverter
+import com.vconvertercrew.vconverter.engines.codename.CodenameModScan
+import com.vconvertercrew.vconverter.engines.codename.CodenameModScanner
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.ZipModWriter
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.StatusMessage
 import kotlinx.coroutines.Dispatchers
@@ -173,5 +173,5 @@ class CodenameToPsychModViewModel(application: Application) : CodenameModViewMod
     override val targetSuffix: String = "psych"
 
     override fun runConversion(files: ModFiles, scan: CodenameModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
-        com.vconvertercrew.vconverter.codename.CodenameToPsychMod(files, scan, writer, progress).convert(info)
+        com.vconvertercrew.vconverter.engines.codename.CodenameToPsychMod(files, scan, writer, progress).convert(info)
 }

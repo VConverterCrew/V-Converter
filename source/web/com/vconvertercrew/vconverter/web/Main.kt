@@ -33,8 +33,8 @@ fun main() {
                 }
                 MainMenuOverlay(state)
                 OptionsOverlay()
-                com.vconvertercrew.vconverter.overlay.FunkinTransitionOverlay()
-                com.vconvertercrew.vconverter.overlay.FpsOverlay()
+                com.vconvertercrew.vconverter.views.overlay.FunkinTransitionOverlay()
+                com.vconvertercrew.vconverter.views.overlay.FpsOverlay()
             }
             UiSounds()
             MenuMusic(suppressed = state.editor.editor.playing)

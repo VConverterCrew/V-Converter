@@ -4,7 +4,7 @@
 
 #include "vbanana/VBanana.h"
 
-#define VCB_FUNCTION(name) Java_com_vconvertercrew_vconverter_online_VBananaNative_##name
+#define VCB_FUNCTION(name) Java_com_vconvertercrew_vconverter_tools_online_VBananaNative_##name
 
 namespace {
 

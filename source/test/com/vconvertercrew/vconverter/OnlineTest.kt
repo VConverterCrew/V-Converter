@@ -1,16 +1,16 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.editor.ChartChange
-import com.vconvertercrew.vconverter.editor.ChartDocument
-import com.vconvertercrew.vconverter.editor.ChartSync
-import com.vconvertercrew.vconverter.editor.EditorEvent
-import com.vconvertercrew.vconverter.editor.EditorNote
-import com.vconvertercrew.vconverter.online.CollabListener
-import com.vconvertercrew.vconverter.online.CollabSession
-import com.vconvertercrew.vconverter.online.ModEngine
-import com.vconvertercrew.vconverter.online.OnlineApi
-import com.vconvertercrew.vconverter.online.OnlineException
-import com.vconvertercrew.vconverter.online.RoomPeer
+import com.vconvertercrew.vconverter.tools.editor.ChartChange
+import com.vconvertercrew.vconverter.tools.editor.ChartDocument
+import com.vconvertercrew.vconverter.tools.editor.ChartSync
+import com.vconvertercrew.vconverter.tools.editor.EditorEvent
+import com.vconvertercrew.vconverter.tools.editor.EditorNote
+import com.vconvertercrew.vconverter.tools.online.CollabListener
+import com.vconvertercrew.vconverter.tools.online.CollabSession
+import com.vconvertercrew.vconverter.tools.online.ModEngine
+import com.vconvertercrew.vconverter.tools.online.OnlineApi
+import com.vconvertercrew.vconverter.tools.online.OnlineException
+import com.vconvertercrew.vconverter.tools.online.RoomPeer
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
@@ -196,9 +196,9 @@ class OnlineTest {
         val png = byteArrayOf(1, 2, 3, 4, 5)
         api.uploadRoomAsset(room.code, "images/storymenu/props/dude pixel.png", png)
         assertTrue(api.downloadRoomAsset(room.code, "images/storymenu/props/dude pixel.png").contentEquals(png))
-        val welcomes = LinkedBlockingQueue<com.vconvertercrew.vconverter.online.RoomWelcome>()
+        val welcomes = LinkedBlockingQueue<com.vconvertercrew.vconverter.tools.online.RoomWelcome>()
         val session = CollabSession(api.socketUrl(room.code, "Guest"), object : CollabListener {
-            override fun onWelcome(welcome: com.vconvertercrew.vconverter.online.RoomWelcome) { welcomes.put(welcome) }
+            override fun onWelcome(welcome: com.vconvertercrew.vconverter.tools.online.RoomWelcome) { welcomes.put(welcome) }
         })
         session.connect()
         val got = welcomes.poll(5, TimeUnit.SECONDS)!!
@@ -209,18 +209,18 @@ class OnlineTest {
 
     @Test
     fun weekSnapshotsKeepEverything() {
-        val doc = com.vconvertercrew.vconverter.editor.WeekDocument(
+        val doc = com.vconvertercrew.vconverter.tools.editor.WeekDocument(
             id = "weekdude", name = "Dude", weekName = "Dude Week",
-            songs = listOf(com.vconvertercrew.vconverter.editor.WeekSong("song-one", "Song One", "dude", "#FF0000")),
+            songs = listOf(com.vconvertercrew.vconverter.tools.editor.WeekSong("song-one", "Song One", "dude", "#FF0000")),
             difficulties = listOf("easy", "erect"), weekBefore = "week1", startUnlocked = false, hiddenUntilUnlocked = true, hideFreeplay = true
-        ).withProp(com.vconvertercrew.vconverter.editor.WeekSlot.DAD, null)
-        val back = com.vconvertercrew.vconverter.editor.WeekDocument.fromSnapshot(JSONObject(doc.toSnapshot().toString()))
+        ).withProp(com.vconvertercrew.vconverter.tools.editor.WeekSlot.DAD, null)
+        val back = com.vconvertercrew.vconverter.tools.editor.WeekDocument.fromSnapshot(JSONObject(doc.toSnapshot().toString()))
         assertEquals(doc.songs, back.songs)
         assertEquals(doc.difficulties, back.difficulties)
         assertEquals(doc.weekBefore, back.weekBefore)
         assertEquals(doc.hiddenUntilUnlocked, back.hiddenUntilUnlocked)
         assertEquals(doc.hideFreeplay, back.hideFreeplay)
-        assertEquals(null, back.prop(com.vconvertercrew.vconverter.editor.WeekSlot.DAD))
-        assertEquals(doc.prop(com.vconvertercrew.vconverter.editor.WeekSlot.BF)!!.offsetX, back.prop(com.vconvertercrew.vconverter.editor.WeekSlot.BF)!!.offsetX, 0.0)
+        assertEquals(null, back.prop(com.vconvertercrew.vconverter.tools.editor.WeekSlot.DAD))
+        assertEquals(doc.prop(com.vconvertercrew.vconverter.tools.editor.WeekSlot.BF)!!.offsetX, back.prop(com.vconvertercrew.vconverter.tools.editor.WeekSlot.BF)!!.offsetX, 0.0)
     }
 }

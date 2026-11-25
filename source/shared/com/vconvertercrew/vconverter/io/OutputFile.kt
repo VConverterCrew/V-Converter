@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.io
 
-import com.vconvertercrew.vconverter.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
 import com.vconvertercrew.vconverter.platform.inputStream
 
 class OutputFile(val directories: List<String>, val name: String, val content: String, val bytes: ByteArray? = null) {

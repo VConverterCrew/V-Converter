@@ -1,15 +1,15 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.character.CharacterSource
-import com.vconvertercrew.vconverter.character.PsychCharacterParser
-import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
-import com.vconvertercrew.vconverter.codename.CodenameCharacterParser
+import com.vconvertercrew.vconverter.convert.character.CharacterSource
+import com.vconvertercrew.vconverter.convert.character.PsychCharacterParser
+import com.vconvertercrew.vconverter.convert.character.PsychToVSliceCharacter
+import com.vconvertercrew.vconverter.engines.codename.CodenameCharacterParser
 import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.SparrowAtlas
 import com.vconvertercrew.vconverter.json.JSONObject
-import com.vconvertercrew.vconverter.reverse.VSliceParser
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychCharacter
-import com.vconvertercrew.vconverter.reverse.VSliceToPsychStage
+import com.vconvertercrew.vconverter.convert.reverse.VSliceParser
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychCharacter
+import com.vconvertercrew.vconverter.convert.reverse.VSliceToPsychStage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

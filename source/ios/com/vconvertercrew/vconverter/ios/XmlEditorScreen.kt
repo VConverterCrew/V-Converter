@@ -1,10 +1,10 @@
 package com.vconvertercrew.vconverter.ios
 
 import androidx.compose.runtime.Composable
-import com.vconvertercrew.vconverter.editorview.FnfXmlEditor
-import com.vconvertercrew.vconverter.editorview.XmlEditorState
-import com.vconvertercrew.vconverter.editorview.XmlExport
-import com.vconvertercrew.vconverter.overlay.FunkinTransition
+import com.vconvertercrew.vconverter.views.editor.FnfXmlEditor
+import com.vconvertercrew.vconverter.views.editor.XmlEditorState
+import com.vconvertercrew.vconverter.views.editor.XmlExport
+import com.vconvertercrew.vconverter.views.overlay.FunkinTransition
 import com.vconvertercrew.vconverter.platform.File
 
 private fun saveSheet(state: AppState, xml: XmlEditorState, export: XmlExport) {

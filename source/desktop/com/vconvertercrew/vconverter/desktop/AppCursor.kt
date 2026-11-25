@@ -12,7 +12,7 @@ import kotlin.math.min
 object AppCursor {
     val cursor: Cursor? by lazy {
         runCatching {
-            val image = AppCursor::class.java.getResourceAsStream("/images/cursor/cursor.png")?.use { ImageIO.read(it) } ?: return@runCatching null
+            val image = AppCursor::class.java.getResourceAsStream("/ui/cursor/cursor.png")?.use { ImageIO.read(it) } ?: return@runCatching null
             val toolkit = Toolkit.getDefaultToolkit()
             val best = toolkit.getBestCursorSize(image.width, image.height)
             if (best.width <= 0 || best.height <= 0) return@runCatching null

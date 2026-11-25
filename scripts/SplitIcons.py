@@ -31,4 +31,4 @@ def main(source, target):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "assets/images/icons")
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "assets/ui/icons")

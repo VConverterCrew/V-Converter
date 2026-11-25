@@ -1,11 +1,11 @@
 package com.vconvertercrew.vconverter
 
 import com.vconvertercrew.vconverter.core.CharacterSlot
-import com.vconvertercrew.vconverter.editor.CharacterDocument
-import com.vconvertercrew.vconverter.editor.CharacterExport
-import com.vconvertercrew.vconverter.editor.CharacterLoader
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SpriteAtlas
+import com.vconvertercrew.vconverter.tools.editor.CharacterDocument
+import com.vconvertercrew.vconverter.tools.editor.CharacterExport
+import com.vconvertercrew.vconverter.tools.editor.CharacterLoader
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SpriteAtlas
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

@@ -4,8 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import com.vconvertercrew.vconverter.json.JSONObject
-import com.vconvertercrew.vconverter.online.Discord
-import com.vconvertercrew.vconverter.overlay.DiscordAccount
+import com.vconvertercrew.vconverter.tools.online.Discord
+import com.vconvertercrew.vconverter.views.overlay.DiscordAccount
 import java.io.Closeable
 import java.io.EOFException
 import java.io.File

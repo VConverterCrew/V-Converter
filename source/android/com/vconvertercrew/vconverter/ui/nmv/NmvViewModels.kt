@@ -11,16 +11,16 @@ import com.vconvertercrew.vconverter.io.ExtractedArchive
 import com.vconvertercrew.vconverter.io.Importer
 import com.vconvertercrew.vconverter.io.TreeModFiles
 import com.vconvertercrew.vconverter.io.TreeModWriter
-import com.vconvertercrew.vconverter.mod.ModFiles
-import com.vconvertercrew.vconverter.mod.ModInfo
-import com.vconvertercrew.vconverter.mod.ModConversionResult
-import com.vconvertercrew.vconverter.mod.ModProgress
-import com.vconvertercrew.vconverter.nmv.NmvModScanner
-import com.vconvertercrew.vconverter.nmv.NmvScan
-import com.vconvertercrew.vconverter.nmv.NmvTarget
-import com.vconvertercrew.vconverter.nmv.NmvToMod
-import com.vconvertercrew.vconverter.mod.ModWriter
-import com.vconvertercrew.vconverter.mod.ZipModWriter
+import com.vconvertercrew.vconverter.convert.mod.ModFiles
+import com.vconvertercrew.vconverter.convert.mod.ModInfo
+import com.vconvertercrew.vconverter.convert.mod.ModConversionResult
+import com.vconvertercrew.vconverter.convert.mod.ModProgress
+import com.vconvertercrew.vconverter.engines.nmv.NmvModScanner
+import com.vconvertercrew.vconverter.engines.nmv.NmvScan
+import com.vconvertercrew.vconverter.engines.nmv.NmvTarget
+import com.vconvertercrew.vconverter.engines.nmv.NmvToMod
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.ZipModWriter
 import com.vconvertercrew.vconverter.ui.BaseConverterViewModel
 import com.vconvertercrew.vconverter.ui.StatusMessage
 import kotlinx.coroutines.Dispatchers
@@ -187,22 +187,22 @@ class NmvToCodenameModViewModel(application: Application) : NmvModViewModel(appl
 class PsychToNmvModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.mod.ModViewModel(application) {
     override val targetSuffix: String = "nmv"
 
-    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.mod.ModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
-        com.vconvertercrew.vconverter.nmv.ToNmvMod.fromPsych(files, scan, writer, info, progress)
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.convert.mod.ModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.nmv.ToNmvMod.fromPsych(files, scan, writer, info, progress)
 }
 
 class CodenameToNmvModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.codename.CodenameModViewModel(application) {
     override val targetSuffix: String = "nmv"
 
-    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.codename.CodenameModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
-        com.vconvertercrew.vconverter.nmv.ToNmvMod.fromCodename(files, scan, writer, info, progress)
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.engines.codename.CodenameModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.nmv.ToNmvMod.fromCodename(files, scan, writer, info, progress)
 }
 
 class VSliceToNmvModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.reverse.ReverseModViewModel(application) {
     override val targetSuffix: String = "nmv"
 
-    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.reverse.VSliceModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
-        com.vconvertercrew.vconverter.nmv.ToNmvMod.fromVSlice(files, scan, writer, info, progress)
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.convert.reverse.VSliceModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.nmv.ToNmvMod.fromVSlice(files, scan, writer, info, progress)
 }
 
 class NmvFileViewModel(application: Application, converter: com.vconvertercrew.vconverter.convert.FileConverter) : com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel(application, converter)
@@ -214,20 +214,20 @@ class NmvToFpsModViewModel(application: Application) : NmvModViewModel(applicati
 class PsychToFpsModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.mod.ModViewModel(application) {
     override val targetSuffix: String = "fpsplus"
 
-    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.mod.ModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
-        com.vconvertercrew.vconverter.fpsplus.ToFpsMod.fromPsych(files, scan, writer, info, progress)
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.convert.mod.ModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.fpsplus.ToFpsMod.fromPsych(files, scan, writer, info, progress)
 }
 
 class CodenameToFpsModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.codename.CodenameModViewModel(application) {
     override val targetSuffix: String = "fpsplus"
 
-    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.codename.CodenameModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
-        com.vconvertercrew.vconverter.fpsplus.ToFpsMod.fromCodename(files, scan, writer, info, progress)
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.engines.codename.CodenameModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.fpsplus.ToFpsMod.fromCodename(files, scan, writer, info, progress)
 }
 
 class VSliceToFpsModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.reverse.ReverseModViewModel(application) {
     override val targetSuffix: String = "fpsplus"
 
-    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.reverse.VSliceModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
-        com.vconvertercrew.vconverter.fpsplus.ToFpsMod.fromVSlice(files, scan, writer, info, progress)
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.convert.reverse.VSliceModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.fpsplus.ToFpsMod.fromVSlice(files, scan, writer, info, progress)
 }

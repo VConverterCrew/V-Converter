@@ -10,8 +10,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.vconvertercrew.vconverter.io.Importer
-import com.vconvertercrew.vconverter.online.ErrorReports
-import com.vconvertercrew.vconverter.online.Online
+import com.vconvertercrew.vconverter.tools.online.ErrorReports
+import com.vconvertercrew.vconverter.tools.online.Online
 import java.io.File
 import com.vconvertercrew.vconverter.ui.MainScreen
 import com.vconvertercrew.vconverter.ui.theme.VConverterTheme
@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
         Online.appVersion = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull() ?: "0.1.0-playtest"
         Online.serverUrl = prefs.getString("server_url", "") ?: ""
         Online.reportsEnabled = prefs.getBoolean("error_reports", false)
-        com.vconvertercrew.vconverter.overlay.DiscordAccount.setup(
+        com.vconvertercrew.vconverter.views.overlay.DiscordAccount.setup(
             prefs.getString("discord_profile", "") ?: "",
             store = { prefs.edit().putString("discord_profile", it).apply() },
             decode = { bytes -> android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }

@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.audio
 
-import com.vconvertercrew.vconverter.editorview.SongPlayer
+import com.vconvertercrew.vconverter.views.editor.SongPlayer
 
 interface PcmOutput {
     val sampleRate: Int

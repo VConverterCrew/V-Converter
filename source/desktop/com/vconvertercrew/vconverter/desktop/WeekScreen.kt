@@ -2,10 +2,10 @@ package com.vconvertercrew.vconverter.desktop
 
 import com.vconvertercrew.vconverterui.VButton as Primary
 import com.vconvertercrew.vconverterui.VOutlineButton as Secondary
-import com.vconvertercrew.vconverter.overlay.ReportView
+import com.vconvertercrew.vconverter.views.overlay.ReportView
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.*
-import com.vconvertercrew.vconverter.editorview.*
+import com.vconvertercrew.vconverter.views.editor.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,24 +31,24 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.unit.dp
 import com.vconvertercrew.vconverter.convert.ConvertedOutput
-import com.vconvertercrew.vconverter.editor.ExportTarget
-import com.vconvertercrew.vconverter.editor.SpriteAtlas
-import com.vconvertercrew.vconverter.editor.StageAsset
-import com.vconvertercrew.vconverter.editor.WeekDocument
-import com.vconvertercrew.vconverter.editor.WeekExport
-import com.vconvertercrew.vconverter.editor.WeekLoader
-import com.vconvertercrew.vconverter.editor.WeekProp
-import com.vconvertercrew.vconverter.editor.WeekSlot
-import com.vconvertercrew.vconverter.editorview.EditorChip
-import com.vconvertercrew.vconverter.editorview.EditorTyping
-import com.vconvertercrew.vconverter.editorview.StageImage
-import com.vconvertercrew.vconverter.editorview.WeekEditorState
-import com.vconvertercrew.vconverter.editorview.WeekInfoPanel
-import com.vconvertercrew.vconverter.editorview.WeekPreview
-import com.vconvertercrew.vconverter.editorview.WeekPropsPanel
-import com.vconvertercrew.vconverter.editorview.WeekSongsPanel
-import com.vconvertercrew.vconverter.editorview.WeekToolbar
-import com.vconvertercrew.vconverter.editorview.weekSummary
+import com.vconvertercrew.vconverter.tools.editor.ExportTarget
+import com.vconvertercrew.vconverter.tools.editor.SpriteAtlas
+import com.vconvertercrew.vconverter.tools.editor.StageAsset
+import com.vconvertercrew.vconverter.tools.editor.WeekDocument
+import com.vconvertercrew.vconverter.tools.editor.WeekExport
+import com.vconvertercrew.vconverter.tools.editor.WeekLoader
+import com.vconvertercrew.vconverter.tools.editor.WeekProp
+import com.vconvertercrew.vconverter.tools.editor.WeekSlot
+import com.vconvertercrew.vconverter.views.editor.EditorChip
+import com.vconvertercrew.vconverter.views.editor.EditorTyping
+import com.vconvertercrew.vconverter.views.editor.StageImage
+import com.vconvertercrew.vconverter.views.editor.WeekEditorState
+import com.vconvertercrew.vconverter.views.editor.WeekInfoPanel
+import com.vconvertercrew.vconverter.views.editor.WeekPreview
+import com.vconvertercrew.vconverter.views.editor.WeekPropsPanel
+import com.vconvertercrew.vconverter.views.editor.WeekSongsPanel
+import com.vconvertercrew.vconverter.views.editor.WeekToolbar
+import com.vconvertercrew.vconverter.views.editor.weekSummary
 import com.vconvertercrew.vconverter.io.Archives
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -60,7 +60,7 @@ enum class WeekImageRole { PROP, TITLE, BACKGROUND }
 
 class DesktopWeekEditor(private val scope: CoroutineScope) {
     val editor = WeekEditorState(WeekDocument("new-week", "New Week"))
-    val live = com.vconvertercrew.vconverter.editorview.LiveSession(com.vconvertercrew.vconverter.editorview.WeekLiveAdapter(editor) { asset -> decode(asset) }) { block -> javax.swing.SwingUtilities.invokeLater(block) }
+    val live = com.vconvertercrew.vconverter.views.editor.LiveSession(com.vconvertercrew.vconverter.views.editor.WeekLiveAdapter(editor) { asset -> decode(asset) }) { block -> javax.swing.SwingUtilities.invokeLater(block) }
     var target by mutableStateOf(ExportTarget.VSLICE)
     var source by mutableStateOf("New week")
         private set
@@ -273,7 +273,7 @@ fun WeekEditorScreen(state: AppState) {
             }
         },
         EditorWindow("props", "Menu Characters", 400.dp) { WeekPropsPanel(editor, onLoadImage = { slot -> Dialogs.openFiles("Pick the character image (.png and its .xml)").let { model.addImage(WeekImageRole.PROP, slot, it) } }) },
-        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.editorview.LiveSessionPanel(model.live) },
+        EditorWindow("live", "Multieditor") { com.vconvertercrew.vconverter.views.editor.LiveSessionPanel(model.live) },
         EditorWindow("export", "Export", 420.dp) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ExportTarget.entries.forEach { t -> EditorChip(t.label, t == model.target) { if (t != model.target) { model.target = t; model.changed(-2) } } }
@@ -294,7 +294,7 @@ fun WeekEditorScreen(state: AppState) {
     )
     FunkinEditorShell(
         "Week Editor", accent, menus, windows, panels, Modifier.fillMaxSize(),
-        exportMenu = com.vconvertercrew.vconverter.editorview.ExportMenuSpec(
+        exportMenu = com.vconvertercrew.vconverter.views.editor.ExportMenuSpec(
             title = "Week",
             target = model.target,
             onTarget = { t -> if (t != model.target) { model.target = t; model.changed(-2) } },

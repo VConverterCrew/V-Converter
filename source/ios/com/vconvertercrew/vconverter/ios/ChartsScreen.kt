@@ -3,8 +3,8 @@ package com.vconvertercrew.vconverter.ios
 import com.vconvertercrew.vconverterui.VCard as Card
 import com.vconvertercrew.vconverterui.VSectionTitle as SectionTitle
 import com.vconvertercrew.vconverterui.VBadge as Chip
-import com.vconvertercrew.vconverter.overlay.UiSound
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.UiSound
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -39,13 +39,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.vconvertercrew.vconverter.chart.preview.ChartField
-import com.vconvertercrew.vconverter.chart.preview.ChartPreview
-import com.vconvertercrew.vconverter.chart.preview.ChartWorkbench
-import com.vconvertercrew.vconverter.chartview.ChartStrip
-import com.vconvertercrew.vconverter.chartview.ChartStripColors
-import com.vconvertercrew.vconverter.chartview.formatBpm
-import com.vconvertercrew.vconverter.chartview.formatDuration
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartField
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartPreview
+import com.vconvertercrew.vconverter.convert.chart.preview.ChartWorkbench
+import com.vconvertercrew.vconverter.views.chart.ChartStrip
+import com.vconvertercrew.vconverter.views.chart.ChartStripColors
+import com.vconvertercrew.vconverter.views.chart.formatBpm
+import com.vconvertercrew.vconverter.views.chart.formatDuration
 
 internal val StripColors = ChartStripColors(
     background = Palette.Ink,
@@ -309,7 +309,7 @@ private fun OptionsCard(files: FileTabState, accent: Color) {
             }
         }
         if (!tweaks.isEmpty) {
-            TextButton(onClick = UiSound.wrap { files.updateTweaks { com.vconvertercrew.vconverter.chart.preview.ChartTweaks(keepUnknownEvents = it.keepUnknownEvents) } }, enabled = enabled) {
+            TextButton(onClick = UiSound.wrap { files.updateTweaks { com.vconvertercrew.vconverter.convert.chart.preview.ChartTweaks(keepUnknownEvents = it.keepUnknownEvents) } }, enabled = enabled) {
                 Text("Reset options", color = Palette.Muted)
             }
         }

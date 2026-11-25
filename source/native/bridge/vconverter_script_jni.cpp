@@ -5,7 +5,7 @@
 
 #include "vscript/VScript.h"
 
-#define VCS_FUNCTION(name) Java_com_vconvertercrew_vconverter_script_VScriptNative_##name
+#define VCS_FUNCTION(name) Java_com_vconvertercrew_vconverter_convert_script_VScriptNative_##name
 
 namespace {
 
@@ -86,6 +86,21 @@ JNIEXPORT jbyteArray JNICALL VCS_FUNCTION(nativePngEncode)(JNIEnv* env, jclass, 
     size_t size = 0;
     unsigned char* png = vscript_png_encode(reinterpret_cast<const unsigned char*>(pixels), width, height, level, &size);
     env->ReleaseByteArrayElements(rgba, pixels, JNI_ABORT);
+    if (png == nullptr) return nullptr;
+    jbyteArray out = env->NewByteArray(static_cast<jsize>(size));
+    if (out != nullptr) env->SetByteArrayRegion(out, 0, static_cast<jsize>(size), reinterpret_cast<const jbyte*>(png));
+    vscript_free_bytes(png);
+    return out;
+}
+
+JNIEXPORT jbyteArray JNICALL VCS_FUNCTION(nativePngOptimize)(JNIEnv* env, jclass, jbyteArray data, jint level) {
+    if (data == nullptr) return nullptr;
+    jsize length = env->GetArrayLength(data);
+    if (length <= 0) return nullptr;
+    jbyte* bytes = env->GetByteArrayElements(data, nullptr);
+    size_t size = 0;
+    unsigned char* png = vscript_png_optimize(reinterpret_cast<const unsigned char*>(bytes), static_cast<size_t>(length), level, &size);
+    env->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
     if (png == nullptr) return nullptr;
     jbyteArray out = env->NewByteArray(static_cast<jsize>(size));
     if (out != nullptr) env->SetByteArrayRegion(out, 0, static_cast<jsize>(size), reinterpret_cast<const jbyte*>(png));

@@ -12,7 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeUIViewController
-import com.vconvertercrew.vconverter.online.Online
+import com.vconvertercrew.vconverter.tools.online.Online
 import platform.UIKit.UIViewController
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
@@ -45,8 +45,8 @@ fun MainViewController(): UIViewController {
                 }
                 MainMenuOverlay(state)
                 OptionsOverlay()
-                com.vconvertercrew.vconverter.overlay.FunkinTransitionOverlay()
-                com.vconvertercrew.vconverter.overlay.FpsOverlay()
+                com.vconvertercrew.vconverter.views.overlay.FunkinTransitionOverlay()
+                com.vconvertercrew.vconverter.views.overlay.FpsOverlay()
             }
             UiSounds()
             MenuMusic(suppressed = state.editor.editor.playing)

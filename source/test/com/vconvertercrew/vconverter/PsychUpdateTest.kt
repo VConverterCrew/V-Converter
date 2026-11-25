@@ -1,17 +1,17 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.character.CharacterSource
-import com.vconvertercrew.vconverter.character.PsychCharacterParser
-import com.vconvertercrew.vconverter.character.PsychToVSliceCharacter
-import com.vconvertercrew.vconverter.chart.PsychNoteStyles
+import com.vconvertercrew.vconverter.convert.character.CharacterSource
+import com.vconvertercrew.vconverter.convert.character.PsychCharacterParser
+import com.vconvertercrew.vconverter.convert.character.PsychToVSliceCharacter
+import com.vconvertercrew.vconverter.convert.chart.PsychNoteStyles
 import com.vconvertercrew.vconverter.core.CharacterSlot
 import com.vconvertercrew.vconverter.core.SparrowAtlas
-import com.vconvertercrew.vconverter.mod.ModFiles
-import com.vconvertercrew.vconverter.mod.ModScanner
-import com.vconvertercrew.vconverter.mod.PsychLayout
-import com.vconvertercrew.vconverter.week.PsychToVSliceLevel
-import com.vconvertercrew.vconverter.week.PsychWeekParser
-import com.vconvertercrew.vconverter.week.WeekSource
+import com.vconvertercrew.vconverter.convert.mod.ModFiles
+import com.vconvertercrew.vconverter.convert.mod.ModScanner
+import com.vconvertercrew.vconverter.convert.mod.PsychLayout
+import com.vconvertercrew.vconverter.convert.week.PsychToVSliceLevel
+import com.vconvertercrew.vconverter.convert.week.PsychWeekParser
+import com.vconvertercrew.vconverter.convert.week.WeekSource
 import com.vconvertercrew.vconverter.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

@@ -40,5 +40,5 @@ kotlin {
 }
 
 tasks.named<ProcessResources>("wasmJsProcessResources") {
-    exclude("icons/desktop/**", "**/README.txt")
+    exclude("ui/app/desktop/**", "**/README.txt")
 }

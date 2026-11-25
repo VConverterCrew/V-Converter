@@ -1,8 +1,8 @@
 package com.vconvertercrew.vconverter.archive
 
-import com.vconvertercrew.vconverter.mod.DirectoryModFiles
-import com.vconvertercrew.vconverter.mod.ModFiles
-import com.vconvertercrew.vconverter.mod.ModWriter
+import com.vconvertercrew.vconverter.convert.mod.DirectoryModFiles
+import com.vconvertercrew.vconverter.convert.mod.ModFiles
+import com.vconvertercrew.vconverter.convert.mod.ModWriter
 import java.io.Closeable
 import java.io.File
 import java.io.IOException

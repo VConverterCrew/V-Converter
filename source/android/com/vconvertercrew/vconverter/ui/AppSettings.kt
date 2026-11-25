@@ -1,6 +1,6 @@
 package com.vconvertercrew.vconverter.ui
 
-import com.vconvertercrew.vconverter.overlay.soundClickable
+import com.vconvertercrew.vconverter.views.overlay.soundClickable
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,10 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.graphics.asImageBitmap
-import com.vconvertercrew.vconverter.overlay.FunkinOptionsMenu
-import com.vconvertercrew.vconverter.overlay.MenuOption
+import com.vconvertercrew.vconverter.views.overlay.FunkinOptionsMenu
+import com.vconvertercrew.vconverter.views.overlay.MenuOption
 import com.vconvertercrew.vconverter.R
-import com.vconvertercrew.vconverter.overlay.OverlayIcons
+import com.vconvertercrew.vconverter.views.overlay.OverlayIcons
 import com.vconvertercrew.vconverter.ui.components.ChunkyButton
 import com.vconvertercrew.vconverter.ui.components.SectionTitle
 import com.vconvertercrew.vconverter.ui.components.ToggleRow
@@ -82,7 +82,7 @@ class AppSettings(context: Context) {
 
     fun updateServerUrl(value: String) {
         serverUrl = value.trim()
-        com.vconvertercrew.vconverter.online.Online.serverUrl = serverUrl
+        com.vconvertercrew.vconverter.tools.online.Online.serverUrl = serverUrl
         prefs.edit().putString(KEY_SERVER, serverUrl).apply()
     }
 
@@ -91,7 +91,7 @@ class AppSettings(context: Context) {
 
     fun updateErrorReports(value: Boolean) {
         errorReports = value
-        com.vconvertercrew.vconverter.online.Online.reportsEnabled = value
+        com.vconvertercrew.vconverter.tools.online.Online.reportsEnabled = value
         prefs.edit().putBoolean(KEY_REPORTS, value).apply()
     }
 
@@ -100,8 +100,17 @@ class AppSettings(context: Context) {
 
     fun updateVSlicePreview(value: Boolean) {
         vslicePreview = value
-        com.vconvertercrew.vconverter.vslice.VSlicePreview.enabled = value
+        com.vconvertercrew.vconverter.engines.vslice.VSlicePreview.enabled = value
         prefs.edit().putBoolean(KEY_VSLICE_PREVIEW, value).apply()
+    }
+
+    var optimizeSprites by mutableStateOf(prefs.getBoolean(KEY_OPTIMIZE_SPRITES, false))
+        private set
+
+    fun updateOptimizeSprites(value: Boolean) {
+        optimizeSprites = value
+        com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.enabled = value
+        prefs.edit().putBoolean(KEY_OPTIMIZE_SPRITES, value).apply()
     }
 
     fun saveString(key: String, value: String) {
@@ -109,11 +118,12 @@ class AppSettings(context: Context) {
     }
 
     init {
-        com.vconvertercrew.vconverter.overlay.TouchOptions.load { prefs.getString(it, null) }
-        com.vconvertercrew.vconverter.overlay.FpsDisplay.load(fpsCounter) { prefs.getString(it, null) }
-        com.vconvertercrew.vconverter.vslice.VSlicePreview.enabled = vslicePreview
-        com.vconvertercrew.vconverter.online.Online.serverUrl = serverUrl
-        com.vconvertercrew.vconverter.online.Online.reportsEnabled = errorReports
+        com.vconvertercrew.vconverter.views.overlay.TouchOptions.load { prefs.getString(it, null) }
+        com.vconvertercrew.vconverter.views.overlay.FpsDisplay.load(fpsCounter) { prefs.getString(it, null) }
+        com.vconvertercrew.vconverter.engines.vslice.VSlicePreview.enabled = vslicePreview
+        com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.enabled = optimizeSprites
+        com.vconvertercrew.vconverter.tools.online.Online.serverUrl = serverUrl
+        com.vconvertercrew.vconverter.tools.online.Online.reportsEnabled = errorReports
     }
 
     fun updateFpsCounter(value: Boolean) {
@@ -130,6 +140,7 @@ class AppSettings(context: Context) {
         const val KEY_SERVER = "server_url"
         const val KEY_REPORTS = "error_reports"
         const val KEY_VSLICE_PREVIEW = "vslice_preview"
+        const val KEY_OPTIMIZE_SPRITES = "optimize_sprites"
     }
 }
 
@@ -160,7 +171,7 @@ fun OptionsDialog(settings: AppSettings, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val art = remember {
         val assets = context.assets
-        com.vconvertercrew.vconverter.overlay.MenuArt.load(
+        com.vconvertercrew.vconverter.views.overlay.MenuArt.load(
             image = { path -> runCatching { assets.open(path).use { android.graphics.BitmapFactory.decodeStream(it) }.asImageBitmap() }.getOrNull() },
             text = { path -> runCatching { assets.open(path).use { it.readBytes().decodeToString() } }.getOrNull() }
         )
@@ -173,7 +184,7 @@ fun OptionsDialog(settings: AppSettings, onDismiss: () -> Unit) {
         androidx.activity.compose.BackHandler { backPresses++ }
         val links = androidx.compose.ui.platform.LocalUriHandler.current
         val preferences = listOf(
-            com.vconvertercrew.vconverter.overlay.FpsDisplay.submenu(settings::saveString) { settings.updateFpsCounter(it) },
+            com.vconvertercrew.vconverter.views.overlay.FpsDisplay.submenu(settings::saveString) { settings.updateFpsCounter(it) },
             MenuOption.Toggle("Touch Cursor", "Shows the cursor where you touch the screen.", { settings.touchCursor }, settings::updateTouchCursor),
             MenuOption.Toggle("UI Sounds", "Plays scrollMenu when you tap tabs and buttons.", { settings.uiSounds }, settings::updateUiSounds),
             MenuOption.Toggle("Menu Music", "Plays freakyMenu while you work. It pauses while the Chart Editor plays a song.", { settings.menuMusic }, settings::updateMenuMusic),
@@ -182,18 +193,19 @@ fun OptionsDialog(settings: AppSettings, onDismiss: () -> Unit) {
                 settings.updateMusicVolume(next / 10f)
             },
             MenuOption.Toggle("V-Slice Preview", "V-Slice output uses the Public PlayTest layout (gameplay/songs, gameplay/characters, gameplay/stages, ui/story-mode). Off keeps the 0.7 layout.", { settings.vslicePreview }, settings::updateVSlicePreview),
+            MenuOption.Toggle(com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.LABEL, com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.DESCRIPTION, { settings.optimizeSprites }, settings::updateOptimizeSprites),
             MenuOption.TextEntry("Online Server", "Leave it empty to connect to a V-Converter server automatically, or type the address of your own server. Tap it again to edit.", { settings.serverUrl }, settings::updateServerUrl, "Automatic"),
             MenuOption.Toggle("Error Reports", "Sends conversion errors and crashes (message, app version and platform) to the online server.", { settings.errorReports }, settings::updateErrorReports)
         )
         val options = listOf(
             MenuOption.Submenu("Preferences", "FPS counter, touch cursor, sounds, music, the V-Slice layout, the online server and error reports.") { preferences },
-            com.vconvertercrew.vconverter.overlay.TouchOptions.submenu(settings::saveString),
-            com.vconvertercrew.vconverter.overlay.discordOption { links.openUri(it) }
+            com.vconvertercrew.vconverter.views.overlay.TouchOptions.submenu(settings::saveString),
+            com.vconvertercrew.vconverter.views.overlay.discordOption { links.openUri(it) }
         )
         FunkinOptionsMenu(
             "Options", options, art, onClose = onDismiss, closeRequests = backPresses,
             overlay = {
-                com.vconvertercrew.vconverter.overlay.DiscordBadge(
+                com.vconvertercrew.vconverter.views.overlay.DiscordBadge(
                     Modifier.align(Alignment.TopEnd).padding(16.dp)
                 )
             }

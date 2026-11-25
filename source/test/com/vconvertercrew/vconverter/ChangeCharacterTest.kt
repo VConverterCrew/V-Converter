@@ -1,14 +1,14 @@
 package com.vconvertercrew.vconverter
 
-import com.vconvertercrew.vconverter.chart.ChartSource
-import com.vconvertercrew.vconverter.chart.ConversionOptions
-import com.vconvertercrew.vconverter.chart.PsychToVSliceChart
-import com.vconvertercrew.vconverter.chart.psych.PsychChartParser
+import com.vconvertercrew.vconverter.convert.chart.ChartSource
+import com.vconvertercrew.vconverter.convert.chart.ConversionOptions
+import com.vconvertercrew.vconverter.convert.chart.PsychToVSliceChart
+import com.vconvertercrew.vconverter.convert.chart.psych.PsychChartParser
 import com.vconvertercrew.vconverter.convert.PsychChartsConverter
-import com.vconvertercrew.vconverter.script.ChangeCharacterEvent
-import com.vconvertercrew.vconverter.script.NativeData
-import com.vconvertercrew.vconverter.script.NativeScripts
-import com.vconvertercrew.vconverter.script.ScriptConverter
+import com.vconvertercrew.vconverter.convert.script.ChangeCharacterEvent
+import com.vconvertercrew.vconverter.convert.script.NativeData
+import com.vconvertercrew.vconverter.convert.script.NativeScripts
+import com.vconvertercrew.vconverter.convert.script.ScriptConverter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
