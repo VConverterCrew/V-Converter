@@ -230,8 +230,8 @@ class VSliceModConverter(
                 }
                 (listOf(character.assetPath) + character.animations.map { it.assetPath }).filter { it.isNotBlank() }.distinct().forEach { asset ->
                     val key = VSliceToPsychCharacter.atlasKey(asset)
-                    candidates(asset).firstNotNullOfOrNull { index["$it.xml".lowercase()] }?.let { xml ->
-                        runCatching { atlases[key] = SparrowAtlas.parse(files.readText(xml)) }
+                    candidates(asset).firstNotNullOfOrNull { index["$it.xml".lowercase()] ?: index["$it.txt".lowercase()] }?.let { sheet ->
+                        runCatching { atlases[key] = SparrowAtlas.parseAny(files.readText(sheet)) }
                     }
                     candidates(asset).forEach { base ->
                         if (key in animates) return@forEach

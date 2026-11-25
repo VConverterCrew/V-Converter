@@ -357,6 +357,16 @@ static void testDataConverters() {
     CHECK(has(character, "\"ok\":true"));
     CHECK(has(character, "\"version\":\"1.0.2\""));
     CHECK(has(character, "\"name\":\"Dude\""));
+    CHECK(has(character, "\"renderType\":\"sparrow\""));
+
+    std::string packer = data("character", R"({"id":"ghost","slot":"opponent","packers":["ghost"],"atlases":{"ghost":[["ghost idle_0",128,128]]},"text":"{\"image\":\"characters/ghost\",\"scale\":6,\"no_antialiasing\":true,\"animations\":[{\"anim\":\"idle\",\"name\":\"ghost idle_\",\"fps\":24}]}"})");
+    CHECK(has(packer, "\"renderType\":\"packer\""));
+    CHECK(has(packer, "\"Accuracy\""));
+    CHECK(has(packer, "Exact"));
+
+    std::string dancer = data("character", R"({"id":"dancer","slot":"opponent","atlases":{"dancer":[["left0000",200,400],["right0000",300,400]]},"text":"{\"image\":\"characters/dancer\",\"animations\":[{\"anim\":\"danceLeft\",\"name\":\"left\",\"fps\":24},{\"anim\":\"danceRight\",\"name\":\"right\",\"fps\":24}]}"})");
+    CHECK(has(dancer, "\"offsets\":[85,385]"));
+    CHECK(has(dancer, "\"startingAnimation\":\"danceRight\""));
 
     std::string stage = data("stage", R"({"id":"my-stage","atlases":{},"stage":{"directory":"mymod","defaultZoom":0.8,"objects":[{"type":"square","name":"fade","scale":[1280,720],"color":"black","filters":3},{"type":"sprite","name":"bg","image":"images/bg.png","filters":3,"scroll":[0.9,0.9]},{"type":"boyfriend"}]}})");
     CHECK(has(stage, "\"ok\":true"));

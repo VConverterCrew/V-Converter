@@ -20,7 +20,11 @@ internal object NativeCharacter {
         val gameOver = source.gameOver
         if (gameOver != null && (gameOver.raw.isBlank() || source.gameOverAnimate != null)) return null
         val atlases = JSONObject()
-        source.atlases.forEach { (key, atlas) -> atlases.put(key, frames(atlas)) }
+        val packers = JSONArray()
+        source.atlases.forEach { (key, atlas) ->
+            atlases.put(key, frames(atlas))
+            if (atlas.packer) packers.put(key)
+        }
         val input = JSONObject()
             .put("id", source.id)
             .put("text", source.character.raw)
@@ -31,6 +35,7 @@ internal object NativeCharacter {
             })
             .put("displayName", source.displayName)
             .put("atlases", atlases)
+            .put("packers", packers)
         if (gameOver != null) input.put("gameOver", JSONObject().put("id", source.gameOverId).put("text", gameOver.raw))
         val result = NativeData.convert("character", input) ?: return null
         val json = result.optJSONObject("json") ?: return null

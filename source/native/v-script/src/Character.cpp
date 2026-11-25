@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdio>
 #include <map>
+#include <set>
 #include <stdexcept>
 
 namespace vscript {
@@ -242,6 +243,9 @@ Json convertPsychCharacter(const Json& input, std::string& error) {
     Slot slot = slotOf(slotKey);
     std::map<std::string, Atlas> atlases;
     for (const auto& entry : input["atlases"].fields()) atlases[entry.first] = Atlas::fromJson(entry.second);
+    std::set<std::string> packers;
+    for (const Json& key : input["packers"].items()) packers.insert(key.text());
+    auto isPacker = [&](const std::string& image) { return packers.count(atlasKey(image)) > 0 && atlases.count(atlasKey(image)) > 0; };
     auto atlasFor = [&](const std::string& image) -> const Atlas* {
         auto it = atlases.find(atlasKey(image));
         return it == atlases.end() ? nullptr : &it->second;
@@ -255,7 +259,7 @@ Json convertPsychCharacter(const Json& input, std::string& error) {
     std::vector<std::string> missingAtlases;
     for (const std::string& image : images) if (!atlasFor(image)) missingAtlases.push_back(image);
 
-    const Anim* idleAnim = psych.hasDanceLeftRight() ? psych.find("danceLeft") : psych.find("idle");
+    const Anim* idleAnim = psych.hasDanceLeftRight() ? psych.find("danceRight") : psych.find("idle");
     if (!idleAnim && !psych.animations.empty()) idleAnim = &psych.animations.front();
 
     const AtlasFrame* firstFrame = atlasFor(mainImage) ? atlasFor(mainImage)->first() : nullptr;
@@ -353,6 +357,12 @@ Json convertPsychCharacter(const Json& input, std::string& error) {
         }
     }
     bool renderMulti = multiAtlas || (merged && deadImage != mainImage);
+    bool packer = !renderMulti && isPacker(mainImage);
+    if (renderMulti) {
+        std::vector<std::string> packed;
+        for (const std::string& image : images) if (isPacker(image)) packed.push_back(image);
+        if (!packed.empty()) report.warn("V-Slice's multi-spritesheet characters only read Sparrow XML; convert the Packer TXT sheets (" + join(packed) + ") to XML.");
+    }
 
     Json healthIcon = Json::object();
     healthIcon.set("id", Json::string(psych.healthIcon));
@@ -362,7 +372,7 @@ Json convertPsychCharacter(const Json& input, std::string& error) {
     Json root = Json::object();
     root.set("version", Json::string("1.0.2"));
     root.set("name", Json::string(displayName.empty() ? prettyName(id) : input["displayName"].text()));
-    root.set("renderType", Json::string(renderMulti ? "multisparrow" : "sparrow"));
+    root.set("renderType", Json::string(renderMulti ? "multisparrow" : packer ? "packer" : "sparrow"));
     root.set("assetPath", Json::string(mainImage));
     root.set("scale", Json::number(jsonNumber(scale)));
     root.set("isPixel", Json::boolean(psych.noAntialiasing));
@@ -379,7 +389,7 @@ Json convertPsychCharacter(const Json& input, std::string& error) {
     root.set("animations", animations);
 
     report.stat("Animations", Json::number(static_cast<double>(psych.animations.size())));
-    report.stat("Render", Json::string(renderMulti ? "Multi-Sparrow" : "Sparrow"));
+    report.stat("Render", Json::string(renderMulti ? "Multi-Sparrow" : packer ? "Packer" : "Sparrow"));
     report.stat("Slot", Json::string(slot.label));
     report.stat("Accuracy", Json::string(exact ? "Exact" : "Approximate"));
 

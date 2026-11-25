@@ -265,7 +265,7 @@ object CodenameStageParser {
             PsychStageAnimation(
                 anim = animName,
                 prefix = a.attr("anim") ?: "",
-                fps = (a.double("fps") ?: 24.0).toInt().coerceAtLeast(1),
+                fps = (a.double("fps") ?: 24.0).toInt().coerceAtLeast(0),
                 loop = a.bool("loop") ?: false,
                 indices = a.attr("indices")?.let { XmlNode.numberRange(it) } ?: emptyList(),
                 offsetX = (a.double("x") ?: 0.0) * scaleX,

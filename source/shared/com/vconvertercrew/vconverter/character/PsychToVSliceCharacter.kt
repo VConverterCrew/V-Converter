@@ -55,7 +55,7 @@ object PsychToVSliceCharacter {
         val missingAtlases = images.filter { atlasByImage[it] == null }
 
         val idleAnim = when {
-            psych.hasDanceLeftRight -> psych.animations.first { it.anim == "danceLeft" }
+            psych.hasDanceLeftRight -> psych.animations.first { it.anim == "danceRight" }
             else -> psych.animations.firstOrNull { it.anim == "idle" } ?: psych.animations.firstOrNull()
         }
 
@@ -138,6 +138,8 @@ object PsychToVSliceCharacter {
             }
         }
         val renderMulti = multiAtlas || (merged && gameOver?.let { (it.atlasImages.ifEmpty { listOf(it.image) }).first() } != mainImage)
+        val packer = !renderMulti && atlasByImage[mainImage]?.packer == true
+        if (renderMulti && images.any { atlasByImage[it]?.packer == true }) report.warn("V-Slice's multi-spritesheet characters only read Sparrow XML; convert the Packer TXT sheets (${images.filter { atlasByImage[it]?.packer == true }.joinToString()}) to XML.")
 
         val healthIcon = JSONObject()
             .put("id", psych.healthIcon)
@@ -147,7 +149,7 @@ object PsychToVSliceCharacter {
         val root = JSONObject()
             .put("version", CHARACTER_VERSION)
             .put("name", name)
-            .put("renderType", if (renderMulti) "multisparrow" else "sparrow")
+            .put("renderType", if (renderMulti) "multisparrow" else if (packer) "packer" else "sparrow")
             .put("assetPath", mainImage)
             .put("scale", scale.toJsonNumber())
             .put("isPixel", psych.noAntialiasing)
@@ -161,7 +163,7 @@ object PsychToVSliceCharacter {
             .put("animations", animations)
 
         report.stat("Animations", psych.animations.size)
-        report.stat("Render", if (renderMulti) "Multi-Sparrow" else "Sparrow")
+        report.stat("Render", if (renderMulti) "Multi-Sparrow" else if (packer) "Packer" else "Sparrow")
         report.stat("Slot", slot.label)
         report.stat("Accuracy", if (exact) "Exact" else "Approximate")
 
@@ -205,7 +207,7 @@ object PsychToVSliceCharacter {
         val report = ReportBuilder()
         val scale = psych.scale
         val idleAnim = when {
-            psych.hasDanceLeftRight -> psych.animations.first { it.anim == "danceLeft" }
+            psych.hasDanceLeftRight -> psych.animations.first { it.anim == "danceRight" }
             else -> psych.animations.firstOrNull { it.anim == "idle" } ?: psych.animations.firstOrNull()
         }
         val first = atlas.firstSprite

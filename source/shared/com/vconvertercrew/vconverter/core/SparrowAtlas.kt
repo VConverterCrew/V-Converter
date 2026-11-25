@@ -6,7 +6,7 @@ data class SparrowFrame(
     val sourceHeight: Double
 )
 
-class SparrowAtlas(val frames: List<SparrowFrame>) {
+class SparrowAtlas(val frames: List<SparrowFrame>, val packer: Boolean = false) {
     val firstFrame: SparrowFrame? get() = frames.firstOrNull()
 
     fun hasPrefix(prefix: String): Boolean = frames.any { it.name.startsWith(prefix) }
@@ -29,6 +29,23 @@ class SparrowAtlas(val frames: List<SparrowFrame>) {
     companion object {
         private val subTexture = Regex("<SubTexture\\b([^>]*)/?>", RegexOption.IGNORE_CASE)
         private val attribute = Regex("([A-Za-z_:][\\w:.-]*)\\s*=\\s*(\"([^\"]*)\"|'([^']*)')")
+
+        private val packerLine = Regex("^(.+?)\\s*=\\s*(-?\\d+(?:\\.\\d+)?)\\s+(-?\\d+(?:\\.\\d+)?)\\s+(\\d+(?:\\.\\d+)?)\\s+(\\d+(?:\\.\\d+)?)\\s*$")
+
+        fun isPacker(text: String): Boolean {
+            val lines = text.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+            return lines.isNotEmpty() && lines.all { packerLine.matches(it) }
+        }
+
+        fun parsePacker(text: String): SparrowAtlas {
+            val frames = text.lineSequence().map { it.trim() }.mapNotNull { line ->
+                val match = packerLine.matchEntire(line) ?: return@mapNotNull null
+                SparrowFrame(match.groupValues[1].trim(), match.groupValues[4].toDouble(), match.groupValues[5].toDouble())
+            }.toList()
+            return SparrowAtlas(frames, packer = true)
+        }
+
+        fun parseAny(text: String): SparrowAtlas = if (text.trimStart().startsWith("<")) parse(text) else if (isPacker(text)) parsePacker(text) else parse(text)
 
         fun parse(xml: String): SparrowAtlas {
             val frames = subTexture.findAll(xml).mapNotNull { match ->

@@ -46,7 +46,8 @@ object VSliceToPsychCharacter {
     private class Placed(val animations: JSONArray, val posX: Double, val posY: Double, val camX: Double, val camY: Double, val missing: List<String>)
 
     private fun idleOf(character: VCharacter): VAnimation? =
-        character.animations.firstOrNull { it.name == "danceLeft" }
+        character.animations.firstOrNull { it.name == "danceRight" }?.takeIf { character.animations.any { it.name == "danceLeft" } }
+            ?: character.animations.firstOrNull { it.name == "danceLeft" }
             ?: character.animations.firstOrNull { it.name == character.startingAnimation }
             ?: character.animations.firstOrNull { it.name == "idle" }
             ?: character.animations.firstOrNull()
@@ -208,10 +209,10 @@ object VSliceToPsychCharacter {
             val basis = sparrowBasis(character, slot, atlases, images)
             exact = basis.exact
             mainJson = psychJson(id, character, slot, images.joinToString(","), placeSparrow(character, slot, kept, basis.fw0, basis.fh0, basis))
-            report.stat("Render", if (images.size > 1) "Multi-Sparrow" else "Sparrow")
-            if (!exact) report.warn("Add the spritesheet XML for an exact position and camera; without it they are approximate.")
+            report.stat("Render", if (images.size > 1) "Multi-Sparrow" else if (character.renderType == "packer") "Packer" else "Sparrow")
+            if (!exact) report.warn(if (character.renderType == "packer") "Add the Packer spritesheet TXT for an exact position and camera; without it they are approximate." else "Add the spritesheet XML for an exact position and camera; without it they are approximate.")
             if (isAtlasRender) report.warn("Render type \"${character.renderType}\": add Animation.json + spritemap for this texture atlas to convert its symbols exactly.")
-            else if (character.renderType !in setOf("sparrow", "multisparrow")) report.warn("Render type \"${character.renderType}\" is not a Sparrow sheet; check the animations in Psych's Character Editor.")
+            else if (character.renderType !in setOf("sparrow", "multisparrow", "packer")) report.warn("Render type \"${character.renderType}\" is not a Sparrow sheet; check the animations in Psych's Character Editor.")
             if (images.size > 1) notes += "Several spritesheets: Psych merges the images listed in \"image\" (${images.joinToString()})."
             if (split) {
                 val deathPath = pathOf(death.first())
@@ -273,6 +274,11 @@ object VSliceToPsychStage {
             while (!used.add(name)) name = "${prop.name.ifBlank { "prop$index" }}${n++}"
             name
         }
+    }
+
+    fun isPixelStageId(id: String): Boolean {
+        val key = id.trim().lowercase().removeSuffix("erect").removeSuffix("-erect").removeSuffix("_erect")
+        return key in setOf("school", "schoolevil", "school-evil", "school_evil") || key.endsWith("-pixel") || key.endsWith("pixel")
     }
 
     fun layers(stage: VStage): Map<String, Int> {
@@ -417,6 +423,7 @@ object VSliceToPsychStage {
 
         fun pos(c: VStageCharacter, slot: CharacterSlot) = JSONArray(listOf((c.x - slot.stageAnchorX).toJsonNumber(), (c.y - slot.stageAnchorY).toJsonNumber()))
         fun cam(c: VStageCharacter, slot: CharacterSlot) = JSONArray(listOf((c.cameraX - slot.cameraBaseX).toJsonNumber(), (c.cameraY - slot.cameraBaseY).toJsonNumber()))
+        if (!pixel && isPixelStageId(id)) pixel = true
         val root = JSONObject()
             .put("directory", "")
             .put("defaultZoom", stage.cameraZoom.toJsonNumber())

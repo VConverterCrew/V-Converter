@@ -324,8 +324,8 @@ class ModConverter(
             try {
                 val slot = usage[id]?.maxByOrNull { it.value }?.key ?: PsychToVSliceCharacter.defaultSlot(id, character)
                 val atlases = character.atlasImages.ifEmpty { listOf(character.image) }.mapNotNull { image ->
-                    val path = pathIndex["${scan.root}images/$image.xml".lowercase()] ?: return@mapNotNull null
-                    PsychToVSliceCharacter.atlasKey(image) to SparrowAtlas.parse(files.readText(path))
+                    val path = pathIndex["${scan.root}images/$image.xml".lowercase()] ?: pathIndex["${scan.root}images/$image.txt".lowercase()] ?: return@mapNotNull null
+                    PsychToVSliceCharacter.atlasKey(image) to SparrowAtlas.parseAny(files.readText(path))
                 }.toMap()
                 val result = PsychToVSliceCharacter.convert(CharacterSource(id, character, slot, atlases, animate = animateAtlas(character.image)))
                 writer.writeText("data/characters/$id.json", result.json)

@@ -59,7 +59,7 @@ object CodenameCharacterParser {
             CodenameAnimation(
                 name = name,
                 prefix = node.attr("anim") ?: "",
-                fps = node.double("fps")?.takeIf { it > 0.0 } ?: defaultFps,
+                fps = node.double("fps")?.takeIf { it >= 0.0 } ?: defaultFps,
                 loop = node.bool("loop") ?: false,
                 indices = node.attr("indices")?.let { XmlNode.numberRange(it) } ?: emptyList(),
                 x = node.double("x") ?: 0.0,
@@ -122,7 +122,7 @@ object CodenamePsychCharacter {
                 offsetX = if (frame != null && baseWidth != null) (frame.sourceWidth - baseWidth) * scale - offsetX else -offsetX
                 swaps.entries.firstOrNull { name.startsWith(it.key) }?.let { (from, to) -> name = to + name.removePrefix(from) }
             }
-            return PsychAnimation(name, anim.prefix, anim.fps.toInt().coerceAtLeast(1), anim.loop, anim.indices, offsetX, offsetY)
+            return PsychAnimation(name, anim.prefix, anim.fps.toInt().coerceAtLeast(0), anim.loop, anim.indices, offsetX, offsetY)
         }
 
         val animations = character.animations.map { psychAnim(it) }.toMutableList()

@@ -108,7 +108,7 @@ class PsychCharactersConverter : PsychToVSliceConverter() {
 
     override fun downloadName() = "characters-vslice.zip"
 
-    override fun accept(file: ImportedFile) = file.extension == "json" || file.extension == "xml"
+    override fun accept(file: ImportedFile) = file.extension == "json" || file.extension == "xml" || file.extension == "txt"
 
     override fun classify(file: ImportedFile, text: String): PickedText {
         val stem = file.name.substringBeforeLast('.')
@@ -116,6 +116,10 @@ class PsychCharactersConverter : PsychToVSliceConverter() {
             val atlas = SparrowAtlas.parse(text)
             require(atlas.frames.isNotEmpty()) { "not a Sparrow spritesheet" }
             return PickedText(file.path, file.name, file.path, text, "atlas", "${atlas.frames.size} frames")
+        }
+        if (file.extension == "txt") {
+            require(SparrowAtlas.isPacker(text)) { "not a Packer spritesheet" }
+            return PickedText(file.path, file.name, file.path, text, "atlas", "${SparrowAtlas.parsePacker(text).frames.size} frames · Packer")
         }
         if (AnimateAtlases.isAtlasFile(file.name)) {
             return PickedText(file.path, file.name, file.path, text, "animate", "Animate atlas · ${AnimateAtlases.key(file.path)}")
@@ -128,7 +132,7 @@ class PsychCharactersConverter : PsychToVSliceConverter() {
     override fun canConvert(items: List<PickedText>): Boolean = items.any { it.kind == "character" }
 
     override fun build(items: List<PickedText>): ConvertedOutput {
-        val atlases = items.filter { it.kind == "atlas" }.associate { PsychToVSliceCharacter.atlasKey(stem(it)) to SparrowAtlas.parse(it.text) }
+        val atlases = items.filter { it.kind == "atlas" }.associate { PsychToVSliceCharacter.atlasKey(stem(it)) to SparrowAtlas.parseAny(it.text) }
         val animates = AnimateAtlases.collect(items.filter { it.kind == "animate" }.map { it.path to it.text })
         val report = ReportBuilder()
         val parsed = items.filter { it.kind == "character" }.associate { psychId(stem(it)) to PsychCharacterParser.parse(it.text) }
@@ -147,7 +151,7 @@ class PsychCharactersConverter : PsychToVSliceConverter() {
             converted.report.sections.forEach { report.section("$id · ${it.title}", it.lines) }
             converted.report.warnings.forEach { report.warn("$id: $it") }
             val missing = character.atlasImages.ifEmpty { listOf(character.image) }.filter { PsychToVSliceCharacter.atlasKey(it) !in atlases && PsychToVSliceCharacter.atlasKey(it) !in animates }
-            if (missing.isNotEmpty()) report.warn("$id: add the spritesheet XML (${missing.joinToString()}), or Animation.json + spritemap for Animate atlases, for exact offsets.")
+            if (missing.isNotEmpty()) report.warn("$id: add the spritesheet XML or Packer TXT (${missing.joinToString()}), or Animation.json + spritemap for Animate atlases, for exact offsets.")
             val replaced = BaseCharacterScripts.replacement(id, converted.json)
             if (replaced != null) report.warn(BaseCharacterScripts.note(id))
             listOfNotNull(out("data/characters/$id.json", converted.json), replaced?.let { out(it.first, it.second) })

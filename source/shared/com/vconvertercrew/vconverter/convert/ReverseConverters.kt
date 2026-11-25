@@ -103,7 +103,7 @@ class ReverseCharactersConverter : FileConverter() {
 
     override fun downloadName() = "characters-psych.zip"
 
-    override fun accept(file: ImportedFile) = (file.extension == "json" && (file.isUnder("characters") || AnimateAtlases.isAtlasFile(file.name))) || (file.extension == "xml" && file.isUnder("images"))
+    override fun accept(file: ImportedFile) = (file.extension == "json" && (file.isUnder("characters") || AnimateAtlases.isAtlasFile(file.name))) || (file.extension in setOf("xml", "txt") && file.isUnder("images"))
 
     override fun classify(file: ImportedFile, text: String): PickedText = when {
         AnimateAtlases.isAtlasFile(file.name) -> PickedText(file.path, file.name, file.path, text, "animate", "Animate atlas · ${AnimateAtlases.key(file.path)}")
@@ -116,18 +116,22 @@ class ReverseCharactersConverter : FileConverter() {
             require(atlas.frames.isNotEmpty()) { "no Sparrow frames" }
             PickedText(file.path, file.name, file.path, text, "atlas", "${atlas.frames.size} frames")
         }
+        "txt" -> {
+            require(SparrowAtlas.isPacker(text)) { "not a Packer spritesheet" }
+            PickedText(file.path, file.name, file.path, text, "atlas", "${SparrowAtlas.parsePacker(text).frames.size} frames · Packer")
+        }
         "json" -> {
             val c = VSliceParser.character(text)
             val id = file.name.substringBeforeLast('.')
             PickedText(file.path, file.name, file.path, text, "character", "${c.animations.size} anims", VSliceToPsychCharacter.defaultSlot(id, c))
         }
-        else -> throw IllegalArgumentException("only V-Slice character .json and spritesheet .xml files")
+        else -> throw IllegalArgumentException("only V-Slice character .json and spritesheet .xml or .txt files")
     }
 
     override fun canConvert(items: List<PickedText>): Boolean = items.any { it.kind == "character" }
 
     override fun build(items: List<PickedText>): ConvertedOutput {
-        val atlases = items.filter { it.kind == "atlas" }.associate { VSliceToPsychCharacter.atlasKey(stem(it)) to SparrowAtlas.parse(it.text) }
+        val atlases = items.filter { it.kind == "atlas" }.associate { VSliceToPsychCharacter.atlasKey(stem(it)) to SparrowAtlas.parseAny(it.text) }
         val animates = AnimateAtlases.collect(items.filter { it.kind == "animate" }.map { it.path to it.text })
         val report = ReportBuilder()
         val files = items.filter { it.kind == "character" }.map { item ->
