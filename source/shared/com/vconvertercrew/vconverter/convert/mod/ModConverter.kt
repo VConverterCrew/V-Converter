@@ -10,6 +10,7 @@ import com.vconvertercrew.vconverter.convert.chart.ChartSource
 import com.vconvertercrew.vconverter.convert.chart.ConversionOptions
 import com.vconvertercrew.vconverter.convert.chart.PsychNoteStyles
 import com.vconvertercrew.vconverter.convert.chart.PsychToVSliceChart
+import com.vconvertercrew.vconverter.convert.chart.PsychEventIds
 import com.vconvertercrew.vconverter.convert.chart.psych.PsychChartParser
 import com.vconvertercrew.vconverter.convert.chart.psych.PsychSong
 import com.vconvertercrew.vconverter.convert.chart.vslice.VSliceWriter
@@ -61,7 +62,8 @@ class ModConverter(
     private val files: ModFiles,
     private val scan: ModScan,
     private val writer: ModWriter,
-    private val onProgress: (ModProgress) -> Unit = {}
+    private val onProgress: (ModProgress) -> Unit = {},
+    private val luaSlice: Boolean = false
 ) {
     private val report = ReportBuilder()
     private val pathIndex: Map<String, String> = files.paths.filter { it.startsWith(scan.root) }.associateBy { (scan.root + scan.relative(it)).lowercase() }
@@ -151,7 +153,7 @@ class ModConverter(
             step("Stage $id")
             try {
                 var stage = if (path != null) PsychStageParser.parse(files.readText(path)) else LuaStageExtractor.defaultStage()
-                luaStages[id]?.let { lua ->
+                luaStages[id]?.takeIf { !luaSlice }?.let { lua ->
                     val props = LuaStageExtractor.extract(files.readText(lua), stage.objectNames)
                     stage = LuaStageExtractor.merge(stage, props)
                     stageSkipLines[id] = props.removedLines
@@ -269,7 +271,9 @@ class ModConverter(
                         noteStyle = noteStyleFor(main.arrowSkin, main.splashSkin, label = "song ${scanned.id}"),
                         pixelStages = pixelStages,
                         playerVocals = listOf(playerKey).takeIf { "voices-${playerKey.lowercase()}" in audioNames },
-                        opponentVocals = listOf(opponentKey).takeIf { "voices-${opponentKey.lowercase()}" in audioNames }
+                        opponentVocals = listOf(opponentKey).takeIf { "voices-${opponentKey.lowercase()}" in audioNames },
+                        luaSlice = luaSlice,
+                        idEvents = if (luaSlice) com.vconvertercrew.vconverter.convert.script.PsychNativeLibrary.builtinEventNames else emptySet()
                     )
                 )
                 conversion.files(scanned.id).forEach { (name, text) ->
@@ -378,8 +382,32 @@ class ModConverter(
         }
     }
 
+    private fun convertLuaSliceScripts() {
+        val lua = scan.scripts.filter { it.substringAfterLast('.').lowercase() == "lua" }
+        if (lua.isEmpty()) return
+        val lines = mutableListOf<String>()
+        lua.forEach { path ->
+            val rel = scan.relative(path)
+            step("Script ${rel.substringAfterLast('/')}")
+            try {
+                val target = com.vconvertercrew.vconverter.engines.luaslice.LuaSlice.toLuaSlicePath(rel)
+                writer.writeText(target, com.vconvertercrew.vconverter.engines.luaslice.LuaSlice.toLuaSliceText(files.readText(path)))
+                written++
+                lines += "$rel → $target"
+            } catch (e: Exception) {
+                report.warn("Script $rel was not copied: ${e.message}")
+            }
+        }
+        report.stat("Lua scripts kept", lines.size)
+        report.section("LuaSlice Psych scripts", limited(lines))
+    }
+
     private fun convertScripts(info: ModInfo, charts: Map<String, Pair<List<ChartSource>, PsychSong>>) {
-        val scriptFiles = scan.scripts.filter { it.substringAfterLast('.').lowercase() in setOf("lua", "hx", "hxs", "hscript") }
+        if (luaSlice) {
+            convertLuaSliceScripts()
+            keptEventNames.removeAll { PsychEventIds.scriptedName(it) == "Change Character" || (PsychEventIds.scriptedName(it) == null && it !in com.vconvertercrew.vconverter.convert.script.PsychNativeLibrary.builtinEventNames) }
+        }
+        val scriptFiles = scan.scripts.filter { it.substringAfterLast('.').lowercase() in (if (luaSlice) setOf("hx", "hxs", "hscript") else setOf("lua", "hx", "hxs", "hscript")) }
         val noteTypeNames = linkedSetOf<String>()
         charts.values.forEach { (sources, _) ->
             sources.forEach { source -> source.song.sections.forEach { section -> section.notes.forEach { if (it.type.isNotBlank()) noteTypeNames += it.type } } }
@@ -397,14 +425,15 @@ class ModConverter(
             }.getOrNull()
         }
         sources.forEach { step("Script ${it.path.substringAfterLast('/')}") }
-        val textured = sources.filter { "/custom_notetypes/" in "/" + it.path.lowercase() }.mapNotNull { source ->
+        val textured = if (luaSlice) emptyList() else sources.filter { "/custom_notetypes/" in "/" + it.path.lowercase() }.mapNotNull { source ->
             val texture = PsychNoteStyles.textureIn(source.text) ?: return@mapNotNull null
             val typeName = source.path.substringAfterLast('/').substringBeforeLast('.')
             val style = noteStyleFor(texture, strumline = false, label = "note type $typeName") ?: return@mapNotNull null
             Triple(typeName, texture, style)
         }
         val noteStyles = textured.associate { (typeName, _, style) -> PsychToVSliceChart.noteKindFor(typeName) to style }
-        val bundle = ScriptConverter.convert(slug, sources, ScriptConverter.noteTypeMap(noteTypeNames), keptEventNames, noteStyles)
+        val noteTypes = if (luaSlice) noteTypeNames.filter { it.isNotBlank() }.associateBy { PsychToVSliceChart.noteKindFor(it, true) } else ScriptConverter.noteTypeMap(noteTypeNames)
+        val bundle = ScriptConverter.convert(slug, sources, noteTypes, keptEventNames, noteStyles)
         val scriptedEvents = sources.map { ScriptConverter.detectTarget(it.path) }.filter { it.scope == com.vconvertercrew.vconverter.convert.script.ScriptScope.EVENT }.map { it.key }
         val outputs = bundle.files + ScriptConverter.eventFiles(keptEventNames, scriptedEvents)
         val renamed = keptEventNames.filter { ScriptConverter.eventId(it) != it }
@@ -429,7 +458,7 @@ class ModConverter(
         report.stat("Scripts", bundle.converted)
         bundle.report.sections.forEach { report.section("Script · ${it.title}", it.lines) }
         bundle.report.warnings.forEach { report.warn(it) }
-        val others = scan.scripts.size - scriptFiles.size
+        val others = scan.scripts.size - scriptFiles.size - (if (luaSlice) scan.scripts.count { it.substringAfterLast('.').lowercase() == "lua" } else 0)
         if (others > 0) report.warn("$others other script files (not .lua or .hx) were skipped.")
     }
 

@@ -30,6 +30,10 @@ class NmvModels(
     val psychToFps: PsychToFpsModViewModel,
     val vsliceToFps: VSliceToFpsModViewModel,
     val codenameToFps: CodenameToFpsModViewModel,
+    val psychToLuaSlice: PsychToLuaSliceModViewModel,
+    val codenameToLuaSlice: CodenameToLuaSliceModViewModel,
+    val nmvToLuaSlice: NmvToLuaSliceModViewModel,
+    val luaSliceToPsych: LuaSliceToPsychModViewModel,
     val files: Map<Pair<Direction, Tab>, NmvFileViewModel>
 ) {
     fun mod(direction: Direction): BaseConverterViewModel = when (direction) {
@@ -42,6 +46,10 @@ class NmvModels(
         Direction.PSYCH_TO_FPSPLUS -> psychToFps
         Direction.VSLICE_TO_FPSPLUS -> vsliceToFps
         Direction.CODENAME_TO_FPSPLUS -> codenameToFps
+        Direction.PSYCH_TO_LUASLICE -> psychToLuaSlice
+        Direction.CODENAME_TO_LUASLICE -> codenameToLuaSlice
+        Direction.NMV_TO_LUASLICE -> nmvToLuaSlice
+        Direction.LUASLICE_TO_PSYCH -> luaSliceToPsych
         else -> toPsych
     }
 
@@ -51,7 +59,8 @@ class NmvModels(
 val nmvDirections = listOf(
     Direction.NMV_TO_PSYCH, Direction.NMV_TO_VSLICE, Direction.NMV_TO_CODENAME,
     Direction.PSYCH_TO_NMV, Direction.VSLICE_TO_NMV, Direction.CODENAME_TO_NMV,
-    Direction.PSYCH_TO_FPSPLUS, Direction.VSLICE_TO_FPSPLUS, Direction.CODENAME_TO_FPSPLUS, Direction.NMV_TO_FPSPLUS
+    Direction.PSYCH_TO_FPSPLUS, Direction.VSLICE_TO_FPSPLUS, Direction.CODENAME_TO_FPSPLUS, Direction.NMV_TO_FPSPLUS,
+    Direction.PSYCH_TO_LUASLICE, Direction.LUASLICE_TO_PSYCH, Direction.CODENAME_TO_LUASLICE, Direction.NMV_TO_LUASLICE
 )
 
 private fun nmvTab(tab: Tab): NmvTab = when (tab) {
@@ -85,12 +94,34 @@ fun rememberNmvModels(): NmvModels {
         viewModel<PsychToFpsModViewModel>(),
         viewModel<VSliceToFpsModViewModel>(),
         viewModel<CodenameToFpsModViewModel>(),
+        viewModel<PsychToLuaSliceModViewModel>(),
+        viewModel<CodenameToLuaSliceModViewModel>(),
+        viewModel<NmvToLuaSliceModViewModel>(),
+        viewModel<LuaSliceToPsychModViewModel>(),
         files
     )
 }
 
 fun nmvDescription(direction: Direction, tab: Tab): String {
     val target = direction.to.title
+    if (direction.to == Engine.LUASLICE) return when (tab) {
+        Tab.MOD -> "A full ${direction.from.title} mod into a LuaSlice mod" + if (direction.from == Engine.PSYCH) ": V-Slice songs, characters and stages, with Lua kept as .luap scripts." else ", the same way as a V-Slice mod."
+        Tab.CHARTS -> "${direction.from.title} charts into V-Slice songs" + if (direction.from == Engine.PSYCH) " that keep Psych event and note type names for Lua." else "."
+        Tab.CHARACTERS -> "${direction.from.title} characters into V-Slice characters."
+        Tab.STAGES -> "${direction.from.title} stages into V-Slice stages."
+        Tab.WEEKS -> "${direction.from.title} weeks into V-Slice levels."
+        Tab.SCRIPTS -> if (direction.from == Engine.PSYCH) "Lua kept as LuaSlice .luap scripts, HScript into .hxc modules." else "${direction.from.title} scripts into .hxc modules."
+        Tab.NOTESTYLES -> com.vconvertercrew.vconverter.ui.noteStyleDescription(direction)
+    }
+    if (direction.from == Engine.LUASLICE) return when (tab) {
+        Tab.MOD -> "A full LuaSlice mod into a Psych mod: songs, characters, stages, levels, .hxc scripts, and .luap scripts back to Psych Lua."
+        Tab.CHARTS -> "LuaSlice songs into Psych charts, keeping Psych events and Change Character."
+        Tab.CHARACTERS -> "LuaSlice characters back to Psych, exact with the XML."
+        Tab.STAGES -> "LuaSlice stages into Psych stage files."
+        Tab.WEEKS -> "LuaSlice levels into Psych weeks and menu characters."
+        Tab.SCRIPTS -> ".luap/.luapg back to Psych .lua, .hxc into Psych HScript."
+        Tab.NOTESTYLES -> com.vconvertercrew.vconverter.ui.noteStyleDescription(direction)
+    }
     if (direction.to == Engine.FPSPLUS) return when (tab) {
         Tab.MOD -> "A full ${direction.from.title} mod into an FPS Plus mod: charts, .hxc characters and stages, weeks, Freeplay and scripts."
         Tab.CHARTS -> "${direction.from.title} charts into fpsplus_1 charts with events.json and meta.json."
@@ -128,6 +159,13 @@ private fun hint(direction: Direction, tab: Tab): String = when (direction.from)
         else -> "Pick .hx scripts. Archives keep the folders, so songs/<song>/, data/scripts/, data/stages/, data/events/ and data/notetypes/ keep their scope."
     }
     Engine.FPSPLUS -> ""
+    Engine.LUASLICE -> when (tab) {
+        Tab.CHARTS -> "Pick <song>-metadata.json and <song>-chart.json (and variations)."
+        Tab.CHARACTERS -> "Pick data/characters/*.json with their spritesheet .xml."
+        Tab.STAGES -> "Pick data/stages/*.json."
+        Tab.WEEKS -> "Pick data/levels/*.json plus the songs' -metadata.json files."
+        else -> "Pick .luap/.luapg and .hxc scripts. Archives keep the folders, so scripts/, data/songs/<song>/, stages/, characters/, custom_events/ and custom_notetypes/ keep their scope."
+    }
     Engine.PSYCH -> when (tab) {
         Tab.CHARTS -> "Pick data/<song>/<song>-<difficulty>.json and events.json."
         Tab.CHARACTERS -> "Pick characters/*.json (and their .lua/.hx scripts)."
@@ -185,6 +223,23 @@ fun NmvTabScreen(models: NmvModels, direction: Direction, tab: Tab, folderName: 
                 intro = "Convert a whole V-Slice mod to FPS Plus: songs, characters and stages as .hxc classes, levels as weeks, scripts, images and audio.",
                 convertNote = "Download the converted mod as a .zip (unzip it into FPS Plus's mods folder), or write it straight into an empty mod folder."
             )
+            Direction.PSYCH_TO_LUASLICE -> ModScreen(
+                models.psychToLuaSlice, folderName, save,
+                intro = "Convert a whole Psych Engine mod to LuaSlice: V-Slice charts, characters, stages and weeks, Lua scripts kept as .luap, HScript as .hxc, events, note types, images and audio.",
+                infoNote = "Written to _polymod_meta.json. pack.png becomes _polymod_icon.png.",
+                convertNote = "Download the converted mod as a .zip (unzip it into LuaSlice's mods folder and enable it in the Mods menu), or write it straight into an empty mod folder."
+            )
+            Direction.CODENAME_TO_LUASLICE -> CodenameModScreen(
+                models.codenameToLuaSlice, folderName, save,
+                intro = "Convert a whole Codename Engine mod to LuaSlice: songs, characters, stages, weeks, HScript as .hxc, events, images and audio.",
+                infoNote = "Written to _polymod_meta.json (read from data/config/modpack.ini).",
+                convertNote = "Download the converted mod as a .zip (unzip it into LuaSlice's mods folder), or write it straight into an empty mod folder."
+            )
+            Direction.LUASLICE_TO_PSYCH -> ReverseModScreen(
+                models.luaSliceToPsych, folderName, save,
+                intro = "Convert a whole LuaSlice mod to Psych Engine: songs, characters, stages, levels, .hxc scripts, .luap/.luapg scripts back to Lua, images and audio.",
+                convertNote = "Download the converted mod as a .zip (unzip it into Psych's mods folder), or write it straight into an empty mod folder."
+            )
             Direction.VSLICE_TO_NMV -> ReverseModScreen(
                 models.fromVSlice, folderName, save,
                 intro = "Convert a whole V-Slice mod to NightmareVision: songs (variations become their own songs), characters, stages, levels, .hxc scripts, images and audio.",
@@ -194,7 +249,7 @@ fun NmvTabScreen(models: NmvModels, direction: Direction, tab: Tab, folderName: 
                 val target = direction.to.title
                 val note = when (direction.to) {
                     Engine.FPSPLUS -> "Written to meta.json with the uid and api_version FPS Plus needs."
-                    Engine.VSLICE -> "Written to _polymod_meta.json (read from meta.json)."
+                    Engine.VSLICE, Engine.LUASLICE -> "Written to _polymod_meta.json (read from meta.json)."
                     Engine.CODENAME -> "Written to data/config/modpack.ini (read from meta.json)."
                     else -> "Written to pack.json (read from meta.json). The meta.json icon becomes pack.png."
                 }

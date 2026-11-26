@@ -30,6 +30,8 @@ internal object NativeChart {
             .put("noteStyle", options.noteStyle ?: "")
             .put("pixelStages", JSONArray(options.pixelStages.toList()))
             .put("generatedBy", options.generatedBy)
+            .put("luaSlice", options.luaSlice)
+            .put("idEvents", JSONArray(options.idEvents.toList()))
             .put("render", true)
         options.playerVocals?.let { opts.put("playerVocals", JSONArray(it)) }
         options.opponentVocals?.let { opts.put("opponentVocals", JSONArray(it)) }

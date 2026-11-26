@@ -296,6 +296,10 @@ object VSliceToPsychChart {
                 }
                 "SetCameraBop" -> add(event.time, "Set Property", "camZoomingMult", field(v, "intensity").asDouble(1.0).toJsonNumber().toString())
                 "PsychEvent" -> add(event.time, field(v, "name").asText(), field(v, "value1").asText(), field(v, "value2").asText())
+                "ChangeCharacter" -> if (field(v, "id").asText().isNotEmpty()) {
+                    val slot = field(v, "char").asDouble(0.0)
+                    add(event.time, "Change Character", if (slot == 1.0) "dad" else if (slot == 2.0) "gf" else "bf", field(v, "id").asText())
+                } else skip(event.kind)
                 else -> {
                     val obj = v as? JSONObject
                     if (obj != null && (obj.has("value1") || obj.has("value2"))) {

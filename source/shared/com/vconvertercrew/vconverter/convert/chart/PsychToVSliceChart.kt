@@ -27,7 +27,9 @@ data class ConversionOptions(
     val splitVariations: Boolean = true,
     val noteStyle: String? = null,
     val pixelStages: Set<String> = emptySet(),
-    val generatedBy: String = "V-Converter (Psych Engine to V-Slice)"
+    val generatedBy: String = "V-Converter (Psych Engine to V-Slice)",
+    val luaSlice: Boolean = false,
+    val idEvents: Set<String> = emptySet()
 )
 
 data class VariationChart(
@@ -177,11 +179,11 @@ object PsychToVSliceChart {
         val notes = LinkedHashMap<String, List<VSliceNote>>()
         val scrollSpeed = LinkedHashMap<String, Double>()
         group.forEach { source ->
-            notes[source.difficulty] = convertNotes(source, report)
+            notes[source.difficulty] = convertNotes(source, report, options.luaSlice)
             scrollSpeed[source.difficulty] = source.song.speed
         }
         val countEvents = variation.isEmpty()
-        val events = (cameraEvents(song, timing, report, countEvents) + psychEvents(song.events + options.extraEvents, song, timing, report, options.keepPsychEvents, countEvents))
+        val events = (cameraEvents(song, timing, report, countEvents) + psychEvents(song.events + options.extraEvents, song, timing, report, options.keepPsychEvents, countEvents, options.luaSlice, options.idEvents))
             .sortedBy { it.time }
 
         val metadata = VSliceMetadata(
@@ -247,7 +249,7 @@ object PsychToVSliceChart {
         }
     }
 
-    private fun convertNotes(source: ChartSource, report: ConversionReport): List<VSliceNote> {
+    private fun convertNotes(source: ChartSource, report: ConversionReport, luaSlice: Boolean): List<VSliceNote> {
         val seen = HashSet<Pair<Long, Int>>()
         val result = mutableListOf<VSliceNote>()
         var duplicates = 0
@@ -259,7 +261,7 @@ object PsychToVSliceChart {
                     duplicates++
                     return@forEach
                 }
-                val kind = noteKind(note.type, !note.isPlayer, section.altAnim)
+                val kind = noteKind(note.type, !note.isPlayer, section.altAnim, luaSlice)
                 if (kind.isNotEmpty()) report.noteKinds += kind
                 result += VSliceNote(note.time, note.lane, note.length, kind)
             }
@@ -271,12 +273,19 @@ object PsychToVSliceChart {
         return result
     }
 
-    private fun noteKind(type: String, opponent: Boolean, altSection: Boolean): String {
+    private fun noteKind(type: String, opponent: Boolean, altSection: Boolean, luaSlice: Boolean): String {
         if (type.isBlank()) return if (altSection && opponent) "alt" else ""
-        return noteKindFor(type)
+        return noteKindFor(type, luaSlice)
     }
 
-    fun noteKindFor(type: String): String = noteKinds[type.trim().lowercase()] ?: slug(type)
+    fun noteKindFor(type: String, luaSlice: Boolean = false): String = noteKinds[type.trim().lowercase()] ?: if (luaSlice) type.trim() else slug(type)
+
+    fun psychCharacterSlot(raw: String): Int = when (val v = raw.trim().lowercase()) {
+        "gf", "girlfriend", "1" -> 2
+        "dad", "opponent", "0" -> 1
+        "bf", "boyfriend", "" -> 0
+        else -> v.toIntOrNull()?.takeIf { it in 0..2 } ?: 0
+    }
 
     private fun slug(text: String): String =
         text.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
@@ -304,10 +313,15 @@ object PsychToVSliceChart {
         return result
     }
 
-    private fun psychEvents(events: List<PsychEvent>, song: PsychSong, timing: PsychTiming, report: ConversionReport, keep: Boolean, count: Boolean): List<VSliceEvent> {
+    private fun psychEvents(events: List<PsychEvent>, song: PsychSong, timing: PsychTiming, report: ConversionReport, keep: Boolean, count: Boolean, luaSlice: Boolean, idEvents: Set<String>): List<VSliceEvent> {
         val result = mutableListOf<VSliceEvent>()
         events.distinct().sortedBy { it.time }.forEach { event ->
             val scripted = PsychEventIds.scriptedName(event.name)
+            if (luaSlice && scripted == "Change Character") {
+                if (count) report.convertedEvents++
+                result += VSliceEvent(event.time, "ChangeCharacter", linkedMapOf("char" to psychCharacterSlot(event.value1), "id" to event.value2.trim(), "preload" to true))
+                return@forEach
+            }
             if (scripted != null) {
                 if (count) report.scriptedEvents[scripted] = (report.scriptedEvents[scripted] ?: 0) + 1
                 result += VSliceEvent(event.time, PsychEventIds.idFor(scripted), linkedMapOf("value1" to event.value1, "value2" to event.value2))
@@ -318,7 +332,7 @@ object PsychToVSliceChart {
                 if (count || event.name !in report.unsupportedEvents) report.skipEvent(event.name.ifBlank { "(unnamed)" })
                 if (keep && event.name.isNotBlank()) {
                     if (count) report.keptPsychEvents++
-                    result += VSliceEvent(event.time, PsychEventIds.idFor(event.name), linkedMapOf("value1" to event.value1, "value2" to event.value2))
+                    result += VSliceEvent(event.time, if (luaSlice && event.name !in idEvents) event.name.trim() else PsychEventIds.idFor(event.name), linkedMapOf("value1" to event.value1, "value2" to event.value2))
                 }
             } else {
                 if (count) report.convertedEvents++

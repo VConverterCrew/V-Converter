@@ -80,7 +80,8 @@ enum class Engine(val label: String, val title: String, val detail: String, val 
     CODENAME("CODENAME", "Codename Engine", "XML · HScript", Palette.Orange),
     VSLICE("V-SLICE", "V-Slice", "Polymod · .hxc", Palette.Down),
     NMV("NMV", "NightmareVision", "HScript · JSON", Palette.Purple),
-    FPSPLUS("FPS PLUS", "FPS Plus", "Polymod · .hxc", Palette.Right);
+    FPSPLUS("FPS PLUS", "FPS Plus", "Polymod · .hxc", Palette.Right),
+    LUASLICE("LUASLICE", "LuaSlice", "Lua · .luap · .hxc", Palette.Up);
 
     val key: String get() = when (this) {
         PSYCH -> "psych"
@@ -88,6 +89,7 @@ enum class Engine(val label: String, val title: String, val detail: String, val 
         VSLICE -> "vslice"
         NMV -> "nmv"
         FPSPLUS -> "fpsplus"
+        LUASLICE -> "luaslice"
     }
 
     val canBeSource: Boolean get() = this != FPSPLUS
@@ -108,7 +110,11 @@ enum class Direction(val from: Engine, val to: Engine) {
     PSYCH_TO_FPSPLUS(Engine.PSYCH, Engine.FPSPLUS),
     VSLICE_TO_FPSPLUS(Engine.VSLICE, Engine.FPSPLUS),
     CODENAME_TO_FPSPLUS(Engine.CODENAME, Engine.FPSPLUS),
-    NMV_TO_FPSPLUS(Engine.NMV, Engine.FPSPLUS);
+    NMV_TO_FPSPLUS(Engine.NMV, Engine.FPSPLUS),
+    PSYCH_TO_LUASLICE(Engine.PSYCH, Engine.LUASLICE),
+    LUASLICE_TO_PSYCH(Engine.LUASLICE, Engine.PSYCH),
+    CODENAME_TO_LUASLICE(Engine.CODENAME, Engine.LUASLICE),
+    NMV_TO_LUASLICE(Engine.NMV, Engine.LUASLICE);
 
     val label: String get() = "${from.title} to ${to.title}"
 
@@ -144,7 +150,7 @@ sealed interface Status {
 object Workspace {
     val cache: File by lazy { File(System.getProperty("java.io.tmpdir"), "v-converter").apply { mkdirs() } }
 
-    fun converter(direction: Direction, tab: Tab): FileConverter = if (tab == Tab.NOTESTYLES) com.vconvertercrew.vconverter.convert.notestyle.NoteStyleConverter(direction.from.key, direction.to.key) else when (direction) {
+    fun converter(direction: Direction, tab: Tab): FileConverter = if (tab == Tab.NOTESTYLES) com.vconvertercrew.vconverter.convert.notestyle.NoteStyleConverter(direction.from.key.replace("luaslice", "vslice"), direction.to.key.replace("luaslice", "vslice")) else when (direction) {
         Direction.PSYCH_TO_VSLICE -> when (tab) {
             Tab.CHARTS -> PsychChartsConverter()
             Tab.CHARACTERS -> PsychCharactersConverter()
@@ -227,6 +233,15 @@ object Workspace {
             Tab.NOTESTYLES -> "data/noteskins/*.json with its note and splash images (.png + .xml)."
         }
         Engine.FPSPLUS -> ""
+        Engine.LUASLICE -> when (tab) {
+            Tab.MOD -> "Pick the mod folder inside LuaSlice's mods directory, or a .zip / .rar / .7z with the mod."
+            Tab.CHARTS -> "<song>-metadata.json and <song>-chart.json (and variations)."
+            Tab.CHARACTERS -> "data/characters/*.json with their spritesheet .xml (or Animation.json + spritemap*.json for Animate atlases)."
+            Tab.STAGES -> "data/stages/*.json."
+            Tab.WEEKS -> "data/levels/*.json plus the songs' -metadata.json files."
+            Tab.SCRIPTS -> ".luap / .luapg Psych Lua scripts and .hxc scripts. Archives keep the folders, so scripts/, data/songs/<song>/, stages/, characters/, custom_events/ and custom_notetypes/ keep their scope."
+            Tab.NOTESTYLES -> "data/notestyles/*.json with the images it uses (.png + .xml, and the hold note strip .png)."
+        }
     }
 
     fun writeZip(target: File, prefix: String, vslice: Boolean = false, body: (ModWriter) -> Unit) {
@@ -281,7 +296,7 @@ class LoadedMod(
             }
             val name = source.name
             try {
-                return build(name, files, archive, direction).also { it.vsliceOutput = direction.to == Engine.VSLICE }
+                return build(name, files, archive, direction).also { it.vsliceOutput = direction.to == Engine.VSLICE || direction.to == Engine.LUASLICE }
             } catch (e: Exception) {
                 archive?.delete()
                 throw e
@@ -299,7 +314,8 @@ class LoadedMod(
                     ModConverter.readPack(files, scan),
                     files, archive
                 ) { writer, info, progress ->
-                    if (direction.to == Engine.FPSPLUS) ToFpsMod.fromPsych(files, scan, writer, info, progress)
+                    if (direction.to == Engine.LUASLICE) com.vconvertercrew.vconverter.engines.luaslice.ToLuaSliceMod.fromPsych(files, scan, writer, info, progress)
+                    else if (direction.to == Engine.FPSPLUS) ToFpsMod.fromPsych(files, scan, writer, info, progress)
                     else if (direction.to == Engine.NMV) ToNmvMod.fromPsych(files, scan, writer, info, progress)
                     else if (direction.to == Engine.CODENAME) PsychToCodenameMod(files, scan, writer, progress).convert(info)
                     else ModConverter(files, scan, writer, progress).convert(info)
@@ -315,7 +331,8 @@ class LoadedMod(
                     CodenameModConverter.readModpack(files, scan),
                     files, archive
                 ) { writer, info, progress ->
-                    if (direction.to == Engine.FPSPLUS) ToFpsMod.fromCodename(files, scan, writer, info, progress)
+                    if (direction.to == Engine.LUASLICE) com.vconvertercrew.vconverter.engines.luaslice.ToLuaSliceMod.fromCodename(files, scan, writer, info, progress)
+                    else if (direction.to == Engine.FPSPLUS) ToFpsMod.fromCodename(files, scan, writer, info, progress)
                     else if (direction.to == Engine.NMV) ToNmvMod.fromCodename(files, scan, writer, info, progress)
                     else if (direction.to == Engine.PSYCH) CodenameToPsychMod(files, scan, writer, progress).convert(info)
                     else CodenameModConverter(files, scan, writer, progress).convert(info)
@@ -348,11 +365,25 @@ class LoadedMod(
                     files, archive
                 ) { writer, info, progress ->
                     NmvToMod(files, scan, writer, progress).convert(info, when (direction.to) {
-                        Engine.VSLICE -> NmvTarget.VSLICE
+                        Engine.VSLICE, Engine.LUASLICE -> NmvTarget.VSLICE
                         Engine.CODENAME -> NmvTarget.CODENAME
                         Engine.FPSPLUS -> NmvTarget.FPSPLUS
                         else -> NmvTarget.PSYCH
                     })
+                }
+            }
+            Engine.LUASLICE -> {
+                val files = VSlicePreview.asStable(files)
+                val scan = com.vconvertercrew.vconverter.engines.luaslice.LuaSliceModScanner.scan(files)
+                require(!scan.isEmpty) { "No LuaSlice mod content was found in $name. Expected _polymod_meta.json, .luap scripts or folders like data/songs, data/characters, data/stages or data/levels." }
+                LoadedMod(
+                    name, scan.base.root,
+                    listOf("Songs" to scan.base.songs.size, "Characters" to scan.base.characters.size, "Stages" to scan.base.stages.size, "Levels" to scan.base.levels.size, "Lua scripts" to scan.psychScripts.size, "Scripts" to scan.base.scripts.size, "Assets" to scan.base.assets.size),
+                    scan.base.songs.map { it.id },
+                    com.vconvertercrew.vconverter.engines.luaslice.LuaSliceModScanner.readInfo(files, scan),
+                    files, archive
+                ) { writer, info, progress ->
+                    com.vconvertercrew.vconverter.engines.luaslice.LuaSliceToPsych.convert(files, scan, writer, info, progress)
                 }
             }
             Engine.FPSPLUS -> throw IllegalArgumentException("FPS Plus mods can only be a conversion target.")
@@ -387,6 +418,7 @@ class ModTabState(val direction: Direction) {
         Engine.VSLICE -> "vslice"
         Engine.NMV -> "nmv"
         Engine.FPSPLUS -> "fpsplus"
+        Engine.LUASLICE -> "luaslice"
     }
 
     fun accept(loaded: LoadedMod, source: File) {

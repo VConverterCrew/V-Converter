@@ -115,6 +115,7 @@ object ModMenus {
         "v-slice" -> "Written to _polymod_meta.json. The icon becomes _polymod_icon.png."
         "nightmarevision" -> "Written to meta.json. The icon becomes images/pack.png."
         "fps plus" -> "Written to meta.json with the uid and api_version FPS Plus needs. The icon becomes icon.png."
+        "luaslice" -> "Written to _polymod_meta.json. The icon becomes _polymod_icon.png. Enable the mod in LuaSlice's Mods menu so its scripts load."
         else -> "Written to the mod's metadata file."
     }
 

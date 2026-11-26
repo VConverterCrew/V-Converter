@@ -346,6 +346,8 @@ struct Options {
     std::string noteStyle;
     std::set<std::string> pixelStages;
     std::string generatedBy = "V-Converter (Psych Engine to V-Slice)";
+    bool luaSlice = false;
+    std::set<std::string> idEvents;
 };
 
 const std::vector<std::string> kOrder = {"easy", "normal", "hard", "erect", "nightmare"};
@@ -415,9 +417,19 @@ const std::map<std::string, std::string> kStages = {{"stage", "mainStage"}, {"sp
 
 const std::map<std::string, std::string> kNoteKinds = {{"alt animation", "alt"}, {"hey!", "hey"}, {"hurt note", "hurt"}, {"no animation", "noanim"}, {"gf sing", "gf-sing"}};
 
-std::string noteKindFor(const std::string& type) {
+std::string noteKindFor(const std::string& type, bool luaSlice = false) {
     auto it = kNoteKinds.find(lowerText(trimText(type)));
-    return it != kNoteKinds.end() ? it->second : slugText(type);
+    return it != kNoteKinds.end() ? it->second : luaSlice ? trimText(type) : slugText(type);
+}
+
+int psychCharacterSlot(const std::string& raw) {
+    std::string v = lowerText(trimText(raw));
+    if (v == "gf" || v == "girlfriend" || v == "1") return 2;
+    if (v == "dad" || v == "opponent" || v == "0") return 1;
+    if (v == "bf" || v == "boyfriend" || v.empty()) return 0;
+    char* end = nullptr;
+    long n = std::strtol(v.c_str(), &end, 10);
+    return end && *end == 0 && n >= 0 && n <= 2 ? int(n) : 0;
 }
 
 struct Signature {
@@ -550,7 +562,7 @@ std::string scriptedEventName(const std::string& raw) {
     return "";
 }
 
-std::vector<VEvent> psychEvents(const std::vector<PsychEvent>& all, const PsychSong& song, const Timing& timing, Report& report, bool keep, bool count) {
+std::vector<VEvent> psychEvents(const std::vector<PsychEvent>& all, const PsychSong& song, const Timing& timing, Report& report, bool keep, bool count, bool luaSlice, const std::set<std::string>& idEvents) {
     std::vector<PsychEvent> events;
     for (const PsychEvent& e : all) {
         if (std::find(events.begin(), events.end(), e) == events.end()) events.push_back(e);
@@ -560,7 +572,10 @@ std::vector<VEvent> psychEvents(const std::vector<PsychEvent>& all, const PsychS
     for (const PsychEvent& event : events) {
         std::vector<VEvent> converted;
         std::string scripted = scriptedEventName(event.name);
-        if (!scripted.empty()) {
+        if (luaSlice && scripted == "Change Character") {
+            if (count) report.convertedEvents++;
+            result.push_back({event.time, "ChangeCharacter", valueObject({{"char", Json::number(psychCharacterSlot(event.value1))}, {"id", Json::string(trimText(event.value2))}, {"preload", Json::boolean(true)}})});
+        } else if (!scripted.empty()) {
             if (count) {
                 bool found = false;
                 for (auto& entry : report.scripted) {
@@ -576,7 +591,7 @@ std::vector<VEvent> psychEvents(const std::vector<PsychEvent>& all, const PsychS
             if (count || !report.hasUnsupported(event.name)) report.skip(trimText(event.name).empty() ? "(unnamed)" : event.name);
             if (keep && !trimText(event.name).empty()) {
                 if (count) report.keptEvents++;
-                result.push_back({event.time, psychEventId(event.name), valueObject({{"value1", Json::string(event.value1)}, {"value2", Json::string(event.value2)}})});
+                result.push_back({event.time, luaSlice && !idEvents.count(event.name) ? trimText(event.name) : psychEventId(event.name), valueObject({{"value1", Json::string(event.value1)}, {"value2", Json::string(event.value2)}})});
             }
         } else {
             if (count) report.convertedEvents++;
@@ -586,7 +601,7 @@ std::vector<VEvent> psychEvents(const std::vector<PsychEvent>& all, const PsychS
     return result;
 }
 
-Json convertNotes(const Source& source, Report& report) {
+Json convertNotes(const Source& source, Report& report, bool luaSlice) {
     std::set<std::pair<long long, int>> seen;
     struct N {
         double time;
@@ -605,7 +620,7 @@ Json convertNotes(const Source& source, Report& report) {
             }
             std::string kind;
             if (trimText(note.type).empty()) kind = section.altAnim && !note.isPlayer() ? "alt" : "";
-            else kind = noteKindFor(note.type);
+            else kind = noteKindFor(note.type, luaSlice);
             if (!kind.empty()) report.noteKinds.insert(kind);
             notes.push_back({note.time, note.lane, note.length, kind});
         }
@@ -647,14 +662,14 @@ Json buildGroup(const Source& lead, const std::vector<const Source*>& group, con
     Json notes = Json::object();
     Json speeds = Json::object();
     for (const Source* s : group) {
-        notes.set(s->difficulty, convertNotes(*s, report));
+        notes.set(s->difficulty, convertNotes(*s, report, options.luaSlice));
         speeds.set(s->difficulty, Json::number(s->song.speed));
     }
     bool count = variation.empty();
     std::vector<VEvent> events = cameraEvents(song, timing, report, count);
     std::vector<PsychEvent> all = song.events;
     all.insert(all.end(), options.extraEvents.begin(), options.extraEvents.end());
-    std::vector<VEvent> converted = psychEvents(all, song, timing, report, options.keepPsychEvents, count);
+    std::vector<VEvent> converted = psychEvents(all, song, timing, report, options.keepPsychEvents, count, options.luaSlice, options.idEvents);
     for (VEvent& v : converted) events.push_back(std::move(v));
     std::stable_sort(events.begin(), events.end(), [](const VEvent& a, const VEvent& b) { return a.time < b.time; });
 
@@ -766,6 +781,8 @@ Json convertPsychCharts(const Json& input, std::string& error) {
     options.noteStyle = o["noteStyle"].text();
     for (const Json& s : o["pixelStages"].items()) options.pixelStages.insert(s.text());
     if (!o["generatedBy"].text().empty()) options.generatedBy = o["generatedBy"].text();
+    options.luaSlice = o["luaSlice"].asBool(false);
+    for (const Json& s : o["idEvents"].items()) options.idEvents.insert(s.text());
 
     std::vector<Source*> ordered;
     for (Source& s : sources) ordered.push_back(&s);

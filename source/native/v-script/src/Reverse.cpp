@@ -373,6 +373,10 @@ Grouped psychEvents(const std::vector<Event>& events, const Meta& meta, double s
             add(event.time, "Set Property", "camZoomingMult", jsonNumberText(asDouble(field(v, "intensity"), 1.0)));
         } else if (event.kind == "PsychEvent") {
             add(event.time, asText(field(v, "name")), asText(field(v, "value1")), asText(field(v, "value2")));
+        } else if (event.kind == "ChangeCharacter") {
+            double slot = asDouble(field(v, "char"), 0.0);
+            if (asText(field(v, "id")).empty()) skip(event.kind);
+            else add(event.time, "Change Character", slot == 1.0 ? "dad" : slot == 2.0 ? "gf" : "bf", asText(field(v, "id")));
         } else {
             bool hasValues = false;
             if (v.kind() == Json::Kind::Object) {

@@ -36,7 +36,7 @@ abstract class NmvModViewModel(application: Application) : BaseConverterViewMode
 
     abstract val target: NmvTarget
 
-    private val targetSuffix: String get() = target.name.lowercase()
+    protected open val targetSuffix: String get() = target.name.lowercase()
 
     private fun runConversion(files: ModFiles, scan: NmvScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
         NmvToMod(files, scan, writer, progress).convert(info, target)
@@ -230,4 +230,30 @@ class VSliceToFpsModViewModel(application: Application) : com.vconvertercrew.vco
 
     override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.convert.reverse.VSliceModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
         com.vconvertercrew.vconverter.engines.fpsplus.ToFpsMod.fromVSlice(files, scan, writer, info, progress)
+}
+
+class PsychToLuaSliceModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.mod.ModViewModel(application) {
+    override val targetSuffix: String = "luaslice"
+
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.convert.mod.ModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.luaslice.ToLuaSliceMod.fromPsych(files, scan, writer, info, progress)
+}
+
+class CodenameToLuaSliceModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.codename.CodenameModViewModel(application) {
+    override val targetSuffix: String = "luaslice"
+
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.engines.codename.CodenameModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.luaslice.ToLuaSliceMod.fromCodename(files, scan, writer, info, progress)
+}
+
+class NmvToLuaSliceModViewModel(application: Application) : NmvModViewModel(application) {
+    override val target: NmvTarget = NmvTarget.VSLICE
+    override val targetSuffix: String get() = "luaslice"
+}
+
+class LuaSliceToPsychModViewModel(application: Application) : com.vconvertercrew.vconverter.ui.reverse.ReverseModViewModel(application) {
+    override val targetSuffix: String = "psych"
+
+    override fun runConversion(files: ModFiles, scan: com.vconvertercrew.vconverter.convert.reverse.VSliceModScan, writer: ModWriter, info: ModInfo, progress: (ModProgress) -> Unit): ModConversionResult =
+        com.vconvertercrew.vconverter.engines.luaslice.LuaSliceToPsych.convert(files, com.vconvertercrew.vconverter.engines.luaslice.LuaSliceModScanner.scan(files), writer, info, progress)
 }

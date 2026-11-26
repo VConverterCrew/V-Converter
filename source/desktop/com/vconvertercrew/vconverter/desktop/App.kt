@@ -340,6 +340,7 @@ private fun ModScreen(state: AppState) {
                     Engine.VSLICE -> "Written to _polymod_meta.json. The icon becomes _polymod_icon.png."
                     Engine.NMV -> "Written to meta.json. The icon becomes images/pack.png."
                     Engine.FPSPLUS -> "Written to meta.json with the uid and api_version FPS Plus needs. The icon becomes icon.png."
+                    Engine.LUASLICE -> "Written to _polymod_meta.json. The icon becomes _polymod_icon.png. Enable the mod in LuaSlice's Mods menu so its scripts load."
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = Palette.Muted

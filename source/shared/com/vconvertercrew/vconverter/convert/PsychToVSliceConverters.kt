@@ -36,7 +36,7 @@ abstract class PsychToVSliceConverter : FileConverter() {
     override val engine = "Psych Engine"
 }
 
-class PsychChartsConverter : PsychToVSliceConverter() {
+class PsychChartsConverter(private val luaSlice: Boolean = false) : PsychToVSliceConverter() {
     override val noun = "chart"
 
     var keepEvents: Boolean = true
@@ -75,7 +75,7 @@ class PsychChartsConverter : PsychToVSliceConverter() {
                 outputs += out("data/notestyles/${style.id}.json", style.json)
                 report.section(if (songs.size > 1) "$id · Note style ${style.id}" else "Note style ${style.id}", listOf("Made from the chart's arrowSkin \"${main.arrowSkin}\".") + style.notes)
             }
-            val conversion = PsychToVSliceChart.convert(sources, ConversionOptions(songName = main.name.ifBlank { id }, extraEvents = events, keepPsychEvents = keepEvents, noteStyle = style?.id))
+            val conversion = PsychToVSliceChart.convert(sources, ConversionOptions(songName = main.name.ifBlank { id }, extraEvents = events, keepPsychEvents = keepEvents, noteStyle = style?.id, luaSlice = luaSlice, idEvents = if (luaSlice) com.vconvertercrew.vconverter.convert.script.PsychNativeLibrary.builtinEventNames else emptySet()))
             conversion.files(id).forEach { (name, text) -> outputs += out("data/songs/$id/$name", text) }
             val eventNames = conversion.report.scriptedEvents.keys + if (keepEvents) conversion.report.unsupportedEvents.keys else emptySet()
             ScriptConverter.eventFiles(eventNames).forEach { outputs += out(it.path, it.content) }

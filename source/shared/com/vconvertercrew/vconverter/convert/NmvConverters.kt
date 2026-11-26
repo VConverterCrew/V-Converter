@@ -260,7 +260,27 @@ object NmvConverters {
             NmvTab.WEEKS -> CodenameToPsychWeeksConverter()
             NmvTab.SCRIPTS -> CodenameToPsychScriptsConverter()
         }
+        fun psychToLuaSlice() = when (tab) {
+            NmvTab.CHARTS -> PsychChartsConverter(luaSlice = true)
+            NmvTab.SCRIPTS -> PsychToLuaSliceScriptsConverter()
+            else -> psychToVSlice()
+        }
+        fun codenameToVSlice() = when (tab) {
+            NmvTab.CHARTS -> CodenameChartsConverter()
+            NmvTab.CHARACTERS -> CodenameCharactersConverter()
+            NmvTab.STAGES -> CodenameStagesConverter()
+            NmvTab.WEEKS -> CodenameWeeksConverter()
+            NmvTab.SCRIPTS -> CodenameScriptsConverter()
+        }
+        fun luaSliceToPsych() = when (tab) {
+            NmvTab.SCRIPTS -> LuaSliceToPsychScriptsConverter()
+            else -> vsliceToPsych()
+        }
         return when (from to to) {
+            "psych" to "luaslice" -> LuaSliceTargetConverter(psychToLuaSlice())
+            "codename" to "luaslice" -> LuaSliceTargetConverter(codenameToVSlice())
+            "nmv" to "luaslice" -> LuaSliceTargetConverter(NmvSourceConverter(psychToLuaSlice()))
+            "luaslice" to "psych" -> luaSliceToPsych()
             "nmv" to "psych" -> NmvSourceConverter(PsychPassConverter(tab))
             "nmv" to "vslice" -> NmvSourceConverter(psychToVSlice())
             "nmv" to "codename" -> NmvSourceConverter(psychToCodename())

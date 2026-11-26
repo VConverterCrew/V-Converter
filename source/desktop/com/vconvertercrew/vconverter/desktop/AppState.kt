@@ -223,7 +223,7 @@ class AppState(private val scope: CoroutineScope) {
         scope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    val vslice = direction.to == Engine.VSLICE
+                    val vslice = direction.to == Engine.VSLICE || direction.to == Engine.LUASLICE
                     if (zip) Workspace.writeZip(target, "", vslice) { writer -> output.files.forEach { it.writeTo(writer) } }
                     else Workspace.writeFolder(target, vslice) { writer -> output.files.forEach { it.writeTo(writer) } }
                 }

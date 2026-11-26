@@ -60,12 +60,13 @@ data class EngineChoice(val key: String, val label: String, val title: String)
 object EngineChoices {
     val CNE = EngineChoice("codename", "CNE", "Codename Engine")
     val FPS = EngineChoice("fpsplus", "FPS", "FPS Plus")
+    val LUA = EngineChoice("luaslice", "LUA SLICE", "LuaSlice")
     val NV = EngineChoice("nmv", "NV", "NightmareVision")
     val PSYCH = EngineChoice("psych", "PSYCH", "Psych Engine")
     val VSLICE = EngineChoice("vslice", "V SLICE", "V-Slice")
 
-    val left = listOf(CNE, FPS, NV, PSYCH, VSLICE)
-    val right = listOf(VSLICE, PSYCH, NV, FPS, CNE)
+    val left = listOf(CNE, FPS, LUA, NV, PSYCH, VSLICE)
+    val right = listOf(VSLICE, PSYCH, NV, LUA, FPS, CNE)
 }
 
 @Composable

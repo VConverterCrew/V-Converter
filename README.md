@@ -4,7 +4,7 @@
 
 # V-Converter
 
-**Convert Friday Night Funkin' mods between Psych Engine, V-Slice, Codename Engine and NightmareVision, and into FPS Plus.**
+**Convert Friday Night Funkin' mods between Psych Engine, V-Slice, Codename Engine, NightmareVision and LuaSlice, and into FPS Plus.**
 
 [![Build](https://github.com/VConverterCrew/V-Converter/actions/workflows/build.yml/badge.svg)](https://github.com/VConverterCrew/V-Converter/actions/workflows/build.yml)
 ![Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)
@@ -22,14 +22,14 @@
 > [!NOTE]
 > **This app was vibe coded.** V-Converter was built through vibe coding: the code was written with an AI assistant (Claude) from prompts, then tested and checked against the engines' source code. Conversions are validated, but expect rough edges, and please [open an issue](https://github.com/VConverterCrew/V-Converter/issues) if something breaks.
 
-A remake of the V-Slice converter as a native app written in Kotlin, for **Android**, **iOS**, **Windows**, **Linux**, **macOS** and the **web** (any modern browser, through WebAssembly). It converts content from **Psych Engine** and **Codename Engine** to **V-Slice** (the current base game), from V-Slice back to Psych, between Psych and Codename in both directions, between [NightmareVision](https://github.com/NMVTeam/NightmareVision) and Psych, V-Slice or Codename in both directions, and from any of them to [FPS Plus](https://github.com/ThatRozebudDude/FPS-Plus-Public).
+A remake of the V-Slice converter as a native app written in Kotlin, for **Android**, **iOS**, **Windows**, **Linux**, **macOS** and the **web** (any modern browser, through WebAssembly). It converts content from **Psych Engine** and **Codename Engine** to **V-Slice** (the current base game), from V-Slice back to Psych, between Psych and Codename in both directions, between [NightmareVision](https://github.com/NMVTeam/NightmareVision) and Psych, V-Slice or Codename in both directions, from any of them to [FPS Plus](https://github.com/ThatRozebudDude/FPS-Plus-Public), and between Psych and [LuaSlice](https://github.com/Fla-man-Max/LuaSlice) in both directions (Codename and NightmareVision go to LuaSlice too).
 
 ## Contents
 
 - [Download](#download)
 - [Supported conversions](#supported-conversions)
 - [Generator](#generator) · [Chart Editor](#chart-editor) · [Character Editor](#character-editor) · [Stage Editor](#stage-editor) · [Week Editor](#week-editor)
-- [Psych → V-Slice](#psych--v-slice) · [V-Slice Preview (Public PlayTest)](#v-slice-preview-public-playtest) · [V-Slice → Psych](#v-slice--psych) · [Codename → V-Slice](#codename--v-slice) · [Codename → Psych](#codename--psych) · [Psych → Codename](#psych--codename) · [NightmareVision](#nightmarevision) · [FPS Plus](#fps-plus)
+- [Psych → V-Slice](#psych--v-slice) · [V-Slice Preview (Public PlayTest)](#v-slice-preview-public-playtest) · [V-Slice → Psych](#v-slice--psych) · [Codename → V-Slice](#codename--v-slice) · [Codename → Psych](#codename--psych) · [Psych → Codename](#psych--codename) · [NightmareVision](#nightmarevision) · [FPS Plus](#fps-plus) · [LuaSlice](#luaslice)
 - [Multieditor](#multieditor) · [PlayTest](#playtest) · [Online server](#online-server)
 - [Project layout](#project-layout) · [Audio (V-MiniAudio)](#audio-v-miniaudio) · [Building](#building)
 
@@ -73,10 +73,13 @@ The web app is the same app as on iOS, running in the browser: files you open ar
 | Psych / V-Slice / Codename → NightmareVision | Lua / HScript → NightmareVision HScript |
 | NightmareVision → Psych / V-Slice / Codename | NightmareVision HScript → Psych HScript, then the usual conversion |
 | Psych / V-Slice / Codename / NightmareVision → FPS Plus | Lua / HScript → FPS Plus `Script` classes (`.hxc`) |
+| Psych → LuaSlice | Lua stays Lua as `.luap`, HScript → `.hxc` |
+| LuaSlice → Psych | `.luap` / `.luapg` → Psych Lua, `.hxc` → Psych HScript |
+| Codename / NightmareVision → LuaSlice | the V-Slice conversion (`.hxc`) |
 
 Every platform opens on an FNF-style main menu (`MainMenuState`): `menuBG` with a slight parallax, **CONVERTER**, **GENERATOR** and **OPTIONS** drawn from `assets/ui/menu/main/` (idle and selected animations at 24 fps), the magenta flash and flicker on confirm, arrows/W/S/Enter, taps, swipes or the mouse wheel. The V-Converter logo (or Back on Android) returns to it. **OPTIONS** opens the FNF Options menu (Alphabet font on `menuBGMagenta`). Phones work in portrait and landscape; in landscape the tabs move to a side rail and the header fits in one row.
 
-The Android app has two sections, switched at the top: **Converter** and **Generator** (new V-Slice content from scratch). In the Converter, pick the source engine (**Psych**, **Codename**, **V-Slice** or **NMV**; **FPS Plus** is a target only) and the target engine in the bridge at the top of each tab; tapping the **To** card or the swap button switches the target. On Windows, Linux and macOS the engines are picked in the sidebar, and files or mods can be dragged into the window. Both apps use the V-Converter icon (a microphone with the four arrows, in `assets/icons/icon.png`; `assets/icons/desktop/` has the `.ico`, `.icns` and `.png` used by the Windows, macOS and Linux packages) and the custom cursor from `assets/images/cursor/cursor.png` (on Android it shows with a mouse or trackpad, and where you touch the screen unless "Touch Cursor" is turned off in the options) show an `FPS:` counter in the top-right corner and play `assets/music/freakyMenu.ogg` as menu music (paused while the Chart Editor plays a song) and `assets/sounds/scrollMenu.ogg` when tabs and buttons are clicked; the counter, the sounds, the music and its volume are set in the options (the gear in the top-right corner).
+The Android app has two sections, switched at the top: **Converter** and **Generator** (new V-Slice content from scratch). In the Converter, pick the source engine (**Psych**, **Codename**, **V-Slice**, **NMV** or **LuaSlice**; **FPS Plus** is a target only) and the target engine in the bridge at the top of each tab; tapping the **To** card or the swap button switches the target. On Windows, Linux and macOS the engines are picked in the sidebar, and files or mods can be dragged into the window. Both apps use the V-Converter icon (a microphone with the four arrows, in `assets/ui/app/icon.png`; `assets/ui/app/desktop/` has the `.ico`, `.icns` and `.png` used by the Windows, macOS and Linux packages) and the custom cursor from `assets/ui/cursor/cursor.png` (on Android it shows with a mouse or trackpad, and where you touch the screen unless "Touch Cursor" is turned off in the options) show an `FPS:` counter in the top-right corner and play `assets/music/freakyMenu.ogg` as menu music (paused while the Chart Editor plays a song) and `assets/sounds/scrollMenu.ogg` when tabs and buttons are clicked; the counter, the sounds, the music and its volume are set in the options (the gear in the top-right corner).
 
 ## Generator
 
@@ -417,6 +420,24 @@ Round trips (Psych → V-Slice → Psych) keep notes, sections, events, stage po
 | `pack.json` + `pack.png` | `meta.json` (with `uid` and `api_version`) + `icon.png` |
 
 ---
+
+## LuaSlice
+
+[LuaSlice](https://github.com/Fla-man-Max/LuaSlice) is V-Slice with Psych Engine 1.0.4's Lua API, so a converted mod is a V-Slice mod whose Lua scripts keep running as Lua. Every tab converts **Psych → LuaSlice** and **LuaSlice → Psych**; **Codename** and **NightmareVision** go to LuaSlice through their V-Slice conversion.
+
+| Psych | LuaSlice |
+| --- | --- |
+| `scripts/*.lua` | `scripts/*.luap` (every song) |
+| `data/<song>/*.lua` | `data/songs/<song>/*.luap` (that song) |
+| `stages/<stage>.lua` | `stages/<stage>.luap`; the stage's sprites stay in the script instead of becoming props |
+| `characters/<character>.lua` | `characters/<character>.luap` |
+| `custom_events/<name>.lua`, `custom_notetypes/<type>.lua` | the same paths as `.luap` |
+| `addLuaScript('….lua')` and the other script-path calls | point at `.luap` |
+| Chart events | keep their Psych names with `value1`/`value2`, so `onEvent` and `custom_events/<name>.luap` match; `Change Character` becomes LuaSlice's `ChangeCharacter` event |
+| Note types | keep their Psych names as note kinds (built-in ones still use V-Slice's `hurt`, `alt`, `noanim`…) |
+| `.hx` HScript | `.hxc`, like Psych → V-Slice |
+
+Going back, `.luap`/`.luapg` become `.lua` in the Psych folders (mod-root `.luapg` files go to `scripts/`), `ChangeCharacter` becomes `Change Character`, and LuaSlice's own `.lua`/`.luag` scripts (its own Lua API) are listed as not converted.
 
 ## Multieditor
 

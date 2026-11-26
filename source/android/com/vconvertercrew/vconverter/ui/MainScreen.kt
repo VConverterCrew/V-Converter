@@ -228,7 +228,8 @@ enum class Engine(val label: String, val title: String, val detail: String, val 
     CODENAME("CODENAME", "Codename Engine", "XML · HScript", Funkin.Orange),
     VSLICE("V-SLICE", "V-Slice", "Polymod · .hxc", Funkin.Down),
     NMV("NMV", "NightmareVision", "HScript · JSON", Funkin.Purple),
-    FPSPLUS("FPS PLUS", "FPS Plus", "Polymod · .hxc", Funkin.Right);
+    FPSPLUS("FPS PLUS", "FPS Plus", "Polymod · .hxc", Funkin.Right),
+    LUASLICE("LUASLICE", "LuaSlice", "Lua · .luap · .hxc", Funkin.Up);
 
     val key: String get() = when (this) {
         PSYCH -> "psych"
@@ -236,6 +237,7 @@ enum class Engine(val label: String, val title: String, val detail: String, val 
         VSLICE -> "vslice"
         NMV -> "nmv"
         FPSPLUS -> "fpsplus"
+        LUASLICE -> "luaslice"
     }
 
     val canBeSource: Boolean get() = this != FPSPLUS
@@ -256,7 +258,11 @@ enum class Direction(val from: Engine, val to: Engine) {
     PSYCH_TO_FPSPLUS(Engine.PSYCH, Engine.FPSPLUS),
     VSLICE_TO_FPSPLUS(Engine.VSLICE, Engine.FPSPLUS),
     CODENAME_TO_FPSPLUS(Engine.CODENAME, Engine.FPSPLUS),
-    NMV_TO_FPSPLUS(Engine.NMV, Engine.FPSPLUS);
+    NMV_TO_FPSPLUS(Engine.NMV, Engine.FPSPLUS),
+    PSYCH_TO_LUASLICE(Engine.PSYCH, Engine.LUASLICE),
+    LUASLICE_TO_PSYCH(Engine.LUASLICE, Engine.PSYCH),
+    CODENAME_TO_LUASLICE(Engine.CODENAME, Engine.LUASLICE),
+    NMV_TO_LUASLICE(Engine.NMV, Engine.LUASLICE);
 
     val label: String get() = "${from.title} to ${to.title}"
     val canSwap: Boolean get() = entries.any { it.from == to && it.to == from }
@@ -274,6 +280,7 @@ enum class Direction(val from: Engine, val to: Engine) {
             Engine.CODENAME -> CODENAME_TO_VSLICE
             Engine.NMV -> NMV_TO_PSYCH
             Engine.FPSPLUS -> PSYCH_TO_FPSPLUS
+            Engine.LUASLICE -> LUASLICE_TO_PSYCH
         }
 
         fun targets(engine: Engine): List<Engine> = entries.filter { it.from == engine }.map { it.to }
@@ -351,17 +358,19 @@ fun MainScreen() {
     val noteStyles = Direction.entries.associateWith { d ->
         viewModel<com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel>(
             key = "notestyle-${d.name}",
-            factory = viewModelFactory { initializer { com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel(noteStyleApp, com.vconvertercrew.vconverter.convert.notestyle.NoteStyleConverter(d.from.key, d.to.key)) } }
+            factory = viewModelFactory { initializer { com.vconvertercrew.vconverter.ui.reverse.ReverseViewModel(noteStyleApp, com.vconvertercrew.vconverter.convert.notestyle.NoteStyleConverter(d.from.key.replace("luaslice", "vslice"), d.to.key.replace("luaslice", "vslice"))) } }
         )
     }
     remember {
         listOf(charts, characters, stages, weeks, mod, scripts, psychStages, psychWeeks, psychScripts, cnMod, cnCharts, cnCharacters, cnStages, cnWeeks, cnScripts, genMod, genScript)
             .forEach { it.vsliceTarget = true }
         Tab.entries.forEach { tab -> runCatching { nmv.forTab(Direction.NMV_TO_VSLICE, tab).vsliceTarget = true } }
+        listOf(Direction.PSYCH_TO_LUASLICE, Direction.CODENAME_TO_LUASLICE, Direction.NMV_TO_LUASLICE).forEach { d -> Tab.entries.forEach { tab -> runCatching { nmv.forTab(d, tab).vsliceTarget = true } } }
+        Tab.entries.forEach { tab -> runCatching { nmv.forTab(Direction.LUASLICE_TO_PSYCH, tab).psychTarget = true } }
         listOf(revMod, revCharts, revCharacters, revStages, revWeeks, revScripts, c2pMod, c2pCharts, c2pCharacters, c2pStages, c2pWeeks, c2pScripts).forEach { it.psychTarget = true }
         Tab.entries.forEach { tab -> runCatching { nmv.forTab(Direction.NMV_TO_PSYCH, tab).psychTarget = true } }
         noteStyles.forEach { (d, model) ->
-            if (d.to == Engine.VSLICE) model.vsliceTarget = true
+            if (d.to == Engine.VSLICE || d.to == Engine.LUASLICE) model.vsliceTarget = true
             if (d.to == Engine.PSYCH) model.psychTarget = true
         }
         true
