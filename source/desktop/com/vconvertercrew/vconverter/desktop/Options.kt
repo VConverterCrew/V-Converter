@@ -316,7 +316,8 @@ fun OptionsOverlay() {
     val options = listOf(
         MenuOption.Submenu("Preferences", "FPS counter, sounds, music, Discord status, the V-Slice layout, the online server and error reports.") { preferences },
         com.vconvertercrew.vconverter.views.overlay.TouchOptions.submenu(AppSettings::saveString),
-        discordOption { links.openUri(it) }
+        discordOption { links.openUri(it) },
+        com.vconvertercrew.vconverter.views.overlay.Credits.submenu { links.openUri(it) }
     )
     FunkinOptionsMenu(
         "Options", options, art, onClose = { OptionsMenu.open = false },

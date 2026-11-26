@@ -200,7 +200,8 @@ fun OptionsDialog(settings: AppSettings, onDismiss: () -> Unit) {
         val options = listOf(
             MenuOption.Submenu("Preferences", "FPS counter, touch cursor, sounds, music, the V-Slice layout, the online server and error reports.") { preferences },
             com.vconvertercrew.vconverter.views.overlay.TouchOptions.submenu(settings::saveString),
-            com.vconvertercrew.vconverter.views.overlay.discordOption { links.openUri(it) }
+            com.vconvertercrew.vconverter.views.overlay.discordOption { links.openUri(it) },
+            com.vconvertercrew.vconverter.views.overlay.Credits.submenu { links.openUri(it) }
         )
         FunkinOptionsMenu(
             "Options", options, art, onClose = onDismiss, closeRequests = backPresses,
