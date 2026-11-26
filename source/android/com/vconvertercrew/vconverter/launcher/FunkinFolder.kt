@@ -12,7 +12,7 @@ object FunkinFolder {
     private fun key(game: LaunchGame): String = if (game == LaunchGame.FUNKIN) "modsTree" else "modsTree-${game.engine}"
 
     fun initialUri(context: Context, game: LaunchGame = LaunchGame.FUNKIN): Uri = when (game) {
-        LaunchGame.FUNKIN -> DocumentsContract.buildDocumentUri(AUTHORITY, "/storage/emulated/0/Android/data/${LaunchGame.FUNKIN_PACKAGE}/files")
+        LaunchGame.FUNKIN, LaunchGame.LUASLICE -> DocumentsContract.buildDocumentUri(game.androidDocuments ?: AUTHORITY, "/storage/emulated/0/Android/data/${game.packages.first()}/files")
         LaunchGame.PSYCH -> DocumentsContract.buildRootUri("${FunkinApp.installedPackage(context, game) ?: game.packages.first()}.documents", "root")
     }
 

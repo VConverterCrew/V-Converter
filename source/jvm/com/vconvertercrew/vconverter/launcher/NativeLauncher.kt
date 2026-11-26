@@ -31,6 +31,7 @@ object NativeLauncher {
     @JvmStatic external fun enablePsychMod(mods: String, name: String): Int
     @JvmStatic external fun modsFolder(executable: String): String?
     @JvmStatic external fun installFolder(source: String, mods: String, name: String): Int
+    @JvmStatic external fun installFolderCounts(source: String, mods: String, name: String): IntArray?
     @JvmStatic external fun launch(executable: String): Int
     @JvmStatic external fun launchPackage(context: Any, packageName: String): Int
     @JvmStatic external fun installed(context: Any, packageName: String): Boolean

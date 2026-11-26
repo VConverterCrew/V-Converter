@@ -81,8 +81,11 @@ abstract class BaseConverterViewModel(application: Application) : AndroidViewMod
 
     open val psychOutput: Boolean get() = psychTarget
 
+    var luaSliceTarget: Boolean = false
+
     val testGame: com.vconvertercrew.vconverter.launcher.LaunchGame?
         get() = when {
+            luaSliceTarget -> com.vconvertercrew.vconverter.launcher.LaunchGame.LUASLICE
             vsliceOutput -> com.vconvertercrew.vconverter.launcher.LaunchGame.FUNKIN
             psychOutput -> com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH
             else -> null

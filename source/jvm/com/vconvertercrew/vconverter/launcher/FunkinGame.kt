@@ -5,7 +5,7 @@ import java.util.zip.ZipFile
 
 class FunkinInstall(val executable: File, val mods: File, val game: LaunchGame = LaunchGame.FUNKIN)
 
-class InstalledMod(val folder: File, val files: Int)
+class InstalledMod(val folder: File, val files: Int, val copied: Int = files)
 
 class FunkinLaunchException(message: String) : Exception(message)
 
@@ -63,15 +63,18 @@ object FunkinGame {
         if (output.isDirectory) {
             native()
             val name = output.name.ifBlank { fallbackName }
-            val files = NativeLauncher.installFolder(output.absolutePath, game.mods.absolutePath, name)
-            if (files < 0) throw FunkinLaunchException(
-                when (-files) {
+            val counts = runCatching { NativeLauncher.installFolderCounts(output.absolutePath, game.mods.absolutePath, name) }.getOrNull()
+            val code = counts?.getOrNull(0) ?: NativeLauncher.installFolder(output.absolutePath, game.mods.absolutePath, name).let { if (it < 0) -it else NativeLauncher.OK }
+            val files = counts?.getOrNull(1) ?: 0
+            val copied = counts?.getOrNull(2) ?: files
+            if (code != NativeLauncher.OK) throw FunkinLaunchException(
+                when (code) {
                     NativeLauncher.NOT_FOUND -> "${output.path} is gone."
                     NativeLauncher.INVALID -> "Can't copy ${output.name} into the game's mods folder."
                     else -> "Could not copy the mod into ${game.mods.path}."
                 }
             )
-            return finish(game, InstalledMod(File(game.mods, name), files))
+            return finish(game, InstalledMod(File(game.mods, name), files, copied))
         }
         return finish(game, extract(output, game.mods, fallbackName))
     }
@@ -89,17 +92,25 @@ object FunkinGame {
             val name = (root ?: zip.nameWithoutExtension.ifBlank { fallbackName }).replace(Regex("[<>:\"/\\\\|?*]"), "_").trim('.', ' ').ifEmpty { fallbackName }
             val target = File(mods, name).canonicalFile
             val base = target.path + File.separator
-            var count = 0
-            entries.filter { !it.isDirectory }.forEach { entry ->
+            val files = entries.filter { !it.isDirectory }.mapNotNull { entry ->
                 val path = entry.name.replace('\\', '/').trimStart('/').let { if (root != null) it.removePrefix("$root/") else it }
                 val out = File(target, path).canonicalFile
-                if (!out.path.startsWith(base)) return@forEach
-                out.parentFile?.mkdirs()
-                file.getInputStream(entry).use { input -> out.outputStream().use { input.copyTo(it) } }
-                count++
+                if (out.path.startsWith(base)) entry to out else null
             }
-            return InstalledMod(target, count)
+            files.mapNotNull { it.second.parentFile }.distinct().forEach { it.mkdirs() }
+            val copied = java.util.concurrent.atomic.AtomicInteger()
+            files.parallelStream().forEach { (entry, out) ->
+                if (out.isFile && entry.size >= 0 && out.length() == entry.size && entry.time > 0 && out.lastModified() >= entry.time) return@forEach
+                file.getInputStream(entry).use { input -> out.outputStream().use { input.copyTo(it, 1 shl 16) } }
+                copied.incrementAndGet()
+            }
+            return InstalledMod(target, files.size, copied.get())
         }
+    }
+
+    fun findFirst(game: LaunchGame, saved: String, roots: List<String> = searchRoots()): FunkinInstall? {
+        if (saved.isNotEmpty()) runCatching { resolve(File(saved), game) }.getOrNull()?.let { return it }
+        return search(roots, game)
     }
 
     fun launch(game: FunkinInstall) {

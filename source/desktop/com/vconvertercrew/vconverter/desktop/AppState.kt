@@ -260,8 +260,24 @@ class AppState(private val scope: CoroutineScope) {
         }
     }
 
-    private fun savedGame(game: LaunchGame): FunkinInstall? =
-        AppSettings.gamePath(game).takeIf { it.isNotEmpty() }?.let { path -> runCatching { FunkinGame.resolve(File(path), game) }.getOrNull() }
+    private fun openDownload(game: LaunchGame): Boolean {
+        val link = game.downloadFor(com.vconvertercrew.vconverter.launcher.LaunchDevice.desktop())
+        return runCatching {
+            if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE)) {
+                java.awt.Desktop.getDesktop().browse(java.net.URI(link))
+                true
+            } else {
+                val os = System.getProperty("os.name").orEmpty().lowercase()
+                val command = when {
+                    os.contains("win") -> listOf("rundll32", "url.dll,FileProtocolHandler", link)
+                    os.contains("mac") -> listOf("open", link)
+                    else -> listOf("xdg-open", link)
+                }
+                ProcessBuilder(command).start()
+                true
+            }
+        }.getOrDefault(false)
+    }
 
     fun testInGame(report: (Status) -> Unit) {
         val output = lastMod ?: return
@@ -272,20 +288,23 @@ class AppState(private val scope: CoroutineScope) {
         }
         scope.launch {
             try {
-                var game = withContext(Dispatchers.IO) { savedGame(target) ?: FunkinGame.search(game = target) }
-                if (game == null) {
-                    report(Status.Info("${target.title} wasn't found. Pick the folder it's in."))
-                    val picked = Dialogs.chooseFolder("Choose the ${target.title} folder") ?: return@launch
-                    game = withContext(Dispatchers.IO) { FunkinGame.resolve(picked, target) }
-                        ?: throw FunkinLaunchException("No ${target.title} game was found in ${picked.path}.")
+                val found = withContext(Dispatchers.IO) { FunkinGame.findFirst(target, AppSettings.gamePath(target)) }
+                if (found == null) {
+                    val opened = withContext(Dispatchers.IO) { openDownload(target) }
+                    val link = target.downloadFor(com.vconvertercrew.vconverter.launcher.LaunchDevice.desktop())
+                    report(Status.Info(
+                        (if (opened) "${target.title} isn't installed, so its download page was opened ($link)." else "${target.title} isn't installed. Download it from $link.") +
+                            " If it's already in another folder, pick it in Options → Preferences → ${target.title} Game."
+                    ))
+                    return@launch
                 }
-                val found = game ?: return@launch
                 AppSettings.updateGamePath(target, found.executable.path)
                 report(Status.Info("Installing the mod into ${found.mods.path}…"))
                 val installed = withContext(Dispatchers.IO) {
                     FunkinGame.install(found, output, output.nameWithoutExtension.ifBlank { "converted-mod" }).also { FunkinGame.launch(found) }
                 }
-                report(Status.Success("Installed ${installed.files} file(s) into ${installed.folder.path} and opened ${target.title}. ${target.turnOn}"))
+                val copied = if (installed.copied < installed.files) " (${installed.copied} changed, the rest were already there)" else ""
+                report(Status.Success("Installed ${installed.files} file(s)$copied into ${installed.folder.path} and opened ${target.title}. ${target.turnOn}"))
             } catch (e: Exception) {
                 report(Status.Error(e.message ?: "Could not open ${target.title}."))
             }

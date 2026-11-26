@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(VLauncher
-    VERSION 1.1.0
-    DESCRIPTION "Finds, fills and opens Friday Night Funkin' and Psych Engine installs for V-Converter, written in C++"
+    VERSION 1.2.0
+    DESCRIPTION "Finds, fills and opens Friday Night Funkin', Psych Engine and LuaSlice installs for V-Converter, written in C++"
     LANGUAGES CXX
 )
 
@@ -15,6 +15,8 @@ option(VLAUNCHER_BUILD_TESTS "Build tests" OFF)
 add_library(VLauncher STATIC src/VLauncher.cpp include/vlauncher/VLauncher.h)
 add_library(VLauncher::VLauncher ALIAS VLauncher)
 
+find_package(Threads REQUIRED)
+target_link_libraries(VLauncher PUBLIC Threads::Threads)
 target_include_directories(VLauncher PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 set_target_properties(VLauncher PROPERTIES OUTPUT_NAME "vlauncher" POSITION_INDEPENDENT_CODE ON)
 

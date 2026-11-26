@@ -152,6 +152,59 @@ static void testPsych(const fs::path& root) {
     CHECK(vlauncher_enable_psych_mod(mods, "..") == VLAUNCHER_INVALID);
 }
 
+static fs::path makeLuaSlice(const fs::path& folder) {
+#if defined(_WIN32)
+    fs::path game = folder / "LuaSlice.exe";
+    writeFile(game, "MZ");
+#else
+    fs::path game = folder / "LuaSlice";
+    writeFile(game, "#!/bin/sh\n");
+    fs::permissions(game, fs::perms::owner_all | fs::perms::group_read | fs::perms::others_read);
+#endif
+    return game;
+}
+
+static void testLuaSlice(const fs::path& root) {
+    char out[4096];
+    fs::path first = makeLuaSlice(root / "games-a" / "LuaSlice-v0.1.0");
+    fs::path second = makeLuaSlice(root / "games-b" / "luaslice");
+    std::string a = (root / "games-a").string();
+    std::string b = (root / "games-b").string();
+    std::string empty = (root / "games-empty").string();
+    fs::create_directories(empty);
+    CHECK(vlauncher_resolve_game(VLAUNCHER_GAME_LUASLICE, a.c_str(), out, sizeof out) == VLAUNCHER_OK);
+    CHECK(fs::equivalent(out, first));
+    CHECK(vlauncher_resolve_game(VLAUNCHER_GAME_PSYCH, a.c_str(), out, sizeof out) == VLAUNCHER_NOT_FOUND);
+    const char* roots[] = {empty.c_str(), b.c_str(), a.c_str()};
+    for (int i = 0; i < 20; i++) {
+        CHECK(vlauncher_search_game(VLAUNCHER_GAME_LUASLICE, roots, 3, out, sizeof out) == VLAUNCHER_OK);
+        CHECK(fs::equivalent(out, second));
+    }
+    const char* none[] = {empty.c_str()};
+    CHECK(vlauncher_search_game(VLAUNCHER_GAME_LUASLICE, none, 1, out, sizeof out) == VLAUNCHER_NOT_FOUND);
+    CHECK(vlauncher_search_game(9, roots, 3, out, sizeof out) == VLAUNCHER_INVALID);
+
+    char mods[4096];
+    CHECK(vlauncher_mods_folder(first.string().c_str(), mods, sizeof mods) == VLAUNCHER_OK);
+    CHECK(fs::equivalent(mods, first.parent_path() / "mods"));
+    fs::path source = root / "lua-mod";
+    for (int i = 0; i < 64; i++) writeFile(source / "images" / ("sprite" + std::to_string(i) + ".png"), std::string(100 + i, 'x'));
+    writeFile(source / "scripts" / "global.luap", "function onCreate() end");
+    int32_t files = 0, copied = 0;
+    CHECK(vlauncher_install_folder_ex(source.string().c_str(), mods, "Lua Mod", &files, &copied) == VLAUNCHER_OK);
+    CHECK(files == 65);
+    CHECK(copied == 65);
+    CHECK(readFile(fs::path(mods) / "Lua Mod" / "images" / "sprite63.png") == std::string(163, 'x'));
+    CHECK(vlauncher_install_folder_ex(source.string().c_str(), mods, "Lua Mod", &files, &copied) == VLAUNCHER_OK);
+    CHECK(files == 65);
+    CHECK(copied == 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    writeFile(source / "scripts" / "global.luap", "function onCreate() debugPrint(1) end");
+    CHECK(vlauncher_install_folder_ex(source.string().c_str(), mods, "Lua Mod", &files, &copied) == VLAUNCHER_OK);
+    CHECK(copied == 1);
+    CHECK(readFile(fs::path(mods) / "Lua Mod" / "scripts" / "global.luap") == "function onCreate() debugPrint(1) end");
+}
+
 int main() {
     fs::path root = fs::temp_directory_path() / ("vlauncher-test-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     fs::create_directories(root);
@@ -162,6 +215,7 @@ int main() {
     testInstall(root);
     testLaunch(root);
     testPsych(root);
+    testLuaSlice(root);
     std::error_code error;
     fs::remove_all(root, error);
     if (failures == 0) std::printf("v-launcher: all tests passed\n");

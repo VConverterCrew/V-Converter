@@ -365,12 +365,21 @@ fun MainScreen() {
         listOf(charts, characters, stages, weeks, mod, scripts, psychStages, psychWeeks, psychScripts, cnMod, cnCharts, cnCharacters, cnStages, cnWeeks, cnScripts, genMod, genScript)
             .forEach { it.vsliceTarget = true }
         Tab.entries.forEach { tab -> runCatching { nmv.forTab(Direction.NMV_TO_VSLICE, tab).vsliceTarget = true } }
-        listOf(Direction.PSYCH_TO_LUASLICE, Direction.CODENAME_TO_LUASLICE, Direction.NMV_TO_LUASLICE).forEach { d -> Tab.entries.forEach { tab -> runCatching { nmv.forTab(d, tab).vsliceTarget = true } } }
+        listOf(Direction.PSYCH_TO_LUASLICE, Direction.CODENAME_TO_LUASLICE, Direction.NMV_TO_LUASLICE).forEach { d ->
+            Tab.entries.forEach { tab ->
+                runCatching {
+                    val model = nmv.forTab(d, tab)
+                    model.vsliceTarget = true
+                    model.luaSliceTarget = true
+                }
+            }
+        }
         Tab.entries.forEach { tab -> runCatching { nmv.forTab(Direction.LUASLICE_TO_PSYCH, tab).psychTarget = true } }
         listOf(revMod, revCharts, revCharacters, revStages, revWeeks, revScripts, c2pMod, c2pCharts, c2pCharacters, c2pStages, c2pWeeks, c2pScripts).forEach { it.psychTarget = true }
         Tab.entries.forEach { tab -> runCatching { nmv.forTab(Direction.NMV_TO_PSYCH, tab).psychTarget = true } }
         noteStyles.forEach { (d, model) ->
             if (d.to == Engine.VSLICE || d.to == Engine.LUASLICE) model.vsliceTarget = true
+            if (d.to == Engine.LUASLICE) model.luaSliceTarget = true
             if (d.to == Engine.PSYCH) model.psychTarget = true
         }
         true

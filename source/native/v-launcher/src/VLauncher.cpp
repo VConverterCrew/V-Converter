@@ -5,6 +5,9 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <atomic>
+#include <mutex>
+#include <thread>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -34,18 +37,22 @@ struct Names {
 #if defined(_WIN32)
 const char* const kFunkin[] = {"Funkin.exe"};
 const char* const kPsych[] = {"PsychEngine.exe", "Psych Engine.exe"};
+const char* const kLuaSlice[] = {"LuaSlice.exe"};
 #elif defined(__APPLE__)
 const char* const kFunkin[] = {"Funkin.app", "Friday Night Funkin'.app", "Funkin"};
 const char* const kPsych[] = {"PsychEngine.app", "Psych Engine.app", "PsychEngine"};
+const char* const kLuaSlice[] = {"LuaSlice.app", "LuaSlice"};
 #else
 const char* const kFunkin[] = {"Funkin"};
 const char* const kPsych[] = {"PsychEngine", "Psych Engine"};
+const char* const kLuaSlice[] = {"LuaSlice"};
 #endif
 
 bool namesFor(int32_t game, Names& names) {
     switch (game) {
         case VLAUNCHER_GAME_FUNKIN: names = {kFunkin, sizeof kFunkin / sizeof kFunkin[0]}; return true;
         case VLAUNCHER_GAME_PSYCH: names = {kPsych, sizeof kPsych / sizeof kPsych[0]}; return true;
+        case VLAUNCHER_GAME_LUASLICE: names = {kLuaSlice, sizeof kLuaSlice / sizeof kLuaSlice[0]}; return true;
         default: return false;
     }
 }
@@ -122,7 +129,7 @@ bool isLaunchable(const fs::path& path) {
     return isRunnable(path);
 }
 
-bool findIn(const fs::path& folder, const Names& names, fs::path& found) {
+bool findIn(const fs::path& folder, const Names& names, fs::path& found, bool scan = true) {
     for (size_t n = 0; n < names.count; n++) {
         fs::path candidate = folder / toPath(names.items[n]);
         if (isLaunchable(candidate)) {
@@ -130,6 +137,7 @@ bool findIn(const fs::path& folder, const Names& names, fs::path& found) {
             return true;
         }
     }
+    if (!scan) return false;
     std::error_code error;
     fs::directory_iterator it(folder, fs::directory_options::skip_permission_denied, error);
     if (error) return false;
@@ -176,12 +184,51 @@ bool resolvePath(const fs::path& path, const Names& names, bool strict, fs::path
     std::error_code error;
     fs::directory_iterator it(path, fs::directory_options::skip_permission_denied, error);
     if (error) return false;
+    std::vector<fs::path> folders;
     for (const fs::directory_entry& entry : it) {
         std::error_code kind;
         if (!entry.is_directory(kind) || isBundle(entry.path())) continue;
-        if (findIn(entry.path(), names, found)) return true;
+        folders.push_back(entry.path());
+    }
+    for (const fs::path& folder : folders) {
+        if (findIn(folder, names, found, false)) return true;
+    }
+    for (const fs::path& folder : folders) {
+        if (findIn(folder, names, found)) return true;
     }
     return false;
+}
+
+unsigned workerCount(size_t jobs) {
+    unsigned hardware = std::max(1u, std::thread::hardware_concurrency());
+    return static_cast<unsigned>(std::min<size_t>(jobs, std::min(8u, hardware)));
+}
+
+template <typename Job>
+void runParallel(size_t jobs, Job job) {
+    unsigned workers = workerCount(jobs);
+    if (workers <= 1) {
+        for (size_t i = 0; i < jobs; i++) job(i);
+        return;
+    }
+    std::atomic<size_t> next{0};
+    auto work = [&]() {
+        for (size_t i = next++; i < jobs; i = next++) job(i);
+    };
+    std::vector<std::thread> threads;
+    for (unsigned t = 1; t < workers; t++) threads.emplace_back(work);
+    work();
+    for (std::thread& t : threads) t.join();
+}
+
+bool upToDate(const fs::path& from, const fs::path& to) {
+    std::error_code a, b, c, d;
+    uintmax_t sourceSize = fs::file_size(from, a);
+    uintmax_t targetSize = fs::file_size(to, b);
+    if (a || b || sourceSize != targetSize) return false;
+    auto sourceTime = fs::last_write_time(from, c);
+    auto targetTime = fs::last_write_time(to, d);
+    return !c && !d && targetTime >= sourceTime;
 }
 
 fs::path modsFolderOf(const fs::path& executable) {
@@ -287,10 +334,26 @@ int32_t vlauncher_resolve_game(int32_t game, const char* path, char* executable,
 
 int32_t vlauncher_search_game(int32_t game, const char* const* roots, int32_t count, char* executable, int32_t capacity) {
     if (roots == nullptr || executable == nullptr || count < 0) return VLAUNCHER_INVALID;
+    Names names;
+    if (!namesFor(game, names)) return VLAUNCHER_INVALID;
+    std::vector<fs::path> found(static_cast<size_t>(count));
+    std::vector<char> hit(static_cast<size_t>(count), 0);
+    std::atomic<int32_t> best{count};
+    runParallel(static_cast<size_t>(count), [&](size_t i) {
+        if (static_cast<int32_t>(i) > best.load() || roots[i] == nullptr || roots[i][0] == '\0') return;
+        fs::path result;
+        if (!resolvePath(toPath(roots[i]), names, false, result)) return;
+        found[i] = result;
+        hit[i] = 1;
+        int32_t current = best.load();
+        while (static_cast<int32_t>(i) < current && !best.compare_exchange_weak(current, static_cast<int32_t>(i))) {
+        }
+    });
     for (int32_t i = 0; i < count; i++) {
-        if (roots[i] == nullptr || roots[i][0] == '\0') continue;
-        int32_t result = vlauncher_resolve_game(game, roots[i], executable, capacity);
-        if (result != VLAUNCHER_NOT_FOUND) return result;
+        if (!hit[static_cast<size_t>(i)]) continue;
+        std::error_code error;
+        fs::path absolute = fs::absolute(found[static_cast<size_t>(i)], error);
+        return copyOut(error ? found[static_cast<size_t>(i)] : absolute, executable, capacity);
     }
     return VLAUNCHER_NOT_FOUND;
 }
@@ -347,7 +410,12 @@ int32_t vlauncher_mods_folder(const char* executable, char* folder, int32_t capa
 }
 
 int32_t vlauncher_install_folder(const char* source, const char* mods, const char* name, int32_t* files) {
+    return vlauncher_install_folder_ex(source, mods, name, files, nullptr);
+}
+
+int32_t vlauncher_install_folder_ex(const char* source, const char* mods, const char* name, int32_t* files, int32_t* copied) {
     if (files != nullptr) *files = 0;
+    if (copied != nullptr) *copied = 0;
     if (source == nullptr || mods == nullptr || name == nullptr) return VLAUNCHER_INVALID;
     fs::path from = toPath(source);
     if (!isDirectory(from)) return VLAUNCHER_NOT_FOUND;
@@ -365,9 +433,42 @@ int32_t vlauncher_install_folder(const char* source, const char* mods, const cha
     error.clear();
     fs::create_directories(target, error);
     if (error) return VLAUNCHER_FAILED;
-    fs::copy(from, target, fs::copy_options::recursive | fs::copy_options::overwrite_existing, error);
+    std::vector<fs::path> sources;
+    std::vector<fs::path> folders;
+    fs::recursive_directory_iterator it(from, fs::directory_options::skip_permission_denied, error);
     if (error) return VLAUNCHER_FAILED;
-    if (files != nullptr) *files = countFiles(target);
+    for (fs::recursive_directory_iterator end; it != end; it.increment(error)) {
+        if (error) return VLAUNCHER_FAILED;
+        std::error_code kind;
+        if (it->is_directory(kind)) folders.push_back(it->path());
+        else if (it->is_regular_file(kind)) sources.push_back(it->path());
+    }
+    for (const fs::path& folder : folders) {
+        std::error_code made;
+        fs::create_directories(target / fs::relative(folder, from, made), made);
+    }
+    std::atomic<int32_t> written{0};
+    std::atomic<bool> failed{false};
+    runParallel(sources.size(), [&](size_t i) {
+        if (failed.load()) return;
+        std::error_code step;
+        fs::path out = target / fs::relative(sources[i], from, step);
+        if (step) {
+            failed = true;
+            return;
+        }
+        if (upToDate(sources[i], out)) return;
+        fs::create_directories(out.parent_path(), step);
+        step.clear();
+        if (!fs::copy_file(sources[i], out, fs::copy_options::overwrite_existing, step) || step) {
+            failed = true;
+            return;
+        }
+        written++;
+    });
+    if (failed.load()) return VLAUNCHER_FAILED;
+    if (files != nullptr) *files = static_cast<int32_t>(sources.size());
+    if (copied != nullptr) *copied = written.load();
     return VLAUNCHER_OK;
 }
 

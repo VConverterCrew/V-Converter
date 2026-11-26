@@ -178,6 +178,19 @@ JNIEXPORT jint JNICALL VCL_FUNCTION(installFolder)(JNIEnv* env, jclass, jstring 
     return result == VLAUNCHER_OK ? files : -result;
 }
 
+JNIEXPORT jintArray JNICALL VCL_FUNCTION(installFolderCounts)(JNIEnv* env, jclass, jstring source, jstring mods, jstring name) {
+    std::string from = text(env, source);
+    std::string to = text(env, mods);
+    std::string folder = text(env, name);
+    int32_t files = 0;
+    int32_t copied = 0;
+    int32_t result = vlauncher_install_folder_ex(from.c_str(), to.c_str(), folder.c_str(), &files, &copied);
+    jint values[3] = {result, files, copied};
+    jintArray out = env->NewIntArray(3);
+    if (out != nullptr) env->SetIntArrayRegion(out, 0, 3, values);
+    return out;
+}
+
 JNIEXPORT jint JNICALL VCL_FUNCTION(launch)(JNIEnv* env, jclass, jstring executable) {
     std::string input = text(env, executable);
     return vlauncher_launch(input.c_str());

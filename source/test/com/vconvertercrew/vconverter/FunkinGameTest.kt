@@ -71,7 +71,7 @@ class FunkinGameTest {
     fun nativeFindsInstallsAndLaunches() {
         if (System.getProperty("vconverter.launcher.library") == null) return
         assertTrue(NativeLauncher.loadError ?: "", NativeLauncher.loaded)
-        assertEquals("1.1.0", NativeLauncher.version())
+        assertEquals("1.2.0", NativeLauncher.version())
         val dir = Files.createTempDirectory("funkin-native").toFile().canonicalFile
         try {
             val folder = File(dir, "funkin-linux-64bit").apply { mkdirs() }
@@ -176,5 +176,70 @@ class FunkinGameTest {
         second.writeText("_polymod_meta.json", "{\"title\":\"Mine\"}")
         second.finish("X")
         assertEquals(mapOf("X/_polymod_meta.json" to "{\"title\":\"Mine\"}"), inside.files)
+    }
+
+    @Test
+    fun luaSliceAndDownloadLinks() {
+        assertEquals(LaunchGame.LUASLICE, LaunchGame.forEngine("luaslice"))
+        assertEquals("me.luaslice.docprovider", LaunchGame.LUASLICE.androidDocuments)
+        assertNull(LaunchGame.PSYCH.androidDocuments)
+        assertEquals(com.vconvertercrew.vconverter.launcher.LaunchDevice.WINDOWS, com.vconvertercrew.vconverter.launcher.LaunchDevice.desktop("Windows 11"))
+        assertEquals(com.vconvertercrew.vconverter.launcher.LaunchDevice.MAC, com.vconvertercrew.vconverter.launcher.LaunchDevice.desktop("Mac OS X"))
+        assertEquals(com.vconvertercrew.vconverter.launcher.LaunchDevice.LINUX, com.vconvertercrew.vconverter.launcher.LaunchDevice.desktop("Linux"))
+        LaunchGame.entries.forEach { game ->
+            com.vconvertercrew.vconverter.launcher.LaunchDevice.entries.forEach { assertTrue(game.downloadFor(it).startsWith("https://")) }
+        }
+        assertTrue(LaunchGame.FUNKIN.downloadFor(com.vconvertercrew.vconverter.launcher.LaunchDevice.ANDROID).contains("play.google.com"))
+        assertTrue(LaunchGame.PSYCH.downloadFor(com.vconvertercrew.vconverter.launcher.LaunchDevice.ANDROID).contains("FNF-PsychEngine-Mobile"))
+        assertTrue(LaunchGame.PSYCH.downloadFor(com.vconvertercrew.vconverter.launcher.LaunchDevice.WINDOWS).contains("ShadowMario"))
+        assertTrue(LaunchGame.LUASLICE.downloadFor(com.vconvertercrew.vconverter.launcher.LaunchDevice.LINUX).contains("Fla-man-Max/LuaSlice"))
+        assertTrue("me.luaslice" in LaunchGame.allPackages())
+    }
+
+    @Test
+    fun zipInstallSkipsUnchangedFiles() {
+        val dir = Files.createTempDirectory("funkin-again").toFile()
+        try {
+            val mods = File(dir, "mods").apply { mkdirs() }
+            val archive = File(dir, "lua-mod.zip")
+            zip(archive, (0 until 40).associate { "images/s$it.png" to "x".repeat(10 + it) } + ("scripts/a.luap" to "a"))
+            val first = FunkinGame.extract(archive, mods, "fallback")
+            assertEquals(41, first.files)
+            assertEquals(41, first.copied)
+            val again = FunkinGame.extract(archive, mods, "fallback")
+            assertEquals(41, again.files)
+            assertEquals(0, again.copied)
+            assertEquals("x".repeat(49), File(mods, "lua-mod/images/s39.png").readText())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun nativeFindsLuaSlice() {
+        if (System.getProperty("vconverter.launcher.library") == null) return
+        val dir = Files.createTempDirectory("luaslice-native").toFile().canonicalFile
+        try {
+            val folder = File(dir, "Games/LuaSlice-0.1.0").apply { mkdirs() }
+            val game = File(folder, "LuaSlice")
+            game.writeText("#!/bin/sh\n")
+            game.setExecutable(true)
+            val found = FunkinGame.search(listOf(File(dir, "nope").path, File(dir, "Games").path), LaunchGame.LUASLICE)
+            assertNotNull(found)
+            assertEquals(game.canonicalPath, found!!.executable.canonicalPath)
+            assertEquals(File(folder, "mods").canonicalPath, found.mods.canonicalPath)
+            assertNull(FunkinGame.search(listOf(File(dir, "Games").path), LaunchGame.PSYCH))
+            val source = File(dir, "out/Lua Mod").apply { mkdirs() }
+            File(source, "scripts").mkdirs()
+            File(source, "scripts/a.luap").writeText("a")
+            File(source, "_polymod_meta.json").writeText("{}")
+            val installed = FunkinGame.install(found, source, "x")
+            assertEquals(2, installed.files)
+            assertEquals(2, installed.copied)
+            assertEquals(0, FunkinGame.install(found, source, "x").copied)
+            assertEquals(found.executable.canonicalPath, FunkinGame.findFirst(LaunchGame.LUASLICE, game.path, emptyList())!!.executable.canonicalPath)
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 }

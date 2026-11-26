@@ -106,11 +106,24 @@ object AppSettings {
         runCatching { if (value.isEmpty()) prefs?.remove("psychPath") else prefs?.put("psychPath", value) }
     }
 
-    fun gamePath(game: com.vconvertercrew.vconverter.launcher.LaunchGame): String =
-        if (game == com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH) psychPath else funkinPath
+    var luaSlicePath by mutableStateOf(prefs?.get("luaSlicePath", "") ?: "")
+        private set
 
-    fun updateGamePath(game: com.vconvertercrew.vconverter.launcher.LaunchGame, value: String) {
-        if (game == com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH) updatePsychPath(value) else updateFunkinPath(value)
+    fun updateLuaSlicePath(value: String) {
+        luaSlicePath = value
+        runCatching { if (value.isEmpty()) prefs?.remove("luaSlicePath") else prefs?.put("luaSlicePath", value) }
+    }
+
+    fun gamePath(game: com.vconvertercrew.vconverter.launcher.LaunchGame): String = when (game) {
+        com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH -> psychPath
+        com.vconvertercrew.vconverter.launcher.LaunchGame.LUASLICE -> luaSlicePath
+        com.vconvertercrew.vconverter.launcher.LaunchGame.FUNKIN -> funkinPath
+    }
+
+    fun updateGamePath(game: com.vconvertercrew.vconverter.launcher.LaunchGame, value: String) = when (game) {
+        com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH -> updatePsychPath(value)
+        com.vconvertercrew.vconverter.launcher.LaunchGame.LUASLICE -> updateLuaSlicePath(value)
+        com.vconvertercrew.vconverter.launcher.LaunchGame.FUNKIN -> updateFunkinPath(value)
     }
 
     var vslicePreview by mutableStateOf(prefs?.getBoolean("vslicePreview", false) ?: false)
@@ -300,16 +313,13 @@ fun OptionsOverlay() {
         MenuOption.Toggle("Discord Status", "Shows what you are doing in V-Converter on your Discord profile (needs the Discord app open).", { AppSettings.discordStatus }, AppSettings::updateDiscordStatus),
         MenuOption.Toggle("V-Slice Preview", "V-Slice output uses the Public PlayTest layout (gameplay/songs, gameplay/characters, gameplay/stages, ui/story-mode). Off keeps the 0.7 layout.", { AppSettings.vslicePreview }, AppSettings::updateVSlicePreview),
         MenuOption.Toggle(com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.LABEL, com.vconvertercrew.vconverter.convert.mod.SpriteOptimizer.DESCRIPTION, { AppSettings.optimizeSprites }, AppSettings::updateOptimizeSprites),
-        MenuOption.Action("Friday Night Funkin' Game", "Picks the Friday Night Funkin' folder that Test In Friday Night Funkin' installs mods into and opens. Now: ${AppSettings.funkinPath.ifEmpty { "found automatically" }}.") {
-            Dialogs.chooseFolder("Choose the Friday Night Funkin' folder")?.let { picked ->
-                runCatching { com.vconvertercrew.vconverter.launcher.FunkinGame.resolve(picked) }.getOrNull()?.let { AppSettings.updateFunkinPath(it.executable.path) }
+        *com.vconvertercrew.vconverter.launcher.LaunchGame.entries.map { game ->
+            MenuOption.Action("${game.title} Game", "Picks the ${game.title} folder that ${game.testLabel} installs mods into and opens. Now: ${AppSettings.gamePath(game).ifEmpty { "found automatically" }}.") {
+                Dialogs.chooseFolder("Choose the ${game.title} folder")?.let { picked ->
+                    runCatching { com.vconvertercrew.vconverter.launcher.FunkinGame.resolve(picked, game) }.getOrNull()?.let { AppSettings.updateGamePath(game, it.executable.path) }
+                }
             }
-        },
-        MenuOption.Action("Psych Engine Game", "Picks the Psych Engine folder that Test In Psych Engine installs mods into and opens. Now: ${AppSettings.psychPath.ifEmpty { "found automatically" }}.") {
-            Dialogs.chooseFolder("Choose the Psych Engine folder")?.let { picked ->
-                runCatching { com.vconvertercrew.vconverter.launcher.FunkinGame.resolve(picked, com.vconvertercrew.vconverter.launcher.LaunchGame.PSYCH) }.getOrNull()?.let { AppSettings.updatePsychPath(it.executable.path) }
-            }
-        },
+        }.toTypedArray(),
         MenuOption.TextEntry("Online Server", "Leave it empty to connect to a V-Converter server automatically, or type the address of your own server. Press Enter on it to edit.", { AppSettings.serverUrl }, AppSettings::updateServerUrl, "Automatic"),
         MenuOption.Toggle("Error Reports", "Sends conversion errors and crashes (message, app version and platform) to the online server.", { AppSettings.errorReports }, AppSettings::updateErrorReports)
     )

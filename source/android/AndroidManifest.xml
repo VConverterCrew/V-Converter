@@ -6,6 +6,9 @@
 
     <queries>
         <package android:name="me.funkin.fnf" />
+        <package android:name="me.funkin.psychengine" />
+        <package android:name="com.shadowmario.psychengine" />
+        <package android:name="me.luaslice" />
     </queries>
 
     <application
