@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="desktop/icon.png" width="128" alt="V-Converter icon">
+<img src="assets/ui/app/icon.png" width="128" alt="V-Converter icon">
 
 # V-Converter
 

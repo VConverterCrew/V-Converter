@@ -378,6 +378,32 @@ std::vector<std::string> screenshots(const Json& record) {
     return out;
 }
 
+std::vector<const Json*> values(const Json& value) {
+    std::vector<const Json*> out;
+    if (value.kind() == Json::Kind::Array) for (const Json& item : value.items()) out.push_back(&item);
+    else if (value.kind() == Json::Kind::Object) for (const auto& field : value.fields()) out.push_back(&field.second);
+    return out;
+}
+
+long long idFromUrl(const std::string& url, const std::string& marker) {
+    size_t at = url.find(marker);
+    if (at == std::string::npos) return 0;
+    at += marker.size();
+    long long value = 0;
+    while (at < url.size() && std::isdigit(static_cast<unsigned char>(url[at]))) value = value * 10 + (url[at++] - '0');
+    return value;
+}
+
+std::string cleanCategory(std::string name) {
+    for (const char* noise : {"(DON'T UPLOAD)", "(DONT UPLOAD)", "(Don't Upload)"}) {
+        size_t at;
+        while ((at = name.find(noise)) != std::string::npos) name.erase(at, std::strlen(noise));
+    }
+    size_t a = name.find_first_not_of(" _-");
+    size_t b = name.find_last_not_of(" _-");
+    return a == std::string::npos ? std::string() : name.substr(a, b - a + 1);
+}
+
 bool modSummary(const Json& record, Json& out) {
     double id = num(record["_idRow"]);
     if (id <= 0) return false;
@@ -390,9 +416,13 @@ bool modSummary(const Json& record, Json& out) {
     out.set("name", Json::string(name.empty() ? "Mod " + std::to_string(static_cast<long long>(id)) : name));
     out.set("submitter", Json::string(record["_aSubmitter"]["_sName"].text()));
     out.set("submitterId", Json::number(num(record["_aSubmitter"]["_idRow"])));
-    std::string category = record["_aRootCategory"]["_sName"].text();
-    if (category.empty()) category = record["_aCategory"]["_sName"].text();
+    std::string category = cleanCategory(record["_aRootCategory"]["_sName"].text());
+    if (category.empty()) category = cleanCategory(record["_aCategory"]["_sName"].text());
     out.set("category", Json::string(category));
+    long long categoryId = idFromUrl(record["_aRootCategory"]["_sProfileUrl"].text(), "/cats/");
+    if (categoryId <= 0) categoryId = static_cast<long long>(num(record["_aRootCategory"]["_idRow"]));
+    if (categoryId <= 0) categoryId = idFromUrl(record["_aCategory"]["_sProfileUrl"].text(), "/cats/");
+    out.set("categoryId", Json::number(static_cast<double>(categoryId)));
     out.set("subcategory", Json::string(record["_aSubCategory"]["_sName"].text()));
     out.set("likes", Json::number(num(record["_nLikeCount"])));
     out.set("views", Json::number(num(record["_nViewCount"])));
@@ -420,15 +450,21 @@ Json parsePage(const Json& root) {
     Json out = Json::object();
     Json mods = Json::array();
     int count = 0;
-    for (const Json& record : root["_aRecords"].items()) {
+    int foreign = 0;
+    int records = 0;
+    for (const Json* record : values(root["_aRecords"])) {
+        records++;
+        if (!(*record)["_aGame"].isNull() && num((*record)["_aGame"]["_idRow"], kGameId) != kGameId) foreign++;
         Json mod;
-        if (modSummary(record, mod)) {
+        if (modSummary(*record, mod)) {
             mods.push(mod);
             count++;
         }
     }
     const Json& meta = root["_aMetadata"];
     out.set("mods", mods);
+    out.set("records", Json::number(records));
+    out.set("foreign", Json::number(foreign));
     out.set("total", Json::number(meta.isNull() ? count : num(meta["_nRecordCount"], count)));
     out.set("complete", Json::boolean(meta.isNull() ? true : flag(meta["_bIsComplete"], true)));
     out.set("perPage", Json::number(num(meta["_nPerpage"], count)));
@@ -481,7 +517,8 @@ Json parseMod(const Json& root) {
     Json files = Json::array();
     std::vector<Json> parsedFiles;
     Detection pre = detect(signals);
-    for (const Json& f : root["_aFiles"].items()) {
+    for (const Json* fp : values(root["_aFiles"])) {
+        const Json& f = *fp;
         if (num(f["_idRow"]) <= 0) continue;
         Json file = fileJson(f, pre);
         signals.push_back({f["_sFile"].text() + " " + f["_sDescription"].text(), 10, "file \"" + f["_sFile"].text() + "\""});
@@ -581,6 +618,29 @@ Json parseUpdates(const Json& root) {
     return out;
 }
 
+Json parseCategories(const Json& root) {
+    Json out = Json::object();
+    Json list = Json::array();
+    for (const Json* item : values(root["_aModRootCategories"])) {
+        const Json& c = *item;
+        long long id = static_cast<long long>(num(c["_idRow"]));
+        if (id <= 0) id = idFromUrl(c["_sUrl"].text(c["_sProfileUrl"].text()), "/cats/");
+        if (id <= 0) continue;
+        std::string raw = c["_sName"].text();
+        Json category = Json::object();
+        category.set("id", Json::number(static_cast<double>(id)));
+        category.set("name", Json::string(cleanCategory(raw)));
+        category.set("count", Json::number(num(c["_nItemCount"])));
+        category.set("children", Json::number(num(c["_nCategoryCount"])));
+        category.set("icon", Json::string(c["_sIconUrl"].text()));
+        std::string low = lower(raw);
+        category.set("legacy", Json::boolean(contains(low, "legacy") || contains(low, "don't upload") || contains(low, "dont upload")));
+        list.push(category);
+    }
+    out.set("categories", list);
+    return out;
+}
+
 Json request(const Json& r) {
     std::string kind = r["kind"].text();
     int page = std::max(1, static_cast<int>(num(r["page"], 1)));
@@ -593,6 +653,24 @@ Json request(const Json& r) {
         if (sort == "popular") sort = "default";
         if (sort != "default" && sort != "new" && sort != "updated") sort = "default";
         url = std::string(kApi) + "/Game/" + std::to_string(kGameId) + "/Subfeed?_nPage=" + std::to_string(page) + "&_sSort=" + sort + "&_csvModelInclusions=Mod";
+        cache = 300;
+    } else if (kind == "categories") {
+        url = std::string(kApi) + "/Game/" + std::to_string(kGameId) + "/ProfilePage";
+        cache = 3600;
+    } else if (kind == "category") {
+        if (id <= 0) {
+            Json out = Json::object();
+            out.set("error", Json::string("A category id is needed."));
+            return out;
+        }
+        std::string sort = r["sort"].text("default");
+        std::string order;
+        if (sort == "new") order = "Generic_Newest";
+        else if (sort == "updated") order = "Generic_LatestUpdated";
+        else if (sort == "liked") order = "Generic_MostLiked";
+        else if (sort == "downloaded") order = "Generic_MostDownloaded";
+        url = std::string(kApi) + "/Mod/Index?_nPage=" + std::to_string(page) + "&_nPerpage=" + std::to_string(perPage) +
+              "&_aFilters%5BGeneric_Category%5D=" + std::to_string(id) + (order.empty() ? std::string() : "&_sSort=" + order);
         cache = 300;
     } else if (kind == "search") {
         std::string query = r["query"].text();
@@ -638,7 +716,10 @@ Json request(const Json& r) {
     out.set("url", Json::string(url));
     out.set("method", Json::string("GET"));
     Json headers = Json::object();
-    if (kind != "download" && kind != "page") headers.set("Accept", Json::string("application/json"));
+    if (kind != "download" && kind != "page") {
+        headers.set("Accept", Json::string("application/json"));
+        headers.set("Accept-Encoding", Json::string("gzip"));
+    }
     headers.set("User-Agent", Json::string("V-Converter (V-Banana)"));
     out.set("headers", headers);
     out.set("cacheSeconds", Json::number(cache));
@@ -995,6 +1076,7 @@ char* vbanana_parse(const char* kind, const char* body, const char* options_json
     if (k == "page") out = parsePage(root);
     else if (k == "mod") out = parseMod(root);
     else if (k == "updates") out = parseUpdates(root);
+    else if (k == "categories") out = parseCategories(root);
     else {
         out = Json::object();
         out.set("ok", Json::boolean(false));

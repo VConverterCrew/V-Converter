@@ -20,8 +20,11 @@ data class GameBananaMod(
     val version: String = "",
     val updated: Long = 0,
     val obsolete: Boolean = false,
-    val engine: String? = null
+    val engine: String? = null,
+    val categoryId: Int = 0
 )
+
+data class GameBananaCategory(val id: Int, val name: String, val count: Int, val icon: String = "", val legacy: Boolean = false)
 
 data class GameBananaFile(
     val id: Int,
@@ -90,7 +93,7 @@ data class GameBananaDetails(
     val updates: Int = 0
 )
 
-data class GameBananaPage(val mods: List<GameBananaMod>, val total: Int, val complete: Boolean)
+data class GameBananaPage(val mods: List<GameBananaMod>, val total: Int, val complete: Boolean, val foreign: Int = 0)
 
 enum class GameBananaFeed(val label: String, val sort: String) {
     POPULAR("Popular", "default"),
@@ -107,6 +110,19 @@ object GameBanana {
     val archiveExtensions = listOf(".zip", ".rar", ".7z")
 
     private val headers = mapOf("Accept" to "application/json", "User-Agent" to "V-Converter")
+
+    val fallbackCategories = listOf(
+        GameBananaCategory(43771, "Mod Folders", 0),
+        GameBananaCategory(3827, "Executables", 0),
+        GameBananaCategory(3046, "Other/Misc", 0),
+        GameBananaCategory(3828, "Translations", 0),
+        GameBananaCategory(43772, "Legacy Categories", 0, legacy = true)
+    )
+
+    private val categoryUrl = Regex("/cats/(\\d+)")
+
+    fun cleanCategory(name: String): String =
+        name.replace("(DON'T UPLOAD)", "").replace("(DONT UPLOAD)", "").trim(' ', '_', '-')
 
     private val engineWords = listOf(
         "v-slice" to "V-Slice", "vslice" to "V-Slice", "base game" to "V-Slice", "polymod" to "V-Slice",
@@ -160,8 +176,11 @@ object GameBanana {
         val id = record.optInt("_idRow")
         if (id <= 0) return null
         if (record.optString("_sModelName", "Mod") != "Mod") return null
-        val category = record.optJSONObject("_aRootCategory")?.optString("_sName")?.takeIf { it.isNotEmpty() }
-            ?: record.optJSONObject("_aCategory")?.optString("_sName").orEmpty()
+        val category = cleanCategory(record.optJSONObject("_aRootCategory")?.optString("_sName")?.takeIf { it.isNotEmpty() }
+            ?: record.optJSONObject("_aCategory")?.optString("_sName").orEmpty())
+        val categoryId = record.optJSONObject("_aRootCategory")?.optString("_sProfileUrl")?.let { categoryUrl.find(it)?.groupValues?.get(1)?.toIntOrNull() }
+            ?: record.optJSONObject("_aRootCategory")?.optInt("_idRow")?.takeIf { it > 0 }
+            ?: 0
         return GameBananaMod(
             id = id,
             name = record.optString("_sName").ifBlank { "Mod $id" },
@@ -171,7 +190,8 @@ object GameBanana {
             views = record.optInt("_nViewCount"),
             thumbnail = thumbnail(record),
             profileUrl = record.optString("_sProfileUrl").ifEmpty { "$SITE/mods/$id" },
-            hasFiles = record.optBoolean("_bHasFiles", true)
+            hasFiles = record.optBoolean("_bHasFiles", true),
+            categoryId = categoryId
         )
     }
 
@@ -188,7 +208,8 @@ object GameBanana {
         version = json.optString("version"),
         updated = json.optLong("updated"),
         obsolete = json.optBoolean("obsolete"),
-        engine = json.optString("engine").ifEmpty { null }
+        engine = json.optString("engine").ifEmpty { null },
+        categoryId = json.optInt("categoryId")
     )
 
     private fun nativeFile(json: JSONObject): GameBananaFile = GameBananaFile(
@@ -208,6 +229,12 @@ object GameBanana {
         warning = json.optString("warning")
     )
 
+    private fun values(root: JSONObject, key: String): List<JSONObject> = when (val value = root.opt(key)) {
+        is JSONArray -> objects(value)
+        is JSONObject -> value.keys().asSequence().mapNotNull { value.optJSONObject(it) }.toList()
+        else -> emptyList()
+    }
+
     private fun objects(array: JSONArray?): List<JSONObject> = array?.let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) } }.orEmpty()
 
     private fun strings(array: JSONArray?): List<String> = array?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty()
@@ -223,14 +250,15 @@ object GameBanana {
         if (native) {
             nativeResult("page", text)?.let { json ->
                 val mods = objects(json.optJSONArray("mods")).map(::nativeMod)
-                return GameBananaPage(mods, json.optInt("total", mods.size), json.optBoolean("complete", true))
+                return GameBananaPage(mods, json.optInt("total", mods.size), json.optBoolean("complete", true), json.optInt("foreign"))
             }
         }
         val root = JSONObject(text)
-        val records = root.optJSONArray("_aRecords") ?: JSONArray()
+        val records = values(root, "_aRecords")
         val meta = root.optJSONObject("_aMetadata")
-        val mods = (0 until records.length()).mapNotNull { records.optJSONObject(it)?.let(::parseMod) }
-        return GameBananaPage(mods, meta?.optInt("_nRecordCount") ?: mods.size, meta?.optBoolean("_bIsComplete", true) ?: true)
+        val foreign = records.count { r -> r.optJSONObject("_aGame")?.optInt("_idRow", GAME_ID)?.let { it != GAME_ID } == true }
+        val mods = records.filter { r -> r.optJSONObject("_aGame")?.optInt("_idRow", GAME_ID)?.let { it == GAME_ID } != false }.mapNotNull(::parseMod)
+        return GameBananaPage(mods, meta?.optInt("_nRecordCount") ?: mods.size, meta?.optBoolean("_bIsComplete", true) ?: true, foreign)
     }
 
     fun parseFile(file: JSONObject): GameBananaFile? {
@@ -282,10 +310,26 @@ object GameBanana {
         val game = root.optJSONObject("_aGame")?.optInt("_idRow") ?: GAME_ID
         if (game != GAME_ID) throw GameBananaException("That GameBanana page isn't a Friday Night Funkin' mod.")
         val mod = parseMod(root) ?: throw GameBananaException("GameBanana didn't return a mod.")
-        val files = root.optJSONArray("_aFiles")?.let { array -> (0 until array.length()).mapNotNull { array.optJSONObject(it)?.let(::parseFile) } }.orEmpty()
+        val files = values(root, "_aFiles").mapNotNull(::parseFile)
         val tags = root.optJSONArray("_aTags")?.let { array -> (0 until array.length()).joinToString(" ") { array.opt(it).toString() } }.orEmpty()
         val engine = engineOf(mod.name + " " + mod.category + " " + tags + " " + root.optJSONObject("_aSuperCategory")?.optString("_sName").orEmpty())
         return GameBananaDetails(mod, files, root.optInt("_nDownloadCount"), engine)
+    }
+
+    fun parseCategories(text: String): List<GameBananaCategory> {
+        if (native) {
+            nativeResult("categories", text)?.let { json ->
+                return objects(json.optJSONArray("categories")).map {
+                    GameBananaCategory(it.optInt("id"), it.optString("name"), it.optInt("count"), it.optString("icon"), it.optBoolean("legacy"))
+                }.filter { it.id > 0 }
+            }
+        }
+        return values(JSONObject(text), "_aModRootCategories").mapNotNull { c ->
+            val raw = c.optString("_sName")
+            val id = c.optInt("_idRow").takeIf { it > 0 } ?: categoryUrl.find(c.optString("_sUrl"))?.groupValues?.get(1)?.toIntOrNull() ?: return@mapNotNull null
+            val low = raw.lowercase()
+            GameBananaCategory(id, cleanCategory(raw), c.optInt("_nItemCount"), c.optString("_sIconUrl"), "legacy" in low || "upload)" in low)
+        }
     }
 
     fun bestFile(files: List<GameBananaFile>): GameBananaFile? {
@@ -342,7 +386,8 @@ object GameBanana {
     private val cache = LinkedHashMap<String, Cached>()
 
     private fun cacheSeconds(url: String): Int = when {
-        "/Subfeed" in url -> 300
+        "/Subfeed" in url || "/Mod/Index" in url -> 300
+        "/Game/$GAME_ID/ProfilePage" in url -> 3600
         "/Search/" in url -> 120
         "/ProfilePage" in url || "/Updates" in url -> 600
         else -> 0
@@ -371,10 +416,17 @@ object GameBanana {
     }
 
     private fun fetch(url: String): String {
-        val response = try {
-            Http.request(url, "GET", headers, null, TIMEOUT_MS)
-        } catch (e: Exception) {
-            throw GameBananaException("Couldn't reach GameBanana: ${e.message ?: e::class.simpleName}")
+        var attempt = 0
+        var response: com.vconvertercrew.vconverter.platform.HttpResponse
+        while (true) {
+            response = try {
+                Http.request(url, "GET", headers, null, TIMEOUT_MS)
+            } catch (e: Exception) {
+                if (++attempt < 3) continue
+                throw GameBananaException("Couldn't reach GameBanana: ${e.message ?: e::class.simpleName}")
+            }
+            if ((response.status == 429 || response.status >= 500) && ++attempt < 3) continue
+            break
         }
         if (response.status == 404) throw GameBananaException("GameBanana has no such mod.")
         if (response.status !in 200..299) throw GameBananaException("GameBanana answered ${response.status}.")
@@ -386,6 +438,40 @@ object GameBanana {
 
     fun searchUrl(query: String, page: Int): String =
         (if (native) nativeUrl(JSONObject().put("kind", "search").put("query", query).put("page", page)) else null) ?: "$API/Util/Search/Results?_sModelName=Mod&_sOrder=best_match&_idGameRow=$GAME_ID&_sSearchString=${encode(query.trim())}&_nPage=$page"
+
+    fun categoriesUrl(): String =
+        (if (native) nativeUrl(JSONObject().put("kind", "categories")) else null) ?: "$API/Game/$GAME_ID/ProfilePage"
+
+    fun categoryUrl(id: Int, feed: GameBananaFeed, page: Int, sorted: Boolean = true): String {
+        val sort = if (sorted) feed.sort else "default"
+        return (if (native) nativeUrl(JSONObject().put("kind", "category").put("id", id).put("sort", sort).put("page", page)) else null)
+            ?: ("$API/Mod/Index?_nPage=$page&_nPerpage=15&_aFilters%5BGeneric_Category%5D=$id" + when (sort) {
+                "new" -> "&_sSort=Generic_Newest"
+                "updated" -> "&_sSort=Generic_LatestUpdated"
+                else -> ""
+            })
+    }
+
+    private var categoryCache: List<GameBananaCategory>? = null
+
+    fun categories(): List<GameBananaCategory> {
+        categoryCache?.let { return it }
+        val found = runCatching { parseCategories(get(categoriesUrl())) }.getOrNull()?.filter { it.id > 0 }.orEmpty()
+        val list = (found.ifEmpty { fallbackCategories }).sortedWith(compareBy<GameBananaCategory> { it.legacy }.thenByDescending { it.count })
+        if (found.isNotEmpty()) categoryCache = list
+        return list
+    }
+
+    fun category(category: GameBananaCategory, order: GameBananaFeed, page: Int = 1): GameBananaPage {
+        val direct = runCatching { parsePage(get(categoryUrl(category.id, order, page))) }.getOrNull()
+            ?: runCatching { parsePage(get(categoryUrl(category.id, order, page, sorted = false))) }.getOrNull()
+        if (direct != null && direct.foreign == 0 && (direct.mods.isEmpty() || direct.mods.all { it.categoryId == 0 || it.categoryId == category.id })) return direct
+        val scan = 4
+        val mods = ((page - 1) * scan + 1..page * scan).flatMap { number ->
+            runCatching { feed(order, number).mods }.getOrDefault(emptyList())
+        }.filter { it.categoryId == category.id }
+        return GameBananaPage(mods, mods.size, mods.isEmpty() && page > 1)
+    }
 
     fun detailsUrl(id: Int): String = "$API/Mod/$id/ProfilePage"
 

@@ -81,4 +81,28 @@ class GameBananaTest {
         assertTrue(GameBanana.feedUrl(GameBananaFeed.NEW, 2).contains("/Game/8694/Subfeed?_nPage=2&_sSort=new"))
         assertTrue(GameBanana.searchUrl("week 7", 1).contains("_sSearchString=week%207"))
     }
+
+    @Test
+    fun parsesCategoriesAndForeignRecords() {
+        val game = """{"_idRow":8694,"_aModRootCategories":[
+            {"_idRow":43772,"_sName":"(DON'T UPLOAD) Legacy Categories (DON'T UPLOAD)","_nItemCount":53274,"_sUrl":"https://gamebanana.com/mods/cats/43772"},
+            {"_idRow":43771,"_sName":"Mod Folders","_nItemCount":15754,"_sUrl":"https://gamebanana.com/mods/cats/43771","_sIconUrl":"https://images.gamebanana.com/b.png"}]}"""
+        val categories = GameBanana.parseCategories(game)
+        assertEquals(listOf(43772, 43771), categories.map { it.id })
+        assertEquals("Legacy Categories", categories[0].name)
+        assertTrue(categories[0].legacy)
+        assertEquals(15754, categories[1].count)
+        val mixed = """{"_aMetadata":{"_nRecordCount":3,"_bIsComplete":true},"_aRecords":[
+            {"_idRow":1,"_sModelName":"Mod","_sName":"Portal","_aGame":{"_idRow":296}},
+            {"_idRow":2,"_sModelName":"Mod","_sName":"Funky","_aGame":{"_idRow":8694},"_aRootCategory":{"_sName":"Mod Folders","_sProfileUrl":"https://gamebanana.com/mods/cats/43771"}},
+            {"_idRow":3,"_sModelName":"Tool","_sName":"A tool"}]}"""
+        val page = GameBanana.parsePage(mixed)
+        assertEquals(listOf(2), page.mods.map { it.id })
+        assertEquals(1, page.foreign)
+        assertEquals(43771, page.mods[0].categoryId)
+        assertEquals(GameBanana.fallbackCategories.size, GameBanana.fallbackCategories.map { it.id }.distinct().size)
+        assertTrue(GameBanana.categoryUrl(43771, com.vconvertercrew.vconverter.tools.online.GameBananaFeed.NEW, 2).contains("Generic_Category%5D=43771"))
+        val keyed = profile.replace(Regex("\"_aFiles\"\\s*:\\s*\\["), "\"_aFilesOld\":[")
+        assertTrue(GameBanana.parseDetails(keyed).files.isEmpty())
+    }
 }

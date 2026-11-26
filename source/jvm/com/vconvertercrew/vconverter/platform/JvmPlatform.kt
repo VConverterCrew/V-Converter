@@ -97,13 +97,15 @@ object Http {
             connection.readTimeout = timeoutMs * 3
             connection.useCaches = false
             headers.forEach { (k, v) -> connection.setRequestProperty(k, v) }
+            if (method == "GET" && headers.keys.none { it.equals("Accept-Encoding", true) || it.equals("Range", true) }) connection.setRequestProperty("Accept-Encoding", "gzip")
             if (body != null) {
                 connection.doOutput = true
                 connection.setFixedLengthStreamingMode(body.size)
                 connection.outputStream.use { it.write(body) }
             }
             val status = connection.responseCode
-            val stream = if (status >= 400) connection.errorStream else connection.inputStream
+            val raw = if (status >= 400) connection.errorStream else connection.inputStream
+            val stream = if (raw != null && connection.contentEncoding?.equals("gzip", true) == true) java.util.zip.GZIPInputStream(raw, 64 * 1024) else raw
             val total = connection.contentLengthLong
             val out = java.io.ByteArrayOutputStream()
             stream?.use { input ->

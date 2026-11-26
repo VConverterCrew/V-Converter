@@ -42,6 +42,42 @@ static void testRequests() {
     CHECK(!r["error"].isNull());
 }
 
+static void testCategories() {
+    vbanana::Json r = take(vbanana_request(R"({"kind":"categories"})"));
+    CHECK(r["url"].text() == "https://gamebanana.com/apiv11/Game/8694/ProfilePage");
+    CHECK(r["headers"]["Accept-Encoding"].text() == "gzip");
+    r = take(vbanana_request(R"({"kind":"category","id":43771,"page":2,"sort":"new"})"));
+    CHECK(r["url"].text() == "https://gamebanana.com/apiv11/Mod/Index?_nPage=2&_nPerpage=15&_aFilters%5BGeneric_Category%5D=43771&_sSort=Generic_Newest");
+    r = take(vbanana_request(R"({"kind":"category","id":3827})"));
+    CHECK(r["url"].text() == "https://gamebanana.com/apiv11/Mod/Index?_nPage=1&_nPerpage=15&_aFilters%5BGeneric_Category%5D=3827");
+    CHECK(!take(vbanana_request(R"({"kind":"category"})"))["error"].isNull());
+    const char* game = R"J({"_idRow":8694,"_aModRootCategories":[
+        {"_idRow":43772,"_sName":"(DON'T UPLOAD) Legacy Categories (DON'T UPLOAD)","_nItemCount":53274,"_nCategoryCount":5,"_sUrl":"https://gamebanana.com/mods/cats/43772","_sIconUrl":"https://images.gamebanana.com/a.png"},
+        {"_idRow":43771,"_sName":"Mod Folders","_nItemCount":15754,"_nCategoryCount":4,"_sUrl":"https://gamebanana.com/mods/cats/43771","_sIconUrl":"https://images.gamebanana.com/b.png"},
+        {"_sName":"Executables","_nItemCount":32661,"_sUrl":"https://gamebanana.com/mods/cats/3827"}]})J";
+    vbanana::Json c = take(vbanana_parse("categories", game, "{}"));
+    CHECK(c["ok"].asBool());
+    CHECK(c["categories"].items().size() == 3);
+    CHECK(c["categories"].items()[0]["name"].text() == "Legacy Categories");
+    CHECK(c["categories"].items()[0]["legacy"].asBool());
+    CHECK(c["categories"].items()[1]["count"].asNumber() == 15754);
+    CHECK(!c["categories"].items()[1]["legacy"].asBool());
+    CHECK(c["categories"].items()[2]["id"].asNumber() == 3827);
+    const char* mixed = R"J({"_aMetadata":{"_nRecordCount":3,"_bIsComplete":true},"_aRecords":[
+        {"_idRow":1,"_sModelName":"Mod","_sName":"Portal","_aGame":{"_idRow":296}},
+        {"_idRow":2,"_sModelName":"Mod","_sName":"Funky","_aGame":{"_idRow":8694},"_aRootCategory":{"_sName":"Mod Folders","_sProfileUrl":"https://gamebanana.com/mods/cats/43771"}},
+        {"_idRow":3,"_sModelName":"Tool","_sName":"A tool"}]})J";
+    vbanana::Json p = take(vbanana_parse("page", mixed, "{}"));
+    CHECK(p["mods"].items().size() == 1);
+    CHECK(p["foreign"].asNumber() == 1);
+    CHECK(p["records"].asNumber() == 3);
+    CHECK(p["mods"].items()[0]["categoryId"].asNumber() == 43771);
+    const char* keyed = R"J({"_idRow":5,"_sModelName":"Mod","_sName":"Keyed","_aGame":{"_idRow":8694},"_aFiles":{"10":{"_idRow":10,"_sFile":"mod.zip","_nFilesize":100},"11":{"_idRow":11,"_sFile":"other.zip","_nFilesize":200}}})J";
+    vbanana::Json d = take(vbanana_parse("mod", keyed, "{}"));
+    CHECK(d["ok"].asBool());
+    CHECK(d["files"].items().size() == 2);
+}
+
 static void testLinks() {
     CHECK(take(vbanana_link("https://gamebanana.com/mods/516489"))["id"].asNumber() == 516489);
     CHECK(take(vbanana_link("gamebanana.com/mods/download/516489#FileInfo_1"))["kind"].text() == "mod");
@@ -196,6 +232,7 @@ static void testFuzz() {
 
 int main() {
     testRequests();
+    testCategories();
     testLinks();
     testParse();
     testInspect();

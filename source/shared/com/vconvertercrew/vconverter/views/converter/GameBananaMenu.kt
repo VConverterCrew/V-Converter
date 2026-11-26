@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vconvertercrew.vconverter.core.fmt
 import com.vconvertercrew.vconverter.tools.online.GameBanana
+import com.vconvertercrew.vconverter.tools.online.GameBananaCategory
 import com.vconvertercrew.vconverter.tools.online.GameBananaDetails
 import com.vconvertercrew.vconverter.tools.online.GameBananaFeed
 import com.vconvertercrew.vconverter.tools.online.GameBananaFile
@@ -71,7 +74,10 @@ import com.vconvertercrew.vconverter.platform.Http
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 typealias GameBananaFetch = suspend (mod: GameBananaMod, file: GameBananaFile, progress: (Float) -> Unit) -> Unit
@@ -100,15 +106,56 @@ class GameBananaState(
     var progress by mutableFloatStateOf(0f)
         private set
     val thumbs = mutableStateMapOf<Int, ImageBitmap>()
+    val categories = mutableStateListOf<GameBananaCategory>()
+    var category by mutableStateOf<GameBananaCategory?>(null)
+        private set
     private val asked = HashSet<Int>()
+    private val known = HashMap<Int, GameBananaDetails>()
+    private val thumbGate = Semaphore(6)
     private var page = 1
     private var job: Job? = null
+    private var prefetchJob: Job? = null
 
     fun show() {
         open = true
         error = null
+        if (categories.isEmpty()) loadCategories()
         if (mods.isEmpty() && !loading) reload()
     }
+
+    private fun loadCategories() {
+        scope.launch {
+            val list = withContext(Dispatchers.Default) { runCatching { GameBanana.categories() }.getOrDefault(GameBanana.fallbackCategories) }
+            categories.clear()
+            categories.addAll(list)
+        }
+    }
+
+    fun selectCategory(next: GameBananaCategory?) {
+        if (category?.id == next?.id && searched == null) return
+        category = next
+        searched = null
+        reload()
+    }
+
+    fun stepCategory(by: Int) {
+        val options = listOf<GameBananaCategory?>(null) + categories
+        val index = options.indexOfFirst { it?.id == category?.id }.coerceAtLeast(0)
+        selectCategory(options[(index + by + options.size) % options.size])
+    }
+
+    fun prefetch(mod: GameBananaMod) {
+        if (known.containsKey(mod.id)) return
+        prefetchJob?.cancel()
+        prefetchJob = scope.launch {
+            delay(350)
+            val info = withContext(Dispatchers.Default) { runCatching { GameBanana.details(mod.id) }.getOrNull() }
+            if (info != null) known[mod.id] = info
+        }
+    }
+
+    private suspend fun detailsOf(mod: GameBananaMod): GameBananaDetails =
+        known[mod.id] ?: withContext(Dispatchers.Default) { GameBanana.details(mod.id) }.also { known[mod.id] = it }
 
     fun hide() {
         if (downloading != null) return
@@ -153,10 +200,17 @@ class GameBananaState(
         val term = searched
         val current = feed
         val number = page
+        val within = category
         job = scope.launch {
             try {
                 val result: GameBananaPage = withContext(Dispatchers.Default) {
-                    if (term != null) GameBanana.search(term, number) else GameBanana.feed(current, number)
+                    when {
+                        term != null -> GameBanana.search(term, number).let { found ->
+                            if (within == null) found else found.copy(mods = found.mods.filter { it.categoryId == 0 || it.categoryId == within.id })
+                        }
+                        within != null -> GameBanana.category(within, current, number)
+                        else -> GameBanana.feed(current, number)
+                    }
                 }
                 val known = mods.map { it.id }.toHashSet()
                 mods.addAll(result.mods.filter { it.id !in known })
@@ -173,11 +227,13 @@ class GameBananaState(
         val url = mod.thumbnail ?: return
         if (!asked.add(mod.id)) return
         scope.launch {
-            val image = withContext(Dispatchers.Default) {
-                runCatching {
-                    val response = Http.request(url, "GET", mapOf("User-Agent" to "V-Converter"), null, 10000)
-                    if (response.status in 200..299) decode(response.body) else null
-                }.getOrNull()
+            val image = thumbGate.withPermit {
+                withContext(Dispatchers.Default) {
+                    runCatching {
+                        val response = Http.request(url, "GET", mapOf("User-Agent" to "V-Converter"), null, 10000)
+                        if (response.status in 200..299) decode(response.body) else null
+                    }.getOrNull()
+                }
             }
             if (image != null) thumbs[mod.id] = image
         }
@@ -187,7 +243,7 @@ class GameBananaState(
         error = null
         scope.launch {
             try {
-                details = withContext(Dispatchers.Default) { GameBanana.details(mod.id) }
+                details = detailsOf(mod)
             } catch (e: Exception) {
                 error = e.message ?: "GameBanana didn't answer."
             }
@@ -205,10 +261,7 @@ class GameBananaState(
         error = null
         scope.launch {
             try {
-                val chosen = file ?: withContext(Dispatchers.Default) {
-                    val info = GameBanana.details(mod.id)
-                    GameBanana.bestFile(info.files) ?: throw IllegalStateException("${mod.name} has no files to download.")
-                }
+                val chosen = file ?: GameBanana.bestFile(detailsOf(mod).files) ?: throw IllegalStateException("${mod.name} has no files to download.")
                 if (!chosen.isArchive) throw IllegalStateException("${chosen.name} isn't a .zip, .rar or .7z, so V-Converter can't open it.")
                 fetch(mod, chosen) { progress = it.coerceIn(0f, 1f) }
                 open = false
@@ -249,7 +302,9 @@ fun GameBananaMenu(state: GameBananaState, art: ConverterArt, modifier: Modifier
     LaunchedEffect(selected) {
         if (state.mods.isNotEmpty()) list.animateScrollToItem(selected.coerceIn(0, state.mods.size - 1))
         if (selected >= state.mods.size - 3) state.loadMore()
+        state.mods.getOrNull(selected)?.let { state.prefetch(it) }
     }
+    LaunchedEffect(state.category?.id, state.feed, state.searched) { selected = 0 }
     val feeds = GameBananaFeed.entries
 
     fun step(by: Int) {
@@ -278,6 +333,8 @@ fun GameBananaMenu(state: GameBananaState, art: ConverterArt, modifier: Modifier
                         state.download(it)
                     }
                     Key.I, Key.Tab -> state.mods.getOrNull(selected)?.let { state.openDetails(it) }
+                    Key.Q, Key.PageUp -> state.stepCategory(-1)
+                    Key.E, Key.PageDown -> state.stepCategory(1)
                     Key.Slash, Key.F -> runCatching { search.requestFocus() }
                     else -> return@onKeyEvent false
                 }
@@ -353,7 +410,22 @@ fun GameBananaMenu(state: GameBananaState, art: ConverterArt, modifier: Modifier
                     modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Banana).clickable { state.search() }.padding(horizontal = 10.dp, vertical = 5.dp)
                 )
             }
-            state.searched?.let { Text("RESULTS FOR \"${it.uppercase()}\"", color = Banana, fontFamily = mono, fontSize = 12.sp) }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                item(key = "all") { CategoryChip("ALL", null, state.category == null) { state.selectCategory(null) } }
+                items(state.categories, key = { it.id }) { item ->
+                    CategoryChip(item.name.uppercase(), item.count.takeIf { it > 0 }?.let(::count), state.category?.id == item.id) { state.selectCategory(item) }
+                }
+            }
+            Text(
+                listOfNotNull(
+                    state.searched?.let { "RESULTS FOR \"${it.uppercase()}\"" } ?: state.feed.label.uppercase(),
+                    state.category?.name?.uppercase()?.let { "IN $it" },
+                    "${state.mods.size} MODS".takeIf { state.mods.isNotEmpty() }
+                ).joinToString("  ·  "),
+                color = Banana,
+                fontFamily = mono,
+                fontSize = 12.sp
+            )
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 LazyColumn(state = list, verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxSize()) {
                     itemsIndexed(state.mods, key = { _, mod -> mod.id }) { index, mod ->
@@ -398,7 +470,7 @@ fun GameBananaMenu(state: GameBananaState, art: ConverterArt, modifier: Modifier
             }
             state.error?.let { Text(it, color = Color(0xFFFF6B6B), fontFamily = mono, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
             Text(
-                "ENTER / TAP TWICE: DOWNLOAD AND OPEN  ·  I / LONG PRESS: FILES  ·  LEFT / RIGHT: FEED  ·  /: SEARCH  ·  ESC: CLOSE",
+                "ENTER / TAP TWICE: DOWNLOAD AND OPEN  ·  I / LONG PRESS: FILES  ·  LEFT / RIGHT: FEED  ·  Q / E: CATEGORY  ·  /: SEARCH  ·  ESC: CLOSE",
                 color = Color.White.copy(alpha = 0.55f),
                 fontFamily = mono,
                 fontSize = 11.sp
@@ -417,6 +489,20 @@ fun GameBananaMenu(state: GameBananaState, art: ConverterArt, modifier: Modifier
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryChip(label: String, detail: String?, active: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.clip(RoundedCornerShape(14.dp)).background(if (active) Banana else Color(0x26FFFFFF))
+            .border(1.dp, if (active) Banana else Color(0x40FFFFFF), RoundedCornerShape(14.dp))
+            .clickable { onClick() }.padding(horizontal = 12.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(label, color = if (active) Ink else Color.White, fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        detail?.let { Text(it, color = if (active) Ink.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.5f), fontFamily = FontFamily.Monospace, fontSize = 11.sp, maxLines = 1) }
     }
 }
 
